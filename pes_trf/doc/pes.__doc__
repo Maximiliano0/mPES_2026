@@ -1,0 +1,100 @@
+pes_trf — Pandemic Experiment Scenario (Transformer)
+
+Variant of the PES experiment that replaces tabular Q-Learning with a causal
+Transformer encoder and actor-critic output heads.  The model processes the
+trajectory of (resources_left, trial_no, severity) states within an episode
+and outputs action logits + a scalar value estimate at each position, using
+multi-head causal self-attention.
+
+## Key Features — Transformer Architecture:
+- **Causal self-attention**: each position attends only to past + current context
+- **Actor-critic heads**: policy logits (11 actions) + value estimate per position
+- **Pre-norm residual connections** (GPT-2 style): LayerNorm → Attention → Add
+- **Learned positional encoding**: max 10 positions (matching max sequence length)
+- **GELU activation** in feed-forward network
+- **Infeasible-action masking**: actions > resources_left set to −∞ before softmax
+- **Entropy-based confidence**: same metacognitive mechanism as Q-Learning variants
+
+## Transformer Model Specification:
+- **d_model**: 64 (embedding dimension)
+- **n_heads**: 4 (multi-head attention)
+- **n_layers**: 2 (Transformer blocks)
+- **d_ff**: 128 (feed-forward hidden dimension)
+- **dropout**: 0.1
+- **Total parameters**: ~77,000 trainable
+- **Input**: (batch, seq_len, 3) → [resources_left, trial_no, severity]
+- **Normalisation**: [resources/30, trial/10, severity/9] → [0, 1]
+- **Policy head**: Dense(64, relu) → Dense(11) → action logits
+- **Value head**: Dense(64, relu) → Dense(1) → scalar value
+
+## Training — REINFORCE with Learned Baseline:
+- **Algorithm**: REINFORCE (Williams, 1992) + GAE (Schulman et al., 2016)
+- **Loss**: L_policy + 0.5 · L_value − 0.01 · H(π)
+- **Optimizer**: Adam, lr = 3×10⁻⁴, gradient clipping at 0.5
+- **Batch size**: 64 episodes per batch
+- **Default training**: 1500 batches × 64 episodes = 96,000 episodes
+- **GAE**: λ = 0.95, γ = 0.98
+- **Evaluation**: every 100 batches on 64 fixed sequences (same benchmark as Q-Learning)
+- **Saving**: best model by evaluation performance, plus final model
+
+## Comparison — Q-Learning vs Transformer:
+| Aspect               | Q-Learning (pes_dql)          | Transformer (pes_trf)   |
+|----------------------|--------------------------------|----------------------------------|
+| Parameters           | 37,510 Q-table cells           | ~77,000 trainable weights        |
+| Representation       | Tabular (exact discretisation) | Neural (continuous embeddings)   |
+| Training algorithm   | TD(0) with ε-greedy            | REINFORCE + GAE + entropy bonus  |
+| Training episodes    | 860,000                        | 96,000 (1500 batches × 64)      |
+| Temporal reasoning   | Markov (single state)          | Attends to full trajectory       |
+| Scalability          | O(|S| × |A|) — explodes        | O(d² × L) — graceful            |
+| Justification        | Optimal for 3,410 states       | Evaluation for future scaling    |
+
+## Experiment Structure:
+- Total Experiment: 1
+- Blocks: 8
+- Sequences per Block: 8 (64 total sequences)
+- Trials per Sequence: 3-10 (approximately 360 total trials)
+- Decision per Trial: Resource allocation to a single city
+
+## Core Modules:
+- **pes_trf/__main__.py**: Experiment execution loop (Transformer agent)
+- **pes_trf/ext/transformer_model.py**: Transformer architecture (CausalSelfAttention, TransformerBlock, PandemicTransformer, TransformerAgent)
+- **pes_trf/ext/train_transformer.py**: REINFORCE+GAE training pipeline
+- **pes_trf/ext/pandemic.py**: Gym environment and evaluation (shared)
+- **pes_trf/ext/optimize_tr.py**: Q-Learning baseline Bayesian optimisation (from pes_dql)
+- **pes_trf/src/pygameMediator.py**: Transformer inference with trajectory buffer
+- **pes_trf/src/exp_utils.py**: Severity calculations and aggregation
+- **pes_trf/src/log_utils.py**: Dual-stream logging (console + file)
+- **pes_trf/src/result_formatter.py**: Report generation and visualisation
+- **pes_trf/src/terminal_utils.py**: ANSI colour formatting utilities
+- **pes_trf/config/CONFIG.py**: Experiment configuration (incl. SEED)
+
+## Files Generated (training):
+- transformer_config.json: Model architecture configuration
+- transformer_weights.weights.h5: Best model weights
+- rewards.npy: Episodic reward history
+- training_curves.png: Loss, reward, and evaluation curves
+- training_report.txt: Summary of training hyperparameters and results
+
+## Files Generated (experiment):
+- responses_*.txt: Agent decisions and confidence scores
+- info_*.txt: Experiment metadata and configuration
+- log_*.txt: Detailed execution logs
+
+## Usage:
+- Execute experiment:         python3 -m pes_trf
+- Train Transformer agent:    python3 -m pes_trf.ext.train_transformer [n_batches]
+
+## Documentation:
+- **sugerencias.md**: Analysis of Transformer viability vs Q-Learning at current scale
+
+## Configuration:
+Flexible configuration via config/CONFIG.py with parameters for:
+- Player type selection (RL-Agent, backed by Transformer model)
+- Resource availability and severity bounds
+- Block/sequence/trial structure (8×8×3-10)
+- Reproducibility (SEED = 42)
+- Output preferences and verbosity levels
+
+**Version**: pes_trf v1.0
+**Last Updated**: 26 de febrero de 2026
+**Status**: Experimental — Transformer architecture implemented for evaluation

@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapeo Teoría Transformer RL ↔ Implementación en pes_trf</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+  <script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {delimiters:[
+          {left:'$$',right:'$$',display:true},
+          {left:'$',right:'$',display:false}
+        ]})"></script>
+  <style>
+    :root { --bg:#ffffff; --fg:#1a1a2e; --accent:#0f3460; --code-bg:#f4f4f8;
+             --border:#ddd; --link:#1565c0; --table-stripe:#f9f9fc; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#1a1a2e; --fg:#e0e0e0; --accent:#64b5f6; --code-bg:#16213e;
+               --border:#333; --link:#90caf9; --table-stripe:#1e2a45; }
+    }
+    *,*::before,*::after { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+           line-height:1.7; color:var(--fg); background:var(--bg);
+           max-width:52em; margin:2em auto; padding:0 1.5em; }
+    h1 { border-bottom:3px solid var(--accent); padding-bottom:.3em; }
+    h2 { border-bottom:1px solid var(--border); padding-bottom:.2em; margin-top:2em; }
+    h3,h4 { margin-top:1.6em; }
+    a { color:var(--link); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    code { font-family:"JetBrains Mono","Fira Code",Consolas,monospace;
+           font-size:.92em; background:var(--code-bg); padding:.15em .35em;
+           border-radius:4px; }
+    pre { background:var(--code-bg); padding:1em 1.2em; border-radius:8px;
+          overflow-x:auto; border:1px solid var(--border); }
+    pre code { background:none; padding:0; font-size:.88em; }
+    table { border-collapse:collapse; width:100%; margin:1em 0; }
+    th,td { border:1px solid var(--border); padding:.55em .9em; text-align:left; }
+    th { background:var(--accent); color:#fff; }
+    tr:nth-child(even) { background:var(--table-stripe); }
+    blockquote { border-left:4px solid var(--accent); margin-left:0;
+                 padding:.4em 1em; color:#666; background:var(--code-bg);
+                 border-radius:0 6px 6px 0; }
+    .katex-display { overflow-x:auto; overflow-y:hidden; padding:.5em 0; }
+  </style>
+</head>
+<body>
+  <h1 id="mapeo-teoria-transformer-rl-implementacion-en-pes_trf">Mapeo Teoría Transformer RL ↔ Implementación en pes_trf</h1>
+<h2 id="1-introduccion">1. Introducción</h2>
+<p>Este documento conecta la <strong>teoría de Transformers causales con
+actor-critic</strong> con su <strong>implementación concreta</strong> en el paquete <code>pes_trf</code>.
+Para cada concepto teórico se indica la variable, función o línea de
+código correspondiente.</p>
+<p><code>pes_trf</code> reemplaza las redes fully-connected de <code>pes_dqn</code> y <code>pes_ac</code>
+por un <strong>Transformer causal</strong> con cabezas de actor-critic.  El modelo
+procesa la <strong>trayectoria completa</strong> de estados dentro de un episodio
+(hasta 10 timesteps) y produce una distribución de acción y un valor
+escalar en cada posición.</p>
+<p>Conserva el mismo entorno Gym (<code>Pandemic</code>), el mismo espacio de estados y
+acciones, y la misma integración con la UI de Pygame.</p>
+<hr />
+<h2 id="2-componentes-del-mdp-heredados-de-pes_base">2. Componentes del MDP (heredados de <code>pes_base</code>)</h2>
+<p>El MDP subyacente es idéntico al del paquete base:</p>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Símbolo</th>
+<th>Implementación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Estados</td>
+<td>$S$</td>
+<td><code>(resources_left, trial_no, severity)</code> — 3 dimensiones discretas</td>
+</tr>
+<tr>
+<td>Acciones</td>
+<td>$A$</td>
+<td>${0, 1, 2, \dots, 10}$ — recursos a asignar</td>
+</tr>
+<tr>
+<td>Transiciones</td>
+<td>$P(s' \mid s, a)$</td>
+<td>Determinísticas: <code>env.step(action)</code> en <code>pandemic.py</code></td>
+</tr>
+<tr>
+<td>Recompensas</td>
+<td>$R(s, a)$</td>
+<td>$-\sum_{i} \text{severities}_i$</td>
+</tr>
+<tr>
+<td>Factor de descuento</td>
+<td>$\gamma$</td>
+<td><code>gamma</code> (por defecto 0.98 en <code>train_transformer.py</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cardinalidad del espacio de estados</strong> (con <code>MAX_SEVERITY = 9</code>):</p>
+<p>$$|S| = 31 \times 11 \times 10 = 3{,}410 \text{ estados}$$</p>
+<hr />
+<h2 id="3-por-que-un-transformer">3. ¿Por qué un Transformer?</h2>
+<h3 id="31-filosofia-del-enfoque">3.1 Filosofía del Enfoque</h3>
+<p>Los enfoques anteriores (<code>pes_dqn</code>, <code>pes_ac</code>) procesan cada estado de
+forma <strong>independiente</strong> — una red feedforward recibe $(r, t, v)$ y
+produce Q-values o probabilidades de acción.  El historial del episodio
+se descarta.</p>
+<p>Un Transformer causal procesa la <strong>secuencia completa de estados</strong> del
+episodio, permitiendo que cada decisión tenga en cuenta todo el contexto
+anterior.  Esto es especialmente relevante en el Pandemic Scenario donde
+las decisiones pasadas afectan los recursos disponibles y las severidades
+futuras.</p>
+<h3 id="32-comparacion">3.2 Comparación</h3>
+<table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>DQN (<code>pes_dqn</code>)</th>
+<th>A2C (<code>pes_ac</code>)</th>
+<th>Transformer (<code>pes_trf</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entrada</td>
+<td>Estado individual $(r, t, v)$</td>
+<td>Estado individual $(r, t, v)$</td>
+<td>Trayectoria ${s_0, s_1, \dots, s_t}$</td>
+</tr>
+<tr>
+<td>Arquitectura</td>
+<td>MLP 3→64→64→11</td>
+<td>Actor MLP + Critic MLP</td>
+<td>Transformer encoder + heads</td>
+</tr>
+<tr>
+<td>Contexto temporal</td>
+<td>Ninguno</td>
+<td>Ninguno</td>
+<td>Atención causal sobre toda la secuencia</td>
+</tr>
+<tr>
+<td>Parámetros</td>
+<td>~5 131</td>
+<td>~9 612</td>
+<td>~77 000</td>
+</tr>
+<tr>
+<td>Algoritmo</td>
+<td>DQN + replay buffer</td>
+<td>A2C (on-policy, per-episode)</td>
+<td>REINFORCE + value baseline + GAE</td>
+</tr>
+<tr>
+<td>Exploración</td>
+<td>ε-greedy sobre Q</td>
+<td>Muestreo de π + ε-overlay</td>
+<td>Muestreo de π + entropy bonus</td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-ventaja-temporal-del-transformer">3.3 Ventaja Temporal del Transformer</h3>
+<p>La atención causal permite al modelo aprender patrones como:</p>
+<ul>
+<li>"Si ya gasté muchos recursos, debo ser conservador ahora."</li>
+<li>"La severidad ha crecido en los últimos trials → necesito intervenir."</li>
+<li>Correlaciones entre la posición en la secuencia y la estrategia óptima.</li>
+</ul>
+<hr />
+<h2 id="4-arquitectura-del-modelo">4. Arquitectura del Modelo</h2>
+<h3 id="41-vision-general">4.1 Visión General</h3>
+<p>Implementada en <code>ext/transformer_model.py</code> → <code>PandemicTransformer</code>:</p>
+<pre><code class="language-text">Input:  (batch, seq_len, 3)  — [resources_left, trial_no, severity]
+  ↓ Normalise to [0, 1]³  (/ [30, 10, 9])
+  ↓ Linear projection → (batch, seq_len, d_model=64)
+  ↓ + Positional encoding aprendido (1, 10, 64)
+  ↓ Input dropout (0.1)
+  ↓
+  L=2 × TransformerBlock
+  │  ├─ LayerNorm → CausalSelfAttention(4 heads) → Dropout → Residual
+  │  └─ LayerNorm → FFN(Dense(128,GELU) → Dense(64)) → Dropout → Residual
+  ↓
+  LayerNormalization final
+  ├→ Policy head:  Dense(64, ReLU) → Dense(11)       [logits]
+  └→ Value head:   Dense(64, ReLU) → Dense(1)        [V(s)]
+</code></pre>
+<h3 id="42-hiperparametros-por-defecto">4.2 Hiperparámetros por Defecto</h3>
+<table>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Valor</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>d_model</code></td>
+<td>64</td>
+<td>Dimensión de embedding</td>
+</tr>
+<tr>
+<td><code>n_heads</code></td>
+<td>4</td>
+<td>Cabezas de atención (depth = 16 por cabeza)</td>
+</tr>
+<tr>
+<td><code>n_layers</code></td>
+<td>2</td>
+<td>Bloques Transformer</td>
+</tr>
+<tr>
+<td><code>d_ff</code></td>
+<td>128</td>
+<td>Dimensión oculta del FFN</td>
+</tr>
+<tr>
+<td><code>max_seq_len</code></td>
+<td>10</td>
+<td>Longitud máxima de episodio</td>
+</tr>
+<tr>
+<td><code>n_actions</code></td>
+<td>11</td>
+<td>Espacio de acciones discreto</td>
+</tr>
+<tr>
+<td><code>dropout_rate</code></td>
+<td>0.1</td>
+<td>Dropout en todas las sub-capas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="43-conteo-de-parametros-77-000">4.3 Conteo de Parámetros (~77 000)</h3>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Estimación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>State projection (3→64)</td>
+<td>256</td>
+</tr>
+<tr>
+<td>Positional embeddings (1×10×64)</td>
+<td>640</td>
+</tr>
+<tr>
+<td>2× TransformerBlock (Q,K,V + FFN + LN)</td>
+<td>~70 000</td>
+</tr>
+<tr>
+<td>Policy head (64→64→11)</td>
+<td>~4 800</td>
+</tr>
+<tr>
+<td>Value head (64→64→1)</td>
+<td>~4 200</td>
+</tr>
+<tr>
+<td>Final LayerNorm</td>
+<td>128</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>~77 000</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="44-normalizacion-del-estado">4.4 Normalización del Estado</h3>
+<p>Antes de alimentar el modelo, el estado se escala internamente a $[0, 1]^3$:</p>
+<p>$$\hat{s} = \left(\frac{r}{30},\; \frac{t}{10},\; \frac{v}{9}\right)$$</p>
+<p>Implementada dentro de <code>PandemicTransformer.call()</code>:</p>
+<pre><code class="language-python">STATE_MAX = tf.constant([30.0, 10.0, 9.0], dtype=tf.float32)
+x = tf.cast(states, tf.float32) / self.STATE_MAX
+</code></pre>
+<hr />
+<h2 id="5-atencion-causal-causal-self-attention">5. Atención Causal (Causal Self-Attention)</h2>
+<h3 id="51-motivacion-teorica">5.1 Motivación Teórica</h3>
+<p>En un Transformer estándar (encoder), cada posición puede atender a
+<strong>todas</strong> las demás.  Para decisiones secuenciales, necesitamos que la
+posición $t$ solo pueda atender a posiciones ${0, 1, \dots, t}$ —
+es decir, atención <strong>causal</strong> (como en GPT).</p>
+<h3 id="52-scaled-dot-product-attention">5.2 Scaled Dot-Product Attention</h3>
+<p>$$\text{Attn}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right) V$$</p>
+<p>donde $M$ es una máscara triangular inferior que asigna $-\infty$ a
+posiciones futuras.</p>
+<h3 id="53-implementacion">5.3 Implementación</h3>
+<p><code>ext/transformer_model.py</code> → <code>CausalSelfAttention</code>:</p>
+<pre><code class="language-python"># Máscara causal — triangular inferior
+causal = tf.linalg.band_part(
+    tf.ones((seq_len, seq_len), dtype=tf.float32), -1, 0
+)
+attn_logits += (1.0 - causal) * (-1e9)   # -∞ para posiciones futuras
+</code></pre>
+<p><strong>Multi-head</strong>: Los <code>d_model=64</code> se dividen en <code>n_heads=4</code> cabezas de
+<code>depth=16</code> cada una.  Cada cabeza aprende patrones de atención diferentes.</p>
+<h3 id="54-mascara-de-padding">5.4 Máscara de Padding</h3>
+<p>Cuando los episodios son más cortos que <code>max_seq_len=10</code>, se rellenan
+con ceros.  Una máscara de padding adicional evita que el modelo atienda
+a posiciones vacías:</p>
+<pre><code class="language-python">if padding_mask is not None:
+    pm = tf.cast(tf.reshape(padding_mask, (batch, 1, 1, -1)), tf.float32)
+    attn_logits += (1.0 - pm) * (-1e9)
+</code></pre>
+<hr />
+<h2 id="6-bloques-transformer-pre-norm">6. Bloques Transformer (Pre-Norm)</h2>
+<h3 id="61-estilo-pre-norm-gpt-2">6.1 Estilo Pre-Norm (GPT-2)</h3>
+<p>A diferencia del Transformer original (Vaswani et al., 2017) que aplica
+LayerNorm <strong>después</strong> de cada sub-capa (post-norm), <code>pes_trf</code> usa el
+estilo <strong>pre-norm</strong> (aplicar LayerNorm <strong>antes</strong> de cada sub-capa), como
+en GPT-2.  Pre-norm facilita el entrenamiento y mejora la estabilidad de
+gradientes.</p>
+<pre><code class="language-text">Entrada x
+  │
+  ├→ LayerNorm → CausalSelfAttention → Dropout → (+x) = h₁
+  │
+  └→ LayerNorm → FFN(GELU) → Dropout → (+h₁) = salida
+</code></pre>
+<h3 id="62-feed-forward-network">6.2 Feed-Forward Network</h3>
+<p>Cada bloque contiene un FFN de dos capas con activación GELU:</p>
+<p>$$\text{FFN}(x) = \text{Dense}<em>{d_model}(\text{GELU}(\text{Dense}</em>{d_ff}(x)))$$</p>
+<p>GELU (Gaussian Error Linear Unit) es una activación suave que
+permite pequeños gradientes negativos, mejorando el entrenamiento
+frente a ReLU.</p>
+<hr />
+<h2 id="7-funciones-de-perdida">7. Funciones de Pérdida</h2>
+<h3 id="71-perdida-combinada">7.1 Pérdida Combinada</h3>
+<p>El modelo se entrena con una pérdida combinada de tres componentes:</p>
+<p>$$\mathcal{L} = \mathcal{L}<em>\text{policy} + c_v \cdot \mathcal{L}</em>\text{value} - c_e \cdot H(\pi)$$</p>
+<p>donde:</p>
+<ul>
+<li>$c_v = 0.5$ (<code>value_coeff</code>): peso de la pérdida del Critic.</li>
+<li>$c_e = 0.01$ (<code>entropy_coeff</code>): peso del bono de entropía.</li>
+</ul>
+<h3 id="72-perdida-de-politica-reinforce-con-advantage">7.2 Pérdida de Política (REINFORCE con Advantage)</h3>
+<p>$$\mathcal{L}<em>\text{policy} = -\frac{1}{|\text{valid}|} \sum</em>{t} \log \pi_\theta(a_t \mid s_{\le t}) \cdot \hat{A}_t \cdot m_t$$</p>
+<p>donde $\hat{A}_t$ es la ventaja estimada por GAE y $m_t$ es la máscara
+de padding.</p>
+<h3 id="73-perdida-del-value-head-mse">7.3 Pérdida del Value Head (MSE)</h3>
+<p>$$\mathcal{L}<em>\text{value} = \frac{1}{|\text{valid}|} \sum</em>{t} \left( V_\theta(s_{\le t}) - R_t \right)^2 \cdot m_t$$</p>
+<p>donde $R_t$ es el retorno descontado calculado por GAE.</p>
+<h3 id="74-bono-de-entropia">7.4 Bono de Entropía</h3>
+<p>$$H(\pi) = \frac{1}{|\text{valid}|} \sum_{t} \left[ -\sum_a \pi_\theta(a \mid s_{\le t}) \log \pi_\theta(a \mid s_{\le t}) \right] \cdot m_t$$</p>
+<h3 id="75-implementacion">7.5 Implementación</h3>
+<p><code>ext/train_transformer.py</code> → <code>train_step()</code> (decorada con <code>@tf.function</code>):</p>
+<pre><code class="language-python">@tf.function
+def train_step(model, optimizer, states, actions, returns, advantages,
+               masks, value_coeff, entropy_coeff, max_grad_norm):
+    with tf.GradientTape() as tape:
+        policy_logits, values = model(states, padding_mask=masks, training=True)
+
+        log_probs_all = tf.nn.log_softmax(policy_logits, axis=-1)
+        actions_oh = tf.one_hot(actions, depth=model.n_actions)
+        log_probs = tf.reduce_sum(log_probs_all * actions_oh, axis=-1)
+
+        probs_all = tf.nn.softmax(policy_logits, axis=-1)
+        entropy = -tf.reduce_sum(probs_all * log_probs_all, axis=-1)
+
+        policy_loss = -tf.reduce_sum(log_probs * advantages * masks) / tf.reduce_sum(masks)
+        value_loss = tf.reduce_sum(tf.square(values - returns) * masks) / tf.reduce_sum(masks)
+        entropy_mean = tf.reduce_sum(entropy * masks) / tf.reduce_sum(masks)
+
+        total_loss = policy_loss + value_coeff * value_loss - entropy_coeff * entropy_mean
+
+    grads = tape.gradient(total_loss, model.trainable_variables)
+    grads, _ = tf.clip_by_global_norm(grads, max_grad_norm)
+    optimizer.apply_gradients(zip(grads, model.trainable_variables))
+    return total_loss, policy_loss, value_loss, entropy_mean
+</code></pre>
+<p><strong>Notas de implementación</strong>:</p>
+<ul>
+<li>A diferencia de <code>pes_ac</code> y <code>pes_dqn</code>, esta función <strong>sí</strong> lleva
+  <code>@tf.function</code> a nivel de módulo, porque el Transformer no se
+  re-instancia entre trials de Optuna en el pipeline de entrenamiento.</li>
+<li>Se aplica <strong>gradient clipping</strong> (<code>tf.clip_by_global_norm</code>, default 0.5)
+  para evitar explosiones de gradientes, especialmente importantes con
+  la atención causal.</li>
+<li>La máscara <code>masks</code> asegura que las posiciones de padding no contribuyan
+  a ninguna de las tres componentes de la pérdida.</li>
+</ul>
+<hr />
+<h2 id="8-generalised-advantage-estimation-gae">8. Generalised Advantage Estimation (GAE)</h2>
+<h3 id="81-motivacion">8.1 Motivación</h3>
+<p>REINFORCE puro sufre de alta varianza.  GAE (Schulman et al., 2016)
+proporciona un estimador de la ventaja con un trade-off continuo entre
+sesgo y varianza controlado por $\lambda$:</p>
+<p>$$\hat{A}<em>t^\text{GAE} = \sum</em>{l=0}^{T-t} (\gamma \lambda)^l \delta_{t+l}$$</p>
+<p>donde $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ es el error TD.</p>
+<ul>
+<li>$\lambda = 0$: Advantage de un paso (TD(0)) — bajo varianza, alto sesgo.</li>
+<li>$\lambda = 1$: Monte-Carlo returns — alta varianza, cero sesgo.</li>
+</ul>
+<h3 id="82-implementacion">8.2 Implementación</h3>
+<p><code>ext/train_transformer.py</code> → <code>compute_gae()</code>:</p>
+<pre><code class="language-python">def compute_gae(rewards, values, masks, gamma, lam=0.95):
+    B, T = rewards.shape
+    advantages = numpy.zeros_like(rewards)
+    returns = numpy.zeros_like(rewards)
+
+    for b in range(B):
+        gae = 0.0
+        for t in reversed(range(T)):
+            if masks[b, t] == 0.0:
+                continue
+            next_val = values[b, t + 1] if (t + 1 &lt; T and masks[b, t + 1] &gt; 0) else 0.0
+            delta = rewards[b, t] + gamma * next_val - values[b, t]
+            gae = delta + gamma * lam * gae
+            advantages[b, t] = gae
+            returns[b, t] = gae + values[b, t]
+
+    return advantages, returns
+</code></pre>
+<p><strong>Configuración</strong> por defecto: <code>gamma=0.98</code>, <code>lam=0.95</code>.</p>
+<h3 id="83-normalizacion-de-ventajas">8.3 Normalización de Ventajas</h3>
+<p>Antes de la actualización, las ventajas se normalizan (media 0, std 1)
+sobre los timesteps válidos, lo que estabiliza el entrenamiento:</p>
+<pre><code class="language-python">adv_valid = advantages[masks &gt; 0]
+advantages = (advantages - adv_valid.mean()) / (adv_valid.std() + 1e-8)
+</code></pre>
+<hr />
+<h2 id="9-recoleccion-de-trayectorias">9. Recolección de Trayectorias</h2>
+<h3 id="91-batch-collection">9.1 Batch Collection</h3>
+<p><code>ext/train_transformer.py</code> → <code>collect_batch()</code>:</p>
+<p>En cada iteración de entrenamiento, se recolectan <code>batch_size=64</code> episodios
+completos usando la política actual (muestreo, no greedy).  Cada episodio
+se rellena con ceros hasta <code>max_seq_len=10</code> y se marca con una máscara
+de padding.</p>
+<pre><code>Para cada episodio k = 1 … batch_size:
+    env.random_sequence()
+    state = env.reset()
+    agent.reset()
+
+    Mientras no done:
+        action, probs, value, log_prob = agent.act(state)
+        action = min(action, resources_left)    ← enmascarar infactibles
+        state', reward, done = env.step(action)
+
+    Rellenar hasta max_seq_len con ceros
+    masks[k] = [1.0]*T + [0.0]*(max_seq_len - T)
+</code></pre>
+<h3 id="92-trajectoryagent">9.2 TrajectoryAgent</h3>
+<p><code>ext/transformer_model.py</code> → <code>TransformerAgent</code>:</p>
+<p>Un wrapper que mantiene un buffer de trayectoria dentro del episodio.
+En cada <code>act(state)</code>:</p>
+<ol>
+<li>Añade <code>state</code> al buffer <code>_trajectory</code>.</li>
+<li>Alimenta la trayectoria completa al modelo.</li>
+<li>El modelo calcula logits/values en <strong>cada</strong> posición, pero solo se usa
+   la del <strong>último</strong> timestep (mediante <code>get_action_and_value</code>).</li>
+</ol>
+<pre><code class="language-python">def act(self, state, resources_left=None):
+    self._trajectory.append([int(s) for s in state])
+    states = tf.constant([self._trajectory], dtype=tf.float32)
+    action, probs, value, log_prob = self.model.get_action_and_value(
+        states, greedy=self.greedy, resources_left=resources_left,
+    )
+    return action, probs, value, log_prob
+</code></pre>
+<hr />
+<h2 id="10-bucle-de-entrenamiento-completo">10. Bucle de Entrenamiento Completo</h2>
+<p><code>ext/train_transformer.py</code> → <code>main()</code>:</p>
+<pre><code>Para cada batch b = 1 … n_batches (1500):
+    1. Recolectar batch_size=64 episodios con la política actual
+       → states, actions, rewards, masks, log_probs, values
+
+    2. Calcular ventajas y retornos con GAE (γ=0.98, λ=0.95)
+    3. Normalizar ventajas (media 0, std 1)
+    4. Actualizar modelo con train_step()
+       → total_loss = policy_loss + 0.5·value_loss - 0.01·entropy
+
+    Cada 50 batches:
+        ─ Imprimir loss, entropía, recompensa media
+
+    Cada 100 batches (eval_every):
+        ─ Evaluar con greedy en 64 secuencias fijas
+        ─ Si mean_perf &gt; best_perf: guardar pesos
+
+Restaurar mejores pesos
+Evaluación final en 64 secuencias
+Guardar modelo, rewards, plots, report
+</code></pre>
+<h3 id="101-on-policy-con-batches">10.1 On-Policy con Batches</h3>
+<table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>A2C (<code>pes_ac</code>)</th>
+<th>Transformer (<code>pes_trf</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unidad de update</td>
+<td>1 episodio</td>
+<td>Batch de 64 episodios</td>
+</tr>
+<tr>
+<td>Ventaja</td>
+<td>TD(0): $r + \gamma V(s') - V(s)$</td>
+<td>GAE($\lambda=0.95$)</td>
+</tr>
+<tr>
+<td>Total episodios</td>
+<td>100 000</td>
+<td>96 000 (1500 × 64)</td>
+</tr>
+<tr>
+<td>Gradient clipping</td>
+<td>No</td>
+<td><code>clip_by_global_norm(0.5)</code></td>
+</tr>
+<tr>
+<td>Normalización de ventajas</td>
+<td>No</td>
+<td>Sí</td>
+</tr>
+</tbody>
+</table>
+<h3 id="102-parametros-de-entrenamiento">10.2 Parámetros de Entrenamiento</h3>
+<table>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Valor por defecto</th>
+<th>Fuente</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>n_batches</code></td>
+<td>1 500</td>
+<td>CLI arg o default</td>
+</tr>
+<tr>
+<td><code>batch_size</code></td>
+<td>64</td>
+<td><code>train_transformer.py</code></td>
+</tr>
+<tr>
+<td><code>learning_rate</code></td>
+<td>3 × 10⁻⁴</td>
+<td><code>train_transformer.py</code></td>
+</tr>
+<tr>
+<td><code>gamma</code></td>
+<td>0.98</td>
+<td><code>train_transformer.py</code></td>
+</tr>
+<tr>
+<td><code>lam</code> (GAE)</td>
+<td>0.95</td>
+<td><code>compute_gae()</code></td>
+</tr>
+<tr>
+<td><code>value_coeff</code></td>
+<td>0.5</td>
+<td><code>train_transformer.py</code></td>
+</tr>
+<tr>
+<td><code>entropy_coeff</code></td>
+<td>0.01</td>
+<td><code>train_transformer.py</code></td>
+</tr>
+<tr>
+<td><code>max_grad_norm</code></td>
+<td>0.5</td>
+<td><code>train_transformer.py</code></td>
+</tr>
+<tr>
+<td><code>eval_every</code></td>
+<td>100 batches</td>
+<td><code>train_transformer.py</code></td>
+</tr>
+<tr>
+<td><code>SEED</code></td>
+<td>42</td>
+<td><code>config/CONFIG.py</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-encoding-posicional">11. Encoding Posicional</h2>
+<h3 id="111-posicional-aprendido-vs-sinusoidal">11.1 Posicional Aprendido (vs. Sinusoidal)</h3>
+<p>A diferencia del Transformer original (Vaswani et al., 2017) que usa
+encodings sinusoidales fijos, <code>pes_trf</code> utiliza <strong>embeddings posicionales
+aprendidos</strong> (como GPT-2):</p>
+<pre><code class="language-python">self.pos_embedding = self.add_weight(
+    name='pos_embedding',
+    shape=(1, max_seq_len, d_model),    # (1, 10, 64)
+    initializer='glorot_uniform',
+    trainable=True,
+)
+</code></pre>
+<p><strong>Justificación</strong>: Con secuencias cortas (máximo 10 timesteps), no hay
+beneficio en la extrapolación de los encodings sinusoidales.  Los
+embeddings aprendidos son más flexibles y se optimizan directamente
+para el dominio.</p>
+<hr />
+<h2 id="12-enmascaramiento-de-acciones">12. Enmascaramiento de Acciones</h2>
+<h3 id="121-acciones-infactibles">12.1 Acciones Infactibles</h3>
+<p>Al seleccionar una acción, si el agente tiene <code>resources_left &lt; 10</code>,
+las acciones que exceden los recursos disponibles se enmascaran con
+logits de $-10^9$ antes del softmax:</p>
+<pre><code class="language-python">if resources_left is not None:
+    rl = int(resources_left)
+    if rl &lt; self.n_actions - 1:
+        mask_vals = tf.concat([
+            tf.zeros(rl + 1, dtype=tf.float32),
+            tf.fill([self.n_actions - rl - 1], -1e9),
+        ], axis=0)
+        logits = logits + mask_vals
+</code></pre>
+<p>Esto asegura que el softmax asigne probabilidad ~0 a acciones imposibles.</p>
+<hr />
+<h2 id="13-meta-cognicion-y-confianza">13. Meta-Cognición y Confianza</h2>
+<h3 id="131-confianza-basada-en-entropia">13.1 Confianza Basada en Entropía</h3>
+<p>Al igual que en <code>pes_ac</code>, la confianza se calcula a partir de la entropía
+de la distribución de probabilidad del actor:</p>
+<p>$$H(\pi_\theta(\cdot \mid s_{\le t})) = -\sum_{a} \pi_\theta(a \mid s_{\le t}) \log \pi_\theta(a \mid s_{\le t})$$</p>
+<p>$$\text{confidence} = \frac{H - H_\text{max}}{H_\text{min} - H_\text{max}}$$</p>
+<h3 id="132-implementacion">13.2 Implementación</h3>
+<p>La distribución softmax del policy head se pasa a
+<code>rl_agent_meta_cognitive()</code> en <code>pandemic.py</code>, que calcula la entropía
+y normaliza entre el mínimo (distribución peaked) y el máximo
+(distribución uniforme):</p>
+<pre><code class="language-python">_, conf, _, _ = rl_agent_meta_cognitive(probs, state[0], 10000)
+</code></pre>
+<h3 id="133-ventaja-sobre-dqn">13.3 Ventaja sobre DQN</h3>
+<p>Como en <code>pes_ac</code>, la salida del policy head ya es una distribución de
+probabilidad válida (softmax), por lo que la entropía tiene un significado
+teórico preciso — a diferencia de <code>pes_dqn</code> donde los Q-values deben
+normalizarse heurísticamente.</p>
+<hr />
+<h2 id="14-inferencia-en-tiempo-de-experimento">14. Inferencia en Tiempo de Experimento</h2>
+<h3 id="141-carga-del-modelo">14.1 Carga del Modelo</h3>
+<p><code>src/pygameMediator.py</code> → <code>provide_rl_agent_response()</code>:</p>
+<pre><code class="language-python">model = PandemicTransformer.from_pretrained(INPUTS_PATH)
+</code></pre>
+<p>El modelo se carga una vez (singleton) desde <code>transformer_config.json</code> +
+<code>transformer_weights.weights.h5</code>.</p>
+<h3 id="142-gestion-de-trayectoria">14.2 Gestión de Trayectoria</h3>
+<p>El mediador mantiene un buffer <code>_trajectory_buffer</code> que se resetea al
+inicio de cada secuencia:</p>
+<pre><code class="language-python">_trajectory_buffer.append([resources_idx, city_idx, sever_idx])
+states = tf.constant([_trajectory_buffer], dtype=tf.float32)
+_, probs, _, _ = model.get_action_and_value(
+    states, greedy=True, resources_left=resources_idx
+)
+</code></pre>
+<p>A diferencia de los modelos feedforward, el Transformer <strong>necesita</strong> la
+trayectoria completa del episodio para producir una decisión informada.</p>
+<h3 id="143-seleccion-de-accion">14.3 Selección de Acción</h3>
+<p>Se usa <strong>argmax</strong> (greedy) sobre los logits enmascarados en inferencia:</p>
+<pre><code class="language-python">action = argmax(logits)   # tras enmascarar acciones infactibles
+</code></pre>
+<hr />
+<h2 id="15-persistencia-del-modelo">15. Persistencia del Modelo</h2>
+<h3 id="151-formato-de-guardado">15.1 Formato de Guardado</h3>
+<p>A diferencia de <code>pes_dqn</code> y <code>pes_ac</code> que usan <code>.keras</code>, el Transformer
+usa un formato custom con dos archivos:</p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Contenido</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>transformer_config.json</code></td>
+<td>Hiperparámetros de arquitectura (d_model, n_heads, etc.)</td>
+</tr>
+<tr>
+<td><code>transformer_weights.weights.h5</code></td>
+<td>Pesos del modelo (Keras HDF5)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="152-serializacion">15.2 Serialización</h3>
+<pre><code class="language-python"># Guardar
+model.save_pretrained(directory)
+
+# Cargar
+model = PandemicTransformer.from_pretrained(directory)
+</code></pre>
+<p>El método <code>from_pretrained</code> reconstruye la arquitectura desde el JSON,
+ejecuta un forward pass dummy para inicializar las variables, y luego
+carga los pesos.</p>
+<hr />
+<h2 id="16-optimizacion-bayesiana-de-hiperparametros-q-learning">16. Optimización Bayesiana de Hiperparámetros Q-Learning</h2>
+<p><strong>Nota:</strong> El módulo <code>ext/optimize_tr.py</code> optimiza hiperparámetros de
+<strong>Q-Learning tabular</strong> (heredado de <code>pes_dql</code>), <strong>no</strong> del Transformer.
+Se conserva como baseline de comparación.</p>
+<h3 id="161-espacio-de-busqueda-q-learning">16.1 Espacio de Búsqueda (Q-Learning)</h3>
+<table>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Rango</th>
+<th>Tipo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>learning_rate</code></td>
+<td>$[0.2,\; 0.4]$</td>
+<td>log-uniforme</td>
+</tr>
+<tr>
+<td><code>discount_factor</code></td>
+<td>$[0.80,\; 0.99]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>epsilon_initial</code></td>
+<td>$[0.4,\; 1.0]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>epsilon_min</code></td>
+<td>$[0.05,\; 0.1]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>num_episodes</code></td>
+<td>$[800\text{K},\; 1.2\text{M}]$</td>
+<td>entero (paso 10K)</td>
+</tr>
+<tr>
+<td><code>warmup_ratio</code></td>
+<td>$[0.01,\; 0.10]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>target_ratio</code></td>
+<td>$[0.50,\; 0.80]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>penalty_coeff</code></td>
+<td>$[0.001,\; 0.5]$</td>
+<td>log-uniforme</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="17-comparacion-con-algoritmos-anteriores">17. Comparación con Algoritmos Anteriores</h2>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th><code>pes_base</code> (Q-tabular)</th>
+<th><code>pes_dqn</code> (DQN)</th>
+<th><code>pes_ac</code> (A2C)</th>
+<th><code>pes_trf</code> (Transformer)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modelo</td>
+<td><code>numpy.ndarray</code></td>
+<td>MLP 5 131 params</td>
+<td>Actor 5 131 + Critic 4 481</td>
+<td>Transformer ~77 000 params</td>
+</tr>
+<tr>
+<td>Contexto</td>
+<td>Sin contexto</td>
+<td>Sin contexto</td>
+<td>Sin contexto</td>
+<td>Trayectoria completa</td>
+</tr>
+<tr>
+<td>Update</td>
+<td>TD tabular</td>
+<td>Huber + replay</td>
+<td>Policy gradient + MSE</td>
+<td>REINFORCE + MSE + GAE</td>
+</tr>
+<tr>
+<td>Datos</td>
+<td>Un paso → un update</td>
+<td>Replay buffer</td>
+<td>Batch de 1 episodio</td>
+<td>Batch de 64 episodios</td>
+</tr>
+<tr>
+<td>Política</td>
+<td>Implícita ($\arg\max Q$)</td>
+<td>Implícita ($\arg\max Q$)</td>
+<td>Explícita ($\pi_\theta$)</td>
+<td>Explícita ($\pi_\theta$)</td>
+</tr>
+<tr>
+<td>Confianza</td>
+<td>Entropía de Q (heurística)</td>
+<td>Entropía de Q (heurística)</td>
+<td>Entropía de $\pi$ (teórica)</td>
+<td>Entropía de $\pi$ (teórica)</td>
+</tr>
+<tr>
+<td>Atención</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Causal multi-head</td>
+</tr>
+<tr>
+<td>Gradient clip</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Global norm (0.5)</td>
+</tr>
+<tr>
+<td>Episodios típicos</td>
+<td>900 000</td>
+<td>100 000</td>
+<td>100 000</td>
+<td>96 000 (1 500 × 64)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="18-estructura-de-archivos">18. Estructura de Archivos</h2>
+<pre><code>pes_trf/
+├── __init__.py                 # Exporta constantes; configura CPU, OMP_NUM_THREADS
+├── __main__.py                 # Valida transformer_config.json antes de ejecutar
+├── config/CONFIG.py            # Parámetros del experimento (no arquitectura)
+├── ext/
+│   ├── transformer_model.py    # CausalSelfAttention, TransformerBlock,
+│   │                           #   PandemicTransformer, TransformerAgent
+│   ├── train_transformer.py    # Pipeline: collect_batch, compute_gae, train_step
+│   ├── pandemic.py             # Entorno Gym + QLearning (baseline) + run_experiment
+│   ├── optimize_tr.py          # Bayesian optimisation (Q-Learning, no Transformer)
+│   └── tools.py                # Entropía, gráficas
+├── src/
+│   ├── pygameMediator.py       # Carga modelo, gestión de trayectoria en experimento
+│   ├── exp_utils.py            # Severidades, secuencias
+│   ├── log_utils.py            # Logging dual
+│   ├── result_formatter.py     # Gráficas matplotlib
+│   └── terminal_utils.py       # UI de consola Rich
+└── doc/
+    ├── explained_transformer.md        # ← este documento
+    └── how_to_train_and_test.md        # Guía práctica de entrenamiento y pruebas
+</code></pre>
+<hr />
+<h2 id="19-formulario-resumen-de-ecuaciones">19. Formulario Resumen de Ecuaciones</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Ecuación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Atención causal</td>
+<td>$\text{Attn}(Q, K, V) = \text{softmax}(QK^T / \sqrt{d_k} + M)\, V$</td>
+</tr>
+<tr>
+<td>Pre-norm residual</td>
+<td>$h = x + \text{SubLayer}(\text{LN}(x))$</td>
+</tr>
+<tr>
+<td>Pérdida de política</td>
+<td>$\mathcal{L}<em>\pi = -\frac{1}{N}\sum_t \log \pi(a_t \mid s</em>{\le t}) \hat{A}_t \cdot m_t$</td>
+</tr>
+<tr>
+<td>Pérdida de valor</td>
+<td>$\mathcal{L}<em>V = \frac{1}{N}\sum_t (V(s</em>{\le t}) - R_t)^2 \cdot m_t$</td>
+</tr>
+<tr>
+<td>Entropía</td>
+<td>$H(\pi) = -\sum_a \pi(a \mid s) \log \pi(a \mid s)$</td>
+</tr>
+<tr>
+<td>Pérdida total</td>
+<td>$\mathcal{L} = \mathcal{L}_\pi + c_v \mathcal{L}_V - c_e H(\pi)$</td>
+</tr>
+<tr>
+<td>GAE</td>
+<td>$\hat{A}<em>t = \sum</em>{l=0}^{T-t} (\gamma\lambda)^l \delta_{t+l}$</td>
+</tr>
+<tr>
+<td>TD error</td>
+<td>$\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$</td>
+</tr>
+<tr>
+<td>Decaimiento posicional</td>
+<td>Aprendido: $\text{pos_emb} \in \mathbb{R}^{1 \times 10 \times 64}$</td>
+</tr>
+<tr>
+<td>Normalización</td>
+<td>$\hat{s} = (r/30, t/10, v/9)$</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="20-referencias">20. Referencias</h2>
+<ol>
+<li>Vaswani, A. et al. (2017). <em>Attention Is All You Need</em>. NeurIPS 2017.</li>
+<li>Chen, L. et al. (2021). <em>Decision Transformer: Reinforcement Learning
+   via Sequence Modeling</em>. NeurIPS 2021.</li>
+<li>Schulman, J. et al. (2016). <em>High-Dimensional Continuous Control Using
+   Generalized Advantage Estimation</em>. ICLR 2016.</li>
+<li>Williams, R. J. (1992). <em>Simple statistical gradient-following
+   algorithms for connectionist reinforcement learning</em>. Machine Learning,
+   8(3-4), 229–256.</li>
+<li>Kingma, D. P. &amp; Ba, J. (2015). <em>Adam: A Method for Stochastic
+   Optimization</em>. ICLR 2015.</li>
+<li>Akiba, T. et al. (2019). <em>Optuna: A next-generation hyperparameter
+   optimization framework</em>. KDD '19.</li>
+<li>Hendrycks, D. &amp; Gimpel, K. (2016). <em>Gaussian Error Linear Units
+   (GELUs)</em>. arXiv:1606.08415.</li>
+</ol>
+</body>
+</html>

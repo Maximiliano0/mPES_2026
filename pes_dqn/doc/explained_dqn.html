@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapeo Teoría DQN ↔ Implementación en pes_dqn</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+  <script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {delimiters:[
+          {left:'$$',right:'$$',display:true},
+          {left:'$',right:'$',display:false}
+        ]})"></script>
+  <style>
+    :root { --bg:#ffffff; --fg:#1a1a2e; --accent:#0f3460; --code-bg:#f4f4f8;
+             --border:#ddd; --link:#1565c0; --table-stripe:#f9f9fc; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#1a1a2e; --fg:#e0e0e0; --accent:#64b5f6; --code-bg:#16213e;
+               --border:#333; --link:#90caf9; --table-stripe:#1e2a45; }
+    }
+    *,*::before,*::after { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+           line-height:1.7; color:var(--fg); background:var(--bg);
+           max-width:52em; margin:2em auto; padding:0 1.5em; }
+    h1 { border-bottom:3px solid var(--accent); padding-bottom:.3em; }
+    h2 { border-bottom:1px solid var(--border); padding-bottom:.2em; margin-top:2em; }
+    h3,h4 { margin-top:1.6em; }
+    a { color:var(--link); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    code { font-family:"JetBrains Mono","Fira Code",Consolas,monospace;
+           font-size:.92em; background:var(--code-bg); padding:.15em .35em;
+           border-radius:4px; }
+    pre { background:var(--code-bg); padding:1em 1.2em; border-radius:8px;
+          overflow-x:auto; border:1px solid var(--border); }
+    pre code { background:none; padding:0; font-size:.88em; }
+    table { border-collapse:collapse; width:100%; margin:1em 0; }
+    th,td { border:1px solid var(--border); padding:.55em .9em; text-align:left; }
+    th { background:var(--accent); color:#fff; }
+    tr:nth-child(even) { background:var(--table-stripe); }
+    blockquote { border-left:4px solid var(--accent); margin-left:0;
+                 padding:.4em 1em; color:#666; background:var(--code-bg);
+                 border-radius:0 6px 6px 0; }
+    .katex-display { overflow-x:auto; overflow-y:hidden; padding:.5em 0; }
+  </style>
+</head>
+<body>
+  <h1 id="mapeo-teoria-dqn-implementacion-en-pes_dqn">Mapeo Teoría DQN ↔ Implementación en pes_dqn</h1>
+<h2 id="1-introduccion">1. Introducción</h2>
+<p>Este documento conecta la <strong>teoría de Deep Q-Networks (DQN)</strong> con su
+<strong>implementación concreta</strong> en el paquete <code>pes_dqn</code>.  Para cada concepto
+teórico se indica la variable, función o línea de código correspondiente.</p>
+<p><code>pes_dqn</code> reemplaza la tabla Q tabular de <code>pes_base</code> / <code>pes_ql</code> por una
+<strong>red neuronal</strong> que aproxima la función $Q(s, a)$.  Conserva el mismo
+entorno Gym (<code>Pandemic</code>), el mismo espacio de estados y acciones, y la
+misma integración con la UI de Pygame.</p>
+<hr />
+<h2 id="2-componentes-del-mdp-heredados-de-pes_base">2. Componentes del MDP (heredados de <code>pes_base</code>)</h2>
+<p>El MDP subyacente es idéntico al del paquete base:</p>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Símbolo</th>
+<th>Implementación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Estados</td>
+<td>$S$</td>
+<td><code>(resources_left, trial_no, severity)</code> — 3 dimensiones discretas</td>
+</tr>
+<tr>
+<td>Acciones</td>
+<td>$A$</td>
+<td><code>{0, 1, 2, …, 10}</code> — recursos a asignar</td>
+</tr>
+<tr>
+<td>Transiciones</td>
+<td>$P(s' \mid s, a)$</td>
+<td>Determinísticas: <code>env.step(action)</code> en <code>pandemic.py</code></td>
+</tr>
+<tr>
+<td>Recompensas</td>
+<td>$R(s, a)$</td>
+<td>$-\sum_{i} \text{severities}_i$</td>
+</tr>
+<tr>
+<td>Factor de descuento</td>
+<td>$\gamma$</td>
+<td><code>discount</code> (por defecto 0.865 en <code>train_dqn.py</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cardinalidad del espacio de estados</strong> (con <code>MAX_SEVERITY = 9</code>):</p>
+<p>$$|S| = 31 \times 11 \times 10 = 3{,}410 \text{ estados}$$</p>
+<hr />
+<h2 id="3-por-que-dqn-en-lugar-de-q-tabular">3. ¿Por qué DQN en lugar de Q-tabular?</h2>
+<table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>Q-tabular (<code>pes_base</code>)</th>
+<th>DQN (<code>pes_dqn</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Representación de $Q$</td>
+<td>Tabla $\lvert S\rvert \times \lvert A\rvert$ (37 510 celdas)</td>
+<td>Red neuronal (~5 131 parámetros)</td>
+</tr>
+<tr>
+<td>Generalización</td>
+<td>Ninguna — cada celda se actualiza de forma independiente</td>
+<td>La red interpola entre estados similares</td>
+</tr>
+<tr>
+<td>Escalabilidad</td>
+<td>Crece exponencialmente con dimensiones</td>
+<td>Crece linealmente con parámetros de red</td>
+</tr>
+<tr>
+<td>Muestra de datos</td>
+<td>On-policy (un paso, un update)</td>
+<td>Off-policy con experience replay</td>
+</tr>
+<tr>
+<td>Estabilidad</td>
+<td>Convergencia garantizada (tabular)</td>
+<td>Se estabiliza mediante red objetivo (target network)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-arquitectura-de-la-red-neuronal">4. Arquitectura de la Red Neuronal</h2>
+<h3 id="41-definicion">4.1 Definición</h3>
+<p>Implementada en <code>ext/dqn_model.py</code> → <code>build_q_network()</code>:</p>
+<pre><code class="language-text">Input  (3)  →  Dense(64, ReLU)  →  Dense(64, ReLU)  →  Dense(11, linear)
+               hidden_units[0]     hidden_units[1]     action_dim
+</code></pre>
+<pre><code class="language-python">model = tf.keras.Sequential(name=&quot;DQN&quot;)
+model.add(tf.keras.layers.Input(shape=(state_dim,)))
+for idx, units in enumerate(hidden_units):
+    model.add(tf.keras.layers.Dense(
+        units, activation=&quot;relu&quot;, name=f&quot;hidden_{idx}&quot;))
+model.add(tf.keras.layers.Dense(
+    action_dim, activation=&quot;linear&quot;, name=&quot;q_values&quot;))
+</code></pre>
+<p><strong>Parámetros</strong> (con <code>DQN_HIDDEN_UNITS = [64, 64]</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Forma</th>
+<th>Parámetros</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hidden_0</code></td>
+<td>3 → 64</td>
+<td>$3 \times 64 + 64 = 256$</td>
+</tr>
+<tr>
+<td><code>hidden_1</code></td>
+<td>64 → 64</td>
+<td>$64 \times 64 + 64 = 4{,}160$</td>
+</tr>
+<tr>
+<td><code>q_values</code></td>
+<td>64 → 11</td>
+<td>$64 \times 11 + 11 = 715$</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td></td>
+<td><strong>5 131</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="42-normalizacion-del-estado">4.2 Normalización del Estado</h3>
+<p>Antes de alimentar la red, el estado entero se escala a $[0, 1]^3$:</p>
+<p>$$\hat{s} = \left(\frac{r}{30},\; \frac{t}{10},\; \frac{v}{9}\right)$$</p>
+<p>Implementada en <code>ext/dqn_model.py</code> → <code>normalize_state()</code>:</p>
+<pre><code class="language-python">numpy.array([
+    state[0] / max(max_resources, 1),   # resources / 30
+    state[1] / max(max_trials, 1),      # trial / 10
+    state[2] / max(max_severity, 1),    # severity / 9
+], dtype=numpy.float32)
+</code></pre>
+<hr />
+<h2 id="5-experience-replay">5. Experience Replay</h2>
+<h3 id="51-motivacion-teorica">5.1 Motivación Teórica</h3>
+<p>En Q-Learning tabular, cada transición se usa una vez y se descarta.  Esto
+genera alta correlación temporal entre muestras consecutivas, perjudicando
+el entrenamiento de redes neuronales.</p>
+<p>Experience Replay almacena transiciones $(s, a, r, s', \text{done})$ en un
+buffer circular y las muestrea <strong>uniformemente al azar</strong>, rompiendo la
+correlación y permitiendo reutilizar datos.</p>
+<h3 id="52-implementacion">5.2 Implementación</h3>
+<p><code>ext/dqn_model.py</code> → clase <code>ReplayBuffer</code>:</p>
+<p>El buffer está respaldado por <strong>arrays NumPy pre-alocados</strong> en lugar de un
+<code>deque</code> de Python.  Esto elimina la iteración a nivel de Python al muestrear
+mini-batches y aprovecha la localidad de caché de arrays contiguos:</p>
+<pre><code class="language-python">class ReplayBuffer:
+    def __init__(self, capacity: int, state_dim: int = 3) -&gt; None:
+        self.capacity = capacity
+        self.size = 0
+        self._idx = 0
+        self._states = numpy.zeros((capacity, state_dim), dtype=numpy.float32)
+        self._actions = numpy.zeros(capacity, dtype=numpy.int32)
+        self._rewards = numpy.zeros(capacity, dtype=numpy.float32)
+        self._next_states = numpy.zeros((capacity, state_dim), dtype=numpy.float32)
+        self._dones = numpy.zeros(capacity, dtype=numpy.float32)
+
+    def push(self, state, action, reward, next_state, done):
+        i = self._idx
+        self._states[i] = state
+        self._actions[i] = action
+        self._rewards[i] = reward
+        self._next_states[i] = next_state
+        self._dones[i] = float(done)
+        self._idx = (i + 1) % self.capacity
+        self.size = min(self.size + 1, self.capacity)
+
+    def sample(self, batch_size):
+        indices = numpy.random.randint(0, self.size, size=batch_size)
+        return (self._states[indices], self._actions[indices],
+                self._rewards[indices], self._next_states[indices],
+                self._dones[indices])
+</code></pre>
+<p><strong>Ventaja frente a <code>deque</code> + <code>random.sample</code></strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Operación</th>
+<th><code>deque</code> (anterior)</th>
+<th>NumPy (actual)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>push</code></td>
+<td>Crear tupla + append</td>
+<td>Asignación directa a array</td>
+</tr>
+<tr>
+<td><code>sample(32)</code></td>
+<td><code>random.sample</code> O(n) + <code>zip</code> + <code>numpy.array</code></td>
+<td><code>randint</code> + advanced indexing O(batch)</td>
+</tr>
+<tr>
+<td>Memoria</td>
+<td>Objetos Python dispersos</td>
+<td>Arrays contiguos (cache-friendly)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Configuración</strong> (<code>config/CONFIG.py</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Constante</th>
+<th>Valor por defecto</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DQN_REPLAY_BUFFER_SIZE</code></td>
+<td>50 000</td>
+<td>Capacidad máxima del buffer</td>
+</tr>
+<tr>
+<td><code>DQN_BATCH_SIZE</code></td>
+<td>32</td>
+<td>Tamaño de mini-batch</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-red-objetivo-target-network">6. Red Objetivo (Target Network)</h2>
+<h3 id="61-problema-de-la-inestabilidad">6.1 Problema de la Inestabilidad</h3>
+<p>Si se usa la misma red para calcular los targets de TD y para actualizar
+los pesos, la función objetivo se mueve con cada gradiente — feedback
+positivo que puede divergir.</p>
+<h3 id="62-solucion-hard-copy-periodico">6.2 Solución: Hard Copy Periódico</h3>
+<p>Se mantiene una <strong>copia congelada</strong> (<em>target network</em>) cuyos pesos se
+reemplazan completamente con los de la red online cada
+<code>DQN_TARGET_SYNC_FREQ</code> pasos de gradiente:</p>
+<pre><code class="language-python">def sync_target_network(online_model, target_model):
+    target_model.set_weights(online_model.get_weights())
+</code></pre>
+<p>El target de TD se calcula con la red objetivo:</p>
+<p>$$y_i = r_i + \gamma \cdot \max_{a'} Q_{\theta^-}(s'_i, a') \cdot (1 - d_i)$$</p>
+<p>donde $\theta^-$ son los pesos congelados.</p>
+<p><strong>Configuración</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Constante</th>
+<th>Valor por defecto</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DQN_TARGET_SYNC_FREQ</code></td>
+<td>1 000</td>
+<td>Gradient steps entre sincronizaciones</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-funcion-de-perdida-huber-loss">7. Función de Pérdida (Huber Loss)</h2>
+<h3 id="71-definicion">7.1 Definición</h3>
+<p>La <strong>Huber loss</strong> (smooth L1) combina MSE para errores pequeños con MAE
+para errores grandes, ofreciendo robustez ante outliers:</p>
+<p>$$L_\delta(y, \hat{y}) =
+\begin{cases}
+\frac{1}{2}(y - \hat{y})^2 &amp; \text{si } |y - \hat{y}| \le \delta \
+\delta \cdot (|y - \hat{y}| - \frac{1}{2}\delta) &amp; \text{en otro caso}
+\end{cases}$$</p>
+<h3 id="72-implementacion">7.2 Implementación</h3>
+<p><code>ext/dqn_model.py</code> → <code>train_step()</code>:</p>
+<pre><code class="language-python">def train_step(online_model, target_model, optimizer,
+               states, actions, rewards, next_states, dones, discount):
+    # TD targets
+    next_q = target_model(next_states, training=False)
+    max_next_q = tf.reduce_max(next_q, axis=1)
+    targets = rewards + discount * max_next_q * (1.0 - dones)
+
+    with tf.GradientTape() as tape:
+        q_all = online_model(states, training=True)
+        action_mask = tf.one_hot(actions, depth=tf.shape(q_all)[1])
+        q_selected = tf.reduce_sum(q_all * action_mask, axis=1)
+        loss = tf.keras.losses.huber(targets, q_selected)
+        loss = tf.reduce_mean(loss)
+
+    grads = tape.gradient(loss, online_model.trainable_variables)
+    optimizer.apply_gradients(zip(grads, online_model.trainable_variables))
+    return loss
+</code></pre>
+<p><strong>Notas de implementación</strong>:
+- <code>train_step</code> <strong>no</strong> lleva <code>@tf.function</code> a nivel de módulo porque la
+  optimización bayesiana (Optuna) ejecuta múltiples trials con diferentes
+  instancias de modelo y optimizer.  <code>@tf.function</code> prohíbe crear nuevas
+  <code>tf.Variable</code> dentro de un grafo ya trazado, lo que provocaría un error
+  al iniciar el segundo trial.
+- En su lugar, <code>DQNTraining()</code> en <code>pandemic.py</code> envuelve la función con
+  <code>compiled_train_step = tf.function(train_step)</code> de forma <strong>local</strong> a
+  cada trial, asegurando que cada grafo sea independiente.
+- El optimizador se pre-construye con <code>optimizer.build(online_model.trainable_variables)</code>
+  antes de entrar al loop, para que sus <code>tf.Variable</code> internas (momentos
+  de Adam) se creen fuera del <code>@tf.function</code>.
+- <code>discount</code> se pasa como <code>tf.constant</code> (no como <code>float</code> de Python) para
+  evitar re-tracing cuando su valor cambia entre trials de Optuna.
+- <code>tf.one_hot</code> + <code>tf.reduce_sum</code> selecciona los Q-values correspondientes
+  a las acciones tomadas, sin indexación que rompa la diferenciabilidad.</p>
+<h3 id="73-optimizador-adam">7.3 Optimizador Adam</h3>
+<p>La actualización de pesos se delega al optimizador <strong>Adam</strong> (Adaptive Moment
+Estimation), propuesto por Kingma &amp; Ba (2015).  Adam combina dos ideas:</p>
+<ol>
+<li><strong>Momento</strong> (como SGD con momentum): mantiene una media exponencial del
+   gradiente para suavizar la dirección de actualización.</li>
+<li><strong>RMSProp</strong>: mantiene una media exponencial del gradiente al cuadrado
+   para adaptar la tasa de aprendizaje por parámetro.</li>
+</ol>
+<h4 id="ecuaciones-de-actualizacion">Ecuaciones de actualización</h4>
+<p>En cada paso $t$, dado el gradiente $g_t = \nabla_\theta L(\theta_{t-1})$:</p>
+<p>$$m_t = \beta_1 \, m_{t-1} + (1 - \beta_1) \, g_t$$</p>
+<p>$$v_t = \beta_2 \, v_{t-1} + (1 - \beta_2) \, g_t^2$$</p>
+<p>donde $m_t$ es la <strong>media móvil del gradiente</strong> (primer momento) y $v_t$ la
+<strong>media móvil del gradiente al cuadrado</strong> (segundo momento).</p>
+<p>Como $m_0 = 0$ y $v_0 = 0$, ambas estimaciones están sesgadas hacia cero al
+inicio.  Adam aplica <strong>corrección de sesgo</strong>:</p>
+<p>$$\hat{m}_t = \frac{m_t}{1 - \beta_1^t}, \qquad
+\hat{v}_t = \frac{v_t}{1 - \beta_2^t}$$</p>
+<p>Finalmente, la actualización de parámetros es:</p>
+<p>$$\theta_t = \theta_{t-1} - \alpha \, \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}$$</p>
+<h4 id="hiperparametros">Hiperparámetros</h4>
+<table>
+<thead>
+<tr>
+<th>Símbolo</th>
+<th>Nombre</th>
+<th>Valor por defecto (Keras)</th>
+<th>En <code>pes_dqn</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$\alpha$</td>
+<td>Learning rate</td>
+<td>0.001</td>
+<td><code>learning_rate</code> en <code>train_dqn.py</code> y <code>optimize_dqn.py</code></td>
+</tr>
+<tr>
+<td>$\beta_1$</td>
+<td>Decaimiento del 1er momento</td>
+<td>0.9</td>
+<td>Por defecto (Keras)</td>
+</tr>
+<tr>
+<td>$\beta_2$</td>
+<td>Decaimiento del 2do momento</td>
+<td>0.999</td>
+<td>Por defecto (Keras)</td>
+</tr>
+<tr>
+<td>$\epsilon$</td>
+<td>Constante de estabilidad</td>
+<td>$10^{-7}$</td>
+<td>Por defecto (Keras)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="por-que-adam-para-dqn">¿Por qué Adam para DQN?</h4>
+<ul>
+<li><strong>Tasa adaptativa por parámetro</strong>: cada peso de la red recibe un learning
+  rate efectivo diferente.  Esto es crucial cuando el replay buffer produce
+  mini-batches con distribuciones de gradiente variables.</li>
+<li><strong>Robustez ante hiperparámetros</strong>: los valores por defecto de $\beta_1$ y
+  $\beta_2$ funcionan bien en la mayoría de los casos, reduciendo la
+  superficie de búsqueda de la optimización bayesiana.</li>
+<li><strong>Convergencia rápida</strong>: la corrección de sesgo acelera las primeras
+  iteraciones, lo que importa cuando el buffer aún es pequeño.</li>
+</ul>
+<h4 id="implementacion">Implementación</h4>
+<pre><code class="language-python"># pandemic.py → DQNTraining()
+optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+</code></pre>
+<p>Solo se expone <code>learning_rate</code> como hiperparámetro ajustable.  Los demás
+parámetros de Adam ($\beta_1$, $\beta_2$, $\epsilon$) se dejan en sus
+valores por defecto de Keras, que coinciden con los propuestos en el paper
+original.</p>
+<hr />
+<h2 id="8-exploracion-greedy-con-decaimiento-lineal">8. Exploración ε-Greedy con Decaimiento Lineal</h2>
+<h3 id="81-politica">8.1 Política</h3>
+<p>$$a_t =
+\begin{cases}
+\arg\max_a Q_\theta(s_t, a) &amp; \text{con probabilidad } 1 - \varepsilon \
+\text{acción aleatoria} &amp; \text{con probabilidad } \varepsilon
+\end{cases}$$</p>
+<h3 id="82-decaimiento">8.2 Decaimiento</h3>
+<p>$$\varepsilon_{i+1} = \max(\varepsilon_{\min},\; \varepsilon_i - \Delta)$$</p>
+<p>donde $\Delta = (\varepsilon_0 - \varepsilon_{\min}) / N_{\text{episodes}}$.</p>
+<p>Implementado en <code>ext/pandemic.py</code> → <code>DQNTraining()</code>:</p>
+<pre><code class="language-python">reduction = (epsilon - min_eps) / episodes
+
+# Al final de cada episodio:
+if epsilon &gt; min_eps:
+    epsilon -= reduction
+</code></pre>
+<hr />
+<h2 id="9-bucle-de-entrenamiento-completo">9. Bucle de Entrenamiento Completo</h2>
+<p><code>ext/pandemic.py</code> → <code>DQNTraining()</code>:</p>
+<pre><code>Para cada episodio i = 1 … N:
+    env.random_sequence()          ← secuencia aleatoria
+    state = env.reset()
+
+    Mientras no done:
+        1. Normalizar estado:     s_norm = normalize_state(state, 30, 10, 9)
+        2. Selección ε-greedy:    action = argmax Q_θ(s_norm) ó random
+        3. (Opcional) Meta-cognición: confidence = dqn_agent_meta_cognitive(q_vals, ...)
+           → Solo si compute_confidence=True; desactivado por defecto para
+             eliminar el segundo forward pass y duplicar la velocidad en CPU.
+        4. Paso del entorno:      s', r, done = env.step(action)
+        5. Almacenar transición:  buffer.push(s_norm, action, r, s'_norm, done)
+        6. Si global_step % train_freq == 0 y |buffer| ≥ batch_size:
+             ─ Samplear mini-batch del buffer (NumPy advanced indexing)
+             ─ train_step(online, target, optimizer, batch)
+             ─ Si train_steps % target_sync_freq == 0:
+                   sync_target_network(online, target)
+        7. Decaer ε
+
+    Cada 10 000 episodios:
+        ─ Imprimir recompensa promedio
+
+    Retornar (ave_reward_list, online_model, conf_list)
+</code></pre>
+<h3 id="91-parametro-verbose">9.1 Parámetro <code>verbose</code></h3>
+<p><code>DQNTraining()</code> acepta un parámetro opcional <code>verbose</code> (por defecto <code>True</code>).
+Cuando está desactivado (<code>verbose=False</code>), se suprimen los mensajes
+periódicos de progreso que normalmente se imprimen cada 10 000 episodios.
+Esto es especialmente útil durante la optimización bayesiana, donde
+decenas de trials consecutivos generarían ruido excesivo en la terminal.</p>
+<p>De forma análoga, <code>run_experiment()</code> también acepta <code>verbose</code> (por defecto
+<code>True</code>).  Cuando <code>verbose=False</code>, se omiten las impresiones del estado
+inicial y de los valores de severidad por secuencia.</p>
+<h3 id="92-parametro-compute_confidence">9.2 Parámetro <code>compute_confidence</code></h3>
+<p><code>DQNTraining()</code> acepta un parámetro opcional <code>compute_confidence</code> (por
+defecto <code>False</code>).  Cuando está desactivado, se <strong>elimina</strong> el segundo
+forward pass por step que antes se usaba exclusivamente para observar la
+confianza meta-cognitiva:</p>
+<pre><code class="language-python"># Antes (compute_confidence implícito = True):
+#   1 forward pass  → ε-greedy
+#   1 forward pass  → meta-cognición  ← ELIMINADO por defecto
+# Ahora (compute_confidence=False, default):
+#   1 forward pass  → ε-greedy
+#   (sin forward pass adicional)
+</code></pre>
+<p>Esto reduce ~50 % el tiempo de inferencia durante el entrenamiento,
+resultando en una mejora de velocidad de ~1.5–2× en CPUs modestas
+(p. ej. Intel i3-6006U).</p>
+<p><strong>Parámetros configurables</strong> (<code>config/CONFIG.py</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Constante</th>
+<th>Valor por defecto</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DQN_HIDDEN_UNITS</code></td>
+<td><code>[64, 64]</code></td>
+<td>Capas ocultas de la red</td>
+</tr>
+<tr>
+<td><code>DQN_BATCH_SIZE</code></td>
+<td>32</td>
+<td>Mini-batch de replay</td>
+</tr>
+<tr>
+<td><code>DQN_REPLAY_BUFFER_SIZE</code></td>
+<td>50 000</td>
+<td>Capacidad del buffer</td>
+</tr>
+<tr>
+<td><code>DQN_TARGET_SYNC_FREQ</code></td>
+<td>1 000</td>
+<td>Pasos entre sincronización de target</td>
+</tr>
+<tr>
+<td><code>DQN_LEARNING_RATE</code></td>
+<td>1e-3</td>
+<td>Learning rate de Adam</td>
+</tr>
+<tr>
+<td><code>DQN_TRAIN_FREQ</code></td>
+<td>4</td>
+<td>Pasos entre gradient updates</td>
+</tr>
+<tr>
+<td><code>DQN_MODEL_FILE</code></td>
+<td><code>dqn_model.keras</code></td>
+<td>Archivo del modelo guardado</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="10-optimizacion-bayesiana-de-hiperparametros">10. Optimización Bayesiana de Hiperparámetros</h2>
+<p><code>ext/optimize_dqn.py</code> utiliza <strong>Optuna</strong> (TPE sampler) para buscar
+hiperparámetros óptimos del DQN.</p>
+<h3 id="101-espacio-de-busqueda">10.1 Espacio de Búsqueda</h3>
+<table>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Rango</th>
+<th>Tipo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>learning_rate</code></td>
+<td>$[5 \times 10^{-4},\; 5 \times 10^{-3}]$</td>
+<td>log-uniforme</td>
+</tr>
+<tr>
+<td><code>discount_factor</code></td>
+<td>$[0.85,\; 0.95]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>epsilon_initial</code></td>
+<td>$[0.50,\; 0.90]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>epsilon_min</code></td>
+<td>$[0.02,\; 0.10]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>num_episodes</code></td>
+<td>$[50\,000,\; 300\,000]$</td>
+<td>entero (paso 25k)</td>
+</tr>
+<tr>
+<td><code>hidden_dim</code></td>
+<td>$[32,\; 64]$</td>
+<td>entero (paso 32)</td>
+</tr>
+<tr>
+<td><code>n_hidden_layers</code></td>
+<td>${1, 2}$</td>
+<td>entero</td>
+</tr>
+<tr>
+<td><code>batch_size</code></td>
+<td>${32, 64}$</td>
+<td>categórico</td>
+</tr>
+<tr>
+<td><code>replay_buffer_size</code></td>
+<td>$[20\,000,\; 50\,000]$</td>
+<td>entero (paso 10k)</td>
+</tr>
+<tr>
+<td><code>target_sync_freq</code></td>
+<td>$[500,\; 1\,500]$</td>
+<td>entero (paso 500)</td>
+</tr>
+<tr>
+<td><code>train_freq</code></td>
+<td>${2, 4}$</td>
+<td>categórico</td>
+</tr>
+</tbody>
+</table>
+<h3 id="102-funcion-objetivo">10.2 Función Objetivo</h3>
+<p>Se entrena un agente DQN con los hiperparámetros sugeridos y se evalúa
+en las <strong>64 secuencias fijas</strong> (las mismas que usa <code>__main__.py</code>).  El score
+reportado a Optuna es el <strong>rendimiento normalizado medio</strong> (a maximizar),
+calculado con <code>calculate_normalised_final_severity_performance_metric()</code>.
+Se aplica enmascaramiento de acciones infactibles (<code>actions &gt; resources_left</code>)
+para que la métrica coincida con el comportamiento del agente en el experimento.</p>
+<p>Durante la evaluación, tanto <code>DQNTraining()</code> como <code>run_experiment()</code> se
+invocan con <code>verbose=False</code> para suprimir las impresiones de consola por
+episodio/secuencia, evitando ruido en la salida de terminal durante
+decenas de trials consecutivos.</p>
+<h3 id="103-poda-temprana-medianpruner">10.3 Poda Temprana (MedianPruner)</h3>
+<p>El estudio de Optuna incorpora un <strong>MedianPruner</strong> configurado con
+<code>n_startup_trials=5</code> y <code>n_warmup_steps=2</code>.  Este pruner descarta trials
+cuyo rendimiento intermedio es inferior a la mediana de trials anteriores,
+acelerando la búsqueda al evitar completar trials prometedoramente malos:</p>
+<pre><code class="language-python">study = optuna.create_study(
+    ...
+    pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=2),
+    ...
+)
+</code></pre>
+<h3 id="104-artefactos">10.4 Artefactos</h3>
+<p>Los mejores pesos del modelo se almacenan durante la búsqueda y al
+finalizar se reconstruye la red y se guarda como <code>dqn_model.keras</code>.</p>
+<hr />
+<h2 id="11-inferencia-en-tiempo-de-experimento">11. Inferencia en Tiempo de Experimento</h2>
+<h3 id="111-carga-del-modelo">11.1 Carga del Modelo</h3>
+<p><code>src/pygameMediator.py</code> → <code>provide_dqn_agent_response()</code>:</p>
+<pre><code class="language-python">model = tf.keras.models.load_model(model_path)
+</code></pre>
+<h3 id="112-seleccion-de-accion">11.2 Selección de Acción</h3>
+<pre><code class="language-python">s_norm = normalize_state([resources_left, city_trial_no, severity], 30, 10, 9)
+q_values = model(s_norm[numpy.newaxis, :], training=False)[0].numpy()
+action = int(numpy.argmax(q_values))
+</code></pre>
+<p>El vector de Q-values (11 elementos) se pasa a <code>dqn_agent_meta_cognitive()</code>
+para calcular la confianza por entropía, exactamente igual que en el
+paquete tabular.</p>
+<hr />
+<h2 id="12-comparacion-con-algoritmo-original-pes">12. Comparación con Algoritmo Original (pes)</h2>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th><code>pes_base</code> (Q-tabular)</th>
+<th><code>pes_dqn</code> (DQN)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modelo</td>
+<td><code>numpy.ndarray</code> (q.npy)</td>
+<td><code>tf.keras.Model</code> (.keras)</td>
+</tr>
+<tr>
+<td>Update</td>
+<td>$Q(s,a) \leftarrow Q(s,a) + \alpha[r + \gamma \max Q(s') - Q(s,a)]$</td>
+<td>Gradient descent con Huber loss</td>
+</tr>
+<tr>
+<td>Datos</td>
+<td>Un paso → un update</td>
+<td>Replay buffer (NumPy arrays) → mini-batch</td>
+</tr>
+<tr>
+<td>Estabilidad</td>
+<td>Convergencia tabular directa</td>
+<td>Target network + Huber loss</td>
+</tr>
+<tr>
+<td>Episodios típicos</td>
+<td>900 000</td>
+<td>100 000</td>
+</tr>
+<tr>
+<td>Tiempo (CPU)</td>
+<td>~30 s</td>
+<td>~15–30 min (con optimizaciones CPU)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="121-optimizaciones-para-cpu">12.1 Optimizaciones para CPU</h2>
+<p>Dado que <code>pes_dqn</code> está diseñado para ejecutarse en CPUs modestas
+(p. ej. Intel i3-6006U @ 2 GHz, 4 hilos), se implementan tres
+optimizaciones clave:</p>
+<h3 id="1211-replay-buffer-con-numpy-pre-alocado">12.1.1 Replay Buffer con NumPy pre-alocado</h3>
+<p>El buffer de experiencia usa <strong>arrays NumPy contiguos</strong> pre-alocados en
+lugar de un <code>deque</code> de Python con tuplas.  El muestreo se realiza con
+<code>numpy.random.randint</code> + indexación avanzada, que es órdenes de magnitud
+más rápido que <code>random.sample</code> sobre un <code>deque</code> de 50 000+ elementos.</p>
+<h3 id="1212-eliminacion-del-forward-pass-de-confianza">12.1.2 Eliminación del forward pass de confianza</h3>
+<p>El parámetro <code>compute_confidence=False</code> (por defecto) elimina el segundo
+forward pass por step de entorno.  Durante 100 000 episodios con ~5 steps
+promedio, esto ahorra ~500 000 forward passes.</p>
+<h3 id="1213-configuracion-de-hilos-tensorflow">12.1.3 Configuración de hilos TensorFlow</h3>
+<p>Al importar <code>ext/dqn_model.py</code> se configuran los pools de hilos de TF:</p>
+<pre><code class="language-python">tf.config.threading.set_intra_op_parallelism_threads(0)   # auto-detect
+tf.config.threading.set_inter_op_parallelism_threads(2)
+</code></pre>
+<p>Además, <code>OMP_NUM_THREADS</code> se configura en <code>__init__.py</code> al número de
+cores disponibles antes de importar TensorFlow.</p>
+<hr />
+<h2 id="13-estructura-de-archivos">13. Estructura de Archivos</h2>
+<pre><code>pes_dqn/
+├── __init__.py              # Exporta constantes DQN; configura OMP_NUM_THREADS
+├── __main__.py              # Valida .keras antes de ejecutar
+├── config/CONFIG.py         # 7 constantes DQN_*
+├── ext/
+│   ├── dqn_model.py         # ReplayBuffer (NumPy-backed), build_q_network,
+│   │                        #   normalize_state, train_step, sync_target_network;
+│   │                        #   configura tf.config.threading al importar
+│   ├── pandemic.py          # Entorno Gym + DQNTraining(compute_confidence=False)
+│   ├── train_dqn.py         # Pipeline de entrenamiento autónomo
+│   ├── optimize_dqn.py      # Búsqueda Bayesiana con Optuna
+│   └── tools.py             # Entropía, gráficas (sin cambios)
+├── src/
+│   ├── pygameMediator.py    # Carga .keras, forward pass en experimento
+│   ├── exp_utils.py         # Severidades, secuencias
+│   ├── log_utils.py         # Logging dual
+│   ├── result_formatter.py  # Gráficas matplotlib
+│   └── terminal_utils.py    # UI de consola Rich
+└── doc/
+    ├── explained_dqn.md             # ← este documento
+    └── how_to_train_and_test.md     # Guía práctica de entrenamiento y pruebas
+</code></pre>
+<hr />
+<h2 id="14-referencias">14. Referencias</h2>
+<ol>
+<li>Mnih, V. et al. (2015). <em>Human-level control through deep reinforcement
+   learning</em>. Nature, 518(7540), 529–533.</li>
+<li>Lin, L.-J. (1992). <em>Self-improving reactive agents based on
+   reinforcement learning, planning and teaching</em>. Machine Learning,
+   8(3-4), 293–321.</li>
+<li>Akiba, T. et al. (2019). <em>Optuna: A next-generation hyperparameter
+   optimization framework</em>. KDD '19.</li>
+<li>Kingma, D. P. &amp; Ba, J. (2015). <em>Adam: A Method for Stochastic
+   Optimization</em>. ICLR 2015.</li>
+</ol>
+</body>
+</html>

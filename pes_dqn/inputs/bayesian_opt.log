@@ -1,0 +1,79 @@
+
+====================================================================================================
+  EXPERIMENT CONFIGURATION PARAMETERS
+====================================================================================================
+
+Variable Name                                 Variable Value                 Suggested Value     
+----------------------------------------------------------------------------------------------------
+AVAILABLE_RESOURCES_PER_SEQUENCE              39                             49                  
+INIT_NO_OF_CITIES                             2                             
+NUM_BLOCKS                                    8                              8                   
+NUM_MAX_TRIALS                                10                             10                  
+NUM_MIN_TRIALS                                3                              3                   
+NUM_SEQUENCES                                 8                              8                   
+PANDEMIC_PARAMETER                            0.4                            0.6                 
+PLAYER_TYPE                                   DQN_AGENT                     
+RESPONSE_MULTIPLIER                           0.4                            0.6                 
+SEVERITY_MULTIPLIER                           1.4                            1.6                 
+TOTAL_NUM_TRIALS_IN_BLOCK                     45                             45                  
+USE_FIXED_BLOCK_SEQUENCES                     True                          
+INITIAL_SEVERITY_FILE                         initial_severity.csv          
+SEQ_LENGTHS_FILE                              sequence_lengths.csv          
+AGGREGATION_METHOD                            confidence_weighted_mean      
+====================================================================================================
+
+
+================================================================================
+  BAYESIAN OPTIMISATION — DQN HYPERPARAMETERS
+================================================================================
+
+ℹ Output directory: C:\Users\maxvega\Documents\Win_mPES\pes_dqn\inputs\2026-03-07_BAYESIAN_OPT
+ℹ Target number of trials: 110
+
+
+--------------------------------------------------------------------------------
+  Loading Evaluation Data
+--------------------------------------------------------------------------------
+
+→ Sequence lengths shape: (64,)
+→ Sequences loaded: 64
+
+
+--------------------------------------------------------------------------------
+  Running Bayesian Optimisation
+--------------------------------------------------------------------------------
+
+ℹ Search space (tightened for CPU):
+→ learning_rate        ∈ [5e-4, 5e-3]   (log scale)
+→ discount_factor      ∈ [0.85, 0.95]
+→ epsilon_initial      ∈ [0.50, 0.90]
+→ epsilon_min          ∈ [0.02, 0.10]
+→ num_episodes         ∈ [50000, 300000]   (step=25000)
+→ hidden_dim           ∈ [32, 64]  (step=32)
+→ n_hidden_layers      ∈ {1, 2}
+→ batch_size           ∈ {32, 64}
+→ replay_buffer_size   ∈ [20000, 50000]  (step=10000)
+→ target_sync_freq     ∈ [500, 1500]  (step=500)
+→ train_freq           ∈ {2, 4}
+
+ℹ Warm-start: known-good defaults enqueued as first trial
+ℹ Starting fresh: 110 trials to run
+  Trial   1/110  |  value=0.8079  |  best=0.8079  |  elapsed=3848s
+  Trial   2/110  |  value=0.8079  |  best=0.8079  |  elapsed=7014s
+  Trial   3/110  |  value=0.8079  |  best=0.8079  |  elapsed=14003s
+  Trial   4/110  |  value=0.8079  |  best=0.8079  |  elapsed=20650s
+  Trial   5/110  |  value=0.8090  |  best=0.8090  |  elapsed=37187s
+  Trial   6/110  |  value=0.8079  |  best=0.8090  |  elapsed=39386s
+  Trial   7/110  |  value=0.8213  |  best=0.8213  |  elapsed=52115s
+  Trial   8/110  |  value=0.8079  |  best=0.8213  |  elapsed=57113s
+  Trial   9/110  |  value=0.8079  |  best=0.8213  |  elapsed=63137s
+  Trial  10/110  |  value=0.8079  |  best=0.8213  |  elapsed=67605s
+  Trial  11/110  |  value=0.8465  |  best=0.8465  |  elapsed=82382s
+  Trial  12/110  |  value=0.8079  |  best=0.8465  |  elapsed=97168s
+  Trial  13/110  |  value=0.8079  |  best=0.8465  |  elapsed=109966s
+  Trial  14/110  |  value=0.8154  |  best=0.8465  |  elapsed=123001s
+  Trial  15/110  |  value=0.8264  |  best=0.8465  |  elapsed=135936s
+  Trial  16/110  |  value=0.8213  |  best=0.8465  |  elapsed=150218s
+  Trial  17/110  |  value=0.8308  |  best=0.8465  |  elapsed=162655s
+  Trial  18/110  |  value=0.8079  |  best=0.8465  |  elapsed=173092s
+  Trial  19/110  |  value=0.8357  |  best=0.8465  |  elapsed=185989s

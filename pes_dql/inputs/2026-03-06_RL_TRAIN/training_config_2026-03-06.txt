@@ -1,0 +1,44 @@
+================================================================================
+RL-AGENT TRAINING CONFIGURATION
+================================================================================
+
+Training Date: 2026-03-06
+Training Time: 2026-03-06 22:11:51
+
+Q-LEARNING HYPERPARAMETERS
+--------------------------------------------------------------------------------
+Algorithm:                   Double Q-Learning
+Learning Rate (α):           0.2592852466099094
+Discount Factor (γ):         0.9806357182178841
+Initial Epsilon (ε):         0.839196365086843
+Minimum Epsilon (ε_min):     0.07993292420985183
+Number of Episodes:          860,000
+Decay Rate (λ):              0.9999944587 (computed from N=860,000)
+Warm-up Ratio:               0.02403950683025824 (20,673 episodes)
+Target Ratio:                0.5174250836504598 (444,985 episodes)
+Exploitation Phase:          415,015 episodes
+Epsilon Decay:               Exponential with warm-up (0.839196365086843 → 0.07993292420985183)
+Decay Formula:               λ = (ε_min / ε₀)^(1 / ((target - warmup) · N))
+Reward Shaping (β):          0.21766241123453672
+
+TRAINING RESULTS
+--------------------------------------------------------------------------------
+Q-Table Shape:               (31, 11, 10, 11)
+State Space:
+  - Available Resources:     31
+  - Trial Numbers:           11
+  - Severity Levels:         10
+  - Action Space:            11
+Rewards History Length:      86
+
+OUTPUT FILES
+--------------------------------------------------------------------------------
+Q-Table File:                q_2026-03-06.npy
+Rewards File:                rewards_2026-03-06.npy
+Configuration File:          training_config_2026-03-06.txt
+
+DESCRIPTION
+--------------------------------------------------------------------------------
+Files saved from Q-Learning training on the Pandemic Scenario.
+The Q-table maps (resources, trial, severity) states to action values.
+The rewards file contains average reward progression every 10,000 episodes.

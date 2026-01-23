@@ -1,0 +1,68 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#  mPES — .gitignore
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Last updated: 2026-03-09
+#
+#  Packages: pes_base · pes_ql · pes_dql · pes_dqn · pes_ac · pes_trf · utils
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Virtual environments ────────────────────────────────────────────────────
+linux_mpes_env/
+win_mpes_env/
+.venv/
+venv/
+env/
+
+# ── Python bytecode / build artefacts ───────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ── IDEs / editors ─────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Testing & coverage ─────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Jupyter ─────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── OS metadata ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Data / binary outputs (generated per run, not tracked) ─────────────────
+*.npy
+*.h5
+*.keras
+*.db
+
+# ── PID / lock files ──────────────────────────────────────────────────────
+*.pid
