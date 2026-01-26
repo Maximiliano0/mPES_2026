@@ -1,0 +1,128 @@
+[ 2026-01-26 17:11:22.749979+00:00 ]: pygameMediator: Resolution set to: 1360x768
+[ 2026-01-26 17:11:22.825436+00:00 ]: pygameMediator: Waiting for player to proceed ... [ 2026-01-26 17:11:24.046771+00:00 ]: [Done]
+[ 2026-01-26 17:11:24.062025+00:00 ]:  - Player 007 <-- active player
+
+
+-- Initialisation parameters --
+
+PKG_ROOT: /home/mecatronica/Documentos/maximiliano/mPES/PES
+CONFIG_FILE: /home/mecatronica/Documentos/maximiliano/mPES/PES/config/CONFIG.py
+AGGREGATION_METHOD: confidence_weighted_mean (Suggested: confidence_weighted_median)
+AVAILABLE_RESOURCES_PER_SEQUENCE: 39 (Suggested: 49)
+AVATAR_ICONS_SET: PlaceholderAvatars
+CITY_RADIUS_REFLECTS_SEVERITY: False
+COLORS: {0: (245, 243, 243), 1: (237, 230, 230), 2: (231, 215, 215), 3: (227, 198, 198), 4: (224, 180, 180), 5: (224, 137, 137), 6: (227, 113, 113), 7: (231, 88, 88), 8: (237, 60, 60), 9: (245, 31, 31), 10: (255, 0, 0)}
+CONFIDENCE_TIMEOUT: 5000
+CONFIDENCE_UPDATE_AMOUNT: 0.05
+DEBUG: False
+DEBUG_RESOLUTION: (962, 920) (Suggested: (762, 720))
+DETECT_USER_RESOLUTION: True
+DISPLAY_FEEDBACK: True
+FALLBACK_RESOLUTION: (1143, 1080)
+FEEDBACK_SHOW_COMBINED_ALLOCATIONS: False
+FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE: True (Suggested: False)
+INIT_NO_OF_CITIES: 2
+INPUTS_PATH: /home/mecatronica/Documentos/maximiliano/mPES/PES/inputs
+LIVE_EXPERIMENT: True
+LOBBY_PLAYERS: 1 (Suggested: 4)
+LOBBY_TIMEOUT: 300
+MAX_ALLOCATABLE_RESOURCES: 10
+MAX_INIT_RESOURCES: 6
+MAX_INIT_SEVERITY: 5
+MIN_ALLOCATABLE_RESOURCES: 0
+MIN_INIT_RESOURCES: 3
+MIN_INIT_SEVERITY: 2
+MOVEMENT_REFRESH_RATE: 1 (Suggested: 7)
+NUM_ATTEMPTS_TO_ASSIGN_SEQ: 8
+NUM_BLOCKS: 8
+NUM_MAX_TRIALS: 10
+NUM_MIN_TRIALS: 3
+NUM_PREDEFINED_CITY_COORDS: 25
+NUM_SEQUENCES: 8
+OUTPUT_FILE_PREFIX: PES_ (Suggested: PES_full_)
+OUTPUTS_PATH: /home/mecatronica/Documentos/maximiliano/mPES/PES/outputs
+PLAYER_TYPE: human
+PLAYBACK_ID: N/A
+RANDOM_INITIAL_SEVERITY: False
+RESPONSE_TIMEOUT: 10000
+RESPONSE_MULTIPLIER: 0.4 (Suggested: 0.2)
+SAVE_INITIAL_SEVERITY_TO_FILE: False
+SAVE_RESULTS: True
+SEVERITY_MULTIPLIER: 1.4 (Suggested: 1.2)
+SHOW_PYGAME_IF_NONHUMAN_PLAYER: True (Suggested: False)
+STARTING_BLOCK_INDEX: 0
+STARTING_SEQ_INDEX: 0
+TOTAL_NUM_TRIALS_IN_BLOCK: 45
+USE_FIXED_BLOCK_SEQUENCES: True
+VERBOSE: True
+BIOSEMI_CONNECTED: False
+SEQ_LENGTHS_FILE: sequence_lengths.csv
+INITIAL_SEVERITY_FILE: initial_severity.csv
+
+
+-- Parameters derived at runtime --
+
+Date: 2026-01-26 17:11:30.324423+00:00
+SubjectId: 007
+[ 2026-01-26 17:11:30.776581+00:00 ]: Current session (i.e. block): 1 of 8
+[ 2026-01-26 17:11:30.776746+00:00 ]: Time elapsed: 0 minutes --  
+[ 2026-01-26 17:11:30.781787+00:00 ]: pygameMediator: Waiting for player to proceed ... [ 2026-01-26 17:11:31.510138+00:00 ]: [Done]
+[ 2026-01-26 17:11:32.510157+00:00 ]:
+[ 2026-01-26 17:11:32.510426+00:00 ]: Current sequence: 1 of 64 (1 of 8 in block), using map No. 2
+[ 2026-01-26 17:11:32.517658+00:00 ]: pygameMediator: Waiting for player to proceed ... [ 2026-01-26 17:11:33.809768+00:00 ]: [Done]
+[ 2026-01-26 17:11:39.384201+00:00 ]:
+[ 2026-01-26 17:11:39.385040+00:00 ]: Current trial: 1 out of 5 in sequence (1 out of 360 overall)
+[ 2026-01-26 17:11:39.385564+00:00 ]: Initial severity values before annotation:  4.40, 1.80
+[ 2026-01-26 17:11:39.386061+00:00 ]: Resources remaining:  30
+[ 2026-01-26 17:11:39.386477+00:00 ]: Current trial's initial severity: 5.0
+[ 2026-01-26 17:11:46.803331+00:00 ]: Response was: 1
+[ 2026-01-26 17:11:46.803472+00:00 ]: Confidence was: 0.1
+[ 2026-01-26 17:11:46.803553+00:00 ]: PressEvent_seconds was: 0.927
+[ 2026-01-26 17:11:46.803632+00:00 ]: ReleaseEvent_seconds was: 2.273
+[ 2026-01-26 17:11:48.809305+00:00 ]:
+[ 2026-01-26 17:11:48.809605+00:00 ]: Current trial: 2 out of 5 in sequence (2 out of 360 overall)
+[ 2026-01-26 17:11:48.810052+00:00 ]: Initial severity values before annotation:  4.96, 0.12, 6.60
+[ 2026-01-26 17:11:48.810248+00:00 ]: Resources remaining:  29
+[ 2026-01-26 17:11:48.810342+00:00 ]: Current trial's initial severity: 6.0
+[ 2026-01-26 17:11:58.535953+00:00 ]: Response was: 5
+[ 2026-01-26 17:11:58.536068+00:00 ]: Confidence was: 0.5
+[ 2026-01-26 17:11:58.536136+00:00 ]: PressEvent_seconds was: 1.211
+[ 2026-01-26 17:11:58.536209+00:00 ]: ReleaseEvent_seconds was: 4.628
+[ 2026-01-26 17:12:00.543193+00:00 ]:
+[ 2026-01-26 17:12:00.543472+00:00 ]: Current trial: 3 out of 5 in sequence (3 out of 360 overall)
+[ 2026-01-26 17:12:00.543712+00:00 ]: Initial severity values before annotation:  5.74, 0.00, 8.84, 6.40
+[ 2026-01-26 17:12:00.543949+00:00 ]: Resources remaining:  24
+[ 2026-01-26 17:12:00.544085+00:00 ]: Current trial's initial severity: 4.0
+[ 2026-01-26 17:12:07.049185+00:00 ]: Response was: 7
+[ 2026-01-26 17:12:07.049304+00:00 ]: Confidence was: 0.9
+[ 2026-01-26 17:12:07.049381+00:00 ]: PressEvent_seconds was: 0.618
+[ 2026-01-26 17:12:07.049461+00:00 ]: ReleaseEvent_seconds was: 1.409
+[ 2026-01-26 17:12:09.055227+00:00 ]:
+[ 2026-01-26 17:12:09.055489+00:00 ]: Current trial: 4 out of 5 in sequence (4 out of 360 overall)
+[ 2026-01-26 17:12:09.055737+00:00 ]: Initial severity values before annotation:  6.84, 0.00, 11.98, 6.96, 2.80
+[ 2026-01-26 17:12:09.055956+00:00 ]: Resources remaining:  17
+[ 2026-01-26 17:12:09.056124+00:00 ]: Current trial's initial severity: 5.0
+[ 2026-01-26 17:12:15.513721+00:00 ]: Response was: 9
+[ 2026-01-26 17:12:15.513841+00:00 ]: Confidence was: 1.0
+[ 2026-01-26 17:12:15.513941+00:00 ]: PressEvent_seconds was: 0.65
+[ 2026-01-26 17:12:15.514024+00:00 ]: ReleaseEvent_seconds was: 1.363
+[ 2026-01-26 17:12:17.518900+00:00 ]:
+[ 2026-01-26 17:12:17.519205+00:00 ]: Current trial: 5 out of 5 in sequence (5 out of 360 overall)
+[ 2026-01-26 17:12:17.519444+00:00 ]: Initial severity values before annotation:  8.38, 0.00, 16.37, 7.74, 1.12, 3.40
+[ 2026-01-26 17:12:17.519659+00:00 ]: Resources remaining:  8
+[ 2026-01-26 17:12:17.519792+00:00 ]: Current trial's initial severity: 8.0
+[ 2026-01-26 17:12:23.195131+00:00 ]: Response was: 2
+[ 2026-01-26 17:12:23.195260+00:00 ]: Confidence was: 0.8
+[ 2026-01-26 17:12:23.195340+00:00 ]: PressEvent_seconds was: 0.311
+[ 2026-01-26 17:12:23.195417+00:00 ]: ReleaseEvent_seconds was: 0.582
+[ 2026-01-26 17:12:25.206328+00:00 ]:
+[ 2026-01-26 17:12:25.206526+00:00 ]: Number of available responses:1
+[ 2026-01-26 17:12:25.207118+00:00 ]: My Sequence Performances:  0.52
+[ 2026-01-26 17:12:25.207188+00:00 ]:
+[ 2026-01-26 17:12:25.208391+00:00 ]: [[0.5234019710991348], [0.5234019710991348]]
+[ 2026-01-26 17:12:28.697747+00:00 ]:
+[ 2026-01-26 17:12:28.697953+00:00 ]: Current sequence: 2 of 64 (2 of 8 in block), using map No. 4
+[ 2026-01-26 17:12:28.703501+00:00 ]: pygameMediator: Waiting for player to proceed ... [ 2026-01-26 17:12:29.391802+00:00 ]: [Done]
+[ 2026-01-26 17:12:29.391926+00:00 ]: Received 'ExitGame' event. Gracefully exiting ... 
+[ 2026-01-26 17:12:29.392061+00:00 ]:
+[ 2026-01-26 17:12:29.392163+00:00 ]: --- Experiment interrupted at BlockIndex=0, SequenceIndex=1 ---

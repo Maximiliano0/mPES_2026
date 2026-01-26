@@ -1,0 +1,3 @@
+#InitialSeverity, Response, Confidence, PressEvent_seconds, ReleaseEvent_seconds
+             5.0,       10, 0.09907069313677917,  8.289492404216025,                 10.0
+             6.0,       10, 0.10315763223197438,  6.167835392456803,                 10.0

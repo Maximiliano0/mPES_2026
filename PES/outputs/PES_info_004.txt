@@ -1,0 +1,2 @@
+#Age, Gender, Handedness, ExperimentDate
+  20,      F,          R,     26/01/2026
