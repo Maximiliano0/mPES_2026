@@ -81,12 +81,10 @@ from . import WHITE, YELLOW, BLACK, DARK_RED, DARK_CYAN, DARK_GREEN, GREEN, RED,
 
 # Import internal modules and functions
 from . import printinfo, printstatus
-from . src import eventMarker
 from . src import exp_utils
 from . src import lobbyManager
 from . src import log_utils
 from . src import pygameMediator
-from . src.eventMarker import evmrk
 
 
 # -----------------------------------------
@@ -127,10 +125,6 @@ def main():
 
   # Create a log file to tee console output to (see: exp3f.src.log_utils.tee)
     log_utils.create_ConsoleLog_filehandle_singleton( MySubjectId )
-
-  # EventMarker initialization (creates a singleton inside eventMarker.py).
-    # NOTE: We do this before the pygame screen is initialized, in order to confirm connection in the terminal.
-    evmrk.init()
 
   # If BioSemi is used, report MySubjectId and confirm proper initialisation of Actiview before creating a pygame window
     if BIOSEMI_CONNECTED:   exp_utils.confirm_biosemi_properly_initialised( MySubjectId )
@@ -435,7 +429,6 @@ def main():
         log_utils.tee(
              f'Current session (i.e. block): {CurrentBlockIndex+1} of {NUM_BLOCKS}'
            )
-        evmrk.blockstart(CurrentBlockIndex)
 
 
       # Set the gameplay 'mode' for the experiment
@@ -681,7 +674,6 @@ def main():
                                                       direction = direction,
                                                       show_arrow = True
                                                     )
-                evmrk.stimulus()
 
 # NOTE: A seemingly useless delay of 2000ms was removed from here
 # NOTE: A seemingly useless if statement (trial_no < num. trials in sequence) was removed from here
@@ -758,7 +750,6 @@ def main():
                 resp_header = 'R=' + str( response[ CurrentBlockIndex ][ CurrentSequenceIndex ][ -1 ] ) + "Conf=" + \
                               str( confidence[ CurrentBlockIndex ][ CurrentSequenceIndex ][ -1 ] )
 
-                evmrk.trialend( response[ CurrentBlockIndex ][ CurrentSequenceIndex ][ -1 ], confidence[ CurrentBlockIndex ][ CurrentSequenceIndex ][ -1 ] )
                 if SAVE_RESULTS:
 
                     Responses_filehandle.write(

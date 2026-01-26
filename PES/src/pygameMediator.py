@@ -95,8 +95,6 @@ from . import log_utils
 from . import Agent
 from . Agent import agent_meta_cognitive, adjust_response_decay, boltzmann_decay, get_random_confidence 
 from . exp_utils import chain_ops
-from . import eventMarker
-from . eventMarker import evmrk
 from .. import printinfo
 from .. import printcolor
 from .. ext.tools import pick_human_reported_confidence, humanise_this_reported_confidence 

@@ -1,2 +1,0 @@
-#Age, Gender, Handedness, ExperimentDate
-   1,      F,          R,     23/01/2026
