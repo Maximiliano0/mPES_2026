@@ -84,32 +84,32 @@ Press ENTER if you'd like to continue regardless (or Ctrl-C to abort).
 ### Process selected CONFIG.py file
 ###################################
 
-# Import all configuration constants
+# Import all configuration constants for RL execution
 AGGREGATION_METHOD                          = CONFIG.AGGREGATION_METHOD
 ALLOCATION_TYPE                             = CONFIG.ALLOCATION_TYPE
 AVAILABLE_RESOURCES_PER_SEQUENCE            = CONFIG.AVAILABLE_RESOURCES_PER_SEQUENCE
-AVATAR_ICONS_SET                            = CONFIG.AVATAR_ICONS_SET
-BIOSEMI_CONNECTED                           = CONFIG.BIOSEMI_CONNECTED
+AVATAR_ICONS_SET                            = 'PlaceholderAvatars'  # RL-Agent uses placeholder
+BIOSEMI_CONNECTED                           = False  # Not used in RL mode
 BLOCK_MODE_INDICES                          = CONFIG.BLOCK_MODE_INDICES
 CITY_RADIUS_REFLECTS_SEVERITY               = CONFIG.CITY_RADIUS_REFLECTS_SEVERITY
 COLORS                                      = CONFIG.COLORS
 CONFIDENCE_TIMEOUT                          = CONFIG.CONFIDENCE_TIMEOUT
 CONFIDENCE_UPDATE_AMOUNT                    = CONFIG.CONFIDENCE_UPDATE_AMOUNT
 DEBUG                                       = CONFIG.DEBUG
-DEBUG_RESOLUTION                            = CONFIG.DEBUG_RESOLUTION
+DEBUG_RESOLUTION                            = (962, 920)  # Default for RL-Agent
 DETECT_USER_RESOLUTION                      = CONFIG.DETECT_USER_RESOLUTION
 DISPLAY_FEEDBACK                            = CONFIG.DISPLAY_FEEDBACK
 FALLBACK_RESOLUTION                         = CONFIG.FALLBACK_RESOLUTION
-FEEDBACK_SHOW_COMBINED_ALLOCATIONS          = CONFIG.FEEDBACK_SHOW_COMBINED_ALLOCATIONS
-FEEDBACK_SHOW_GROUP_PERFORMANCE             = CONFIG.FEEDBACK_SHOW_GROUP_PERFORMANCE
-FEEDBACK_SHOW_INDIVIDUAL_PERFORMANCES       = CONFIG.FEEDBACK_SHOW_INDIVIDUAL_PERFORMANCES
-FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE          = CONFIG.FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE
+FEEDBACK_SHOW_COMBINED_ALLOCATIONS          = False  # RL-Agent specific
+FEEDBACK_SHOW_INDIVIDUAL_PERFORMANCES       = True   # RL-Agent specific
+FEEDBACK_SHOW_GROUP_PERFORMANCE             = False  # RL-Agent specific
+FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE          = True   # RL-Agent specific
 INIT_NO_OF_CITIES                           = CONFIG.INIT_NO_OF_CITIES
 INITIAL_SEVERITY_FILE                       = CONFIG.INITIAL_SEVERITY_FILE
 INPUTS_PATH                                 = CONFIG.get_INPUTS_PATH( PKG_ROOT )
 LIVE_EXPERIMENT                             = CONFIG.LIVE_EXPERIMENT
-LOBBY_PLAYERS                               = CONFIG.LOBBY_PLAYERS
-LOBBY_TIMEOUT                               = CONFIG.LOBBY_TIMEOUT
+LOBBY_PLAYERS                               = 1  # Single agent only
+LOBBY_TIMEOUT                               = 300  # Not used in single agent
 MAX_ALLOCATABLE_RESOURCES                   = CONFIG.MAX_ALLOCATABLE_RESOURCES
 MAX_INIT_RESOURCES                          = CONFIG.MAX_INIT_RESOURCES
 MAX_INIT_SEVERITY                           = CONFIG.MAX_INIT_SEVERITY
@@ -128,12 +128,13 @@ OUTPUTS_PATH                                = CONFIG.get_OUTPUTS_PATH( PKG_ROOT 
 PANDEMIC_PARAMETER                          = CONFIG.PANDEMIC_PARAMETER
 PLAYER_TYPE                                 = CONFIG.PLAYER_TYPE
 RANDOM_INITIAL_SEVERITY                     = CONFIG.RANDOM_INITIAL_SEVERITY
+RESOURCES_PATH                              = CONFIG.get_OUTPUTS_PATH( PKG_ROOT ).replace('outputs', 'res')  # Path to resources
 RESPONSE_TIMEOUT                            = CONFIG.RESPONSE_TIMEOUT
 SAVE_INITIAL_SEVERITY_TO_FILE               = CONFIG.SAVE_INITIAL_SEVERITY_TO_FILE
 SAVE_RESULTS                                = CONFIG.SAVE_RESULTS
-SEQ_LENGTHS_FILE                            = CONFIG.SEQ_LENGTHS_FILE
 SHOW_BEFORE_AND_AFTER_MAP                   = CONFIG.SHOW_BEFORE_AND_AFTER_MAP
-SHOW_PYGAME_IF_NONHUMAN_PLAYER              = CONFIG.SHOW_PYGAME_IF_NONHUMAN_PLAYER
+SHOW_PYGAME_IF_NONHUMAN_PLAYER              = False  # Don't show pygame for RL-Agent (to avoid graphics overhead)
+SEQ_LENGTHS_FILE                            = CONFIG.SEQ_LENGTHS_FILE
 STARTING_BLOCK_INDEX                        = CONFIG.STARTING_BLOCK_INDEX
 STARTING_SEQ_INDEX                          = CONFIG.STARTING_SEQ_INDEX
 TOTAL_NUM_TRIALS_IN_BLOCK                   = CONFIG.TOTAL_NUM_TRIALS_IN_BLOCK
@@ -148,8 +149,7 @@ AGENT_WAIT                                  = CONFIG.AGENT_WAIT
 ### Process imported configuration options
 ##########################################
 
-if PLAYER_TYPE == 'playback':   PLAYBACK_ID = CONFIG.PLAYBACK_ID
-else                        :   PLAYBACK_ID = 'N/A'
+PLAYBACK_ID = 'N/A'
 
 RESPONSE_MULTIPLIER = PANDEMIC_PARAMETER
 SEVERITY_MULTIPLIER = 1 + PANDEMIC_PARAMETER
@@ -210,62 +210,39 @@ if VERBOSE:
 #               Variable name                           Variable Value                           Suggested value check
     printconfig( 'PKG_ROOT'                             ,                              PKG_ROOT                                      )
     printconfig( 'CONFIG_FILE'                          ,                           CONFIG_FILE                                      )
-    printconfig( 'AGGREGATION_METHOD'                   ,                    AGGREGATION_METHOD, 'confidence_weighted_median'        )
     printconfig( 'ALLOCATION_TYPE'                      ,                       ALLOCATION_TYPE, 'shared'                            )
     printconfig( 'AVAILABLE_RESOURCES_PER_SEQUENCE'     ,      AVAILABLE_RESOURCES_PER_SEQUENCE, 49                                  )
-    printconfig( 'AVATAR_ICONS_SET'                     ,                      AVATAR_ICONS_SET, 'PlaceholderAvatars'                )
-    printconfig( 'BLOCK_MODE_INDICES'                   ,                    BLOCK_MODE_INDICES                                      )
     printconfig( 'CITY_RADIUS_REFLECTS_SEVERITY'        ,         CITY_RADIUS_REFLECTS_SEVERITY, False                               )
-    printconfig( 'COLORS'                               ,                                COLORS                                      )
     printconfig( 'CONFIDENCE_TIMEOUT'                   ,                    CONFIDENCE_TIMEOUT, 5000                                )
-    printconfig( 'CONFIDENCE_UPDATE_AMOUNT'             ,              CONFIDENCE_UPDATE_AMOUNT, 0.05                                )
-    printconfig( 'DEBUG'                                ,                                 DEBUG, False                               )
-    printconfig( 'DEBUG_RESOLUTION'                     ,                      DEBUG_RESOLUTION, (762, 720)                          )
-    printconfig( 'DETECT_USER_RESOLUTION'               ,                DETECT_USER_RESOLUTION, True                                )
     printconfig( 'DISPLAY_FEEDBACK'                     ,                      DISPLAY_FEEDBACK, True                                )
-    printconfig( 'FALLBACK_RESOLUTION'                  ,                   FALLBACK_RESOLUTION, (1143, 1080)                        )
-    printconfig( 'FEEDBACK_SHOW_COMBINED_ALLOCATIONS'   ,    FEEDBACK_SHOW_COMBINED_ALLOCATIONS, False                               )
-    printconfig( 'FEEDBACK_SHOW_GROUP_PERFORMANCE'      , FEEDBACK_SHOW_GROUP_PERFORMANCE      , True                                )
-    printconfig( 'FEEDBACK_SHOW_INDIVIDUAL_PERFORMANCES', FEEDBACK_SHOW_INDIVIDUAL_PERFORMANCES, False                               )
-    printconfig( 'FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE'   ,    FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE, False                               )
     printconfig( 'INIT_NO_OF_CITIES'                    ,                     INIT_NO_OF_CITIES, 2                                   )
     printconfig( 'INPUTS_PATH'                          ,                           INPUTS_PATH, os.path.join( PKG_ROOT, 'inputs' )  )
     printconfig( 'LIVE_EXPERIMENT'                      ,                       LIVE_EXPERIMENT, True                                )
-    printconfig( 'LOBBY_PLAYERS'                        ,                         LOBBY_PLAYERS, 4                                   )
-    printconfig( 'LOBBY_TIMEOUT'                        ,                         LOBBY_TIMEOUT, 300                                 )
     printconfig( 'MAX_ALLOCATABLE_RESOURCES'            ,             MAX_ALLOCATABLE_RESOURCES, 10                                  )
     printconfig( 'MAX_INIT_RESOURCES'                   ,                    MAX_INIT_RESOURCES, 6                                   )
     printconfig( 'MAX_INIT_SEVERITY'                    ,                     MAX_INIT_SEVERITY, 5                                   )
     printconfig( 'MIN_ALLOCATABLE_RESOURCES'            ,             MIN_ALLOCATABLE_RESOURCES, 0                                   )
     printconfig( 'MIN_INIT_RESOURCES'                   ,                    MIN_INIT_RESOURCES, 3                                   )
     printconfig( 'MIN_INIT_SEVERITY'                    ,                     MIN_INIT_SEVERITY, 2                                   )
-    printconfig( 'MOVEMENT_REFRESH_RATE'                ,                 MOVEMENT_REFRESH_RATE, 7                                   )
-    printconfig( 'NUM_ATTEMPTS_TO_ASSIGN_SEQ'           ,            NUM_ATTEMPTS_TO_ASSIGN_SEQ, 8                                   )
     printconfig( 'NUM_BLOCKS'                           ,                            NUM_BLOCKS, 8                                   )
     printconfig( 'NUM_MAX_TRIALS'                       ,                        NUM_MAX_TRIALS, 10                                  )
     printconfig( 'NUM_MIN_TRIALS'                       ,                        NUM_MIN_TRIALS, 3                                   )
-    printconfig( 'NUM_PREDEFINED_CITY_COORDS'           ,            NUM_PREDEFINED_CITY_COORDS, 25                                  )
     printconfig( 'NUM_SEQUENCES'                        ,                         NUM_SEQUENCES, 8                                   )
-    printconfig( 'OUTPUT_FILE_PREFIX'                   ,                    OUTPUT_FILE_PREFIX, 'PES_full_'                       )
+    printconfig( 'OUTPUT_FILE_PREFIX'                   ,                    OUTPUT_FILE_PREFIX, 'PES_RL_'                        )
     printconfig( 'OUTPUTS_PATH'                         ,                          OUTPUTS_PATH, os.path.join( PKG_ROOT, 'outputs' ) )
     printconfig( 'PANDEMIC_PARAMETER'                   ,                   PANDEMIC_PARAMETER , 0.6                                 )
-    printconfig( 'PLAYER_TYPE'                          ,                           PLAYER_TYPE, 'human'                             )
-    printconfig( 'PLAYBACK_ID'                          ,                           PLAYBACK_ID                                      )
-    printconfig( 'RANDOM_INITIAL_SEVERITY'              ,               RANDOM_INITIAL_SEVERITY, False                               )
+    printconfig( 'PLAYER_TYPE'                          ,                           PLAYER_TYPE, 'RL-Agent'                          )
     printconfig( 'RESPONSE_TIMEOUT'                     ,                      RESPONSE_TIMEOUT, 10000                               )
     printconfig( 'RESPONSE_MULTIPLIER'                  ,                   RESPONSE_MULTIPLIER, 0.6                                 )
-    printconfig( 'SAVE_INITIAL_SEVERITY_TO_FILE'        ,         SAVE_INITIAL_SEVERITY_TO_FILE, False                               )
     printconfig( 'SAVE_RESULTS'                         ,                          SAVE_RESULTS, True                                )
     printconfig( 'SEVERITY_MULTIPLIER'                  ,                   SEVERITY_MULTIPLIER, 1.6                                 )
     printconfig( 'SHOW_BEFORE_AND_AFTER_MAP'            ,             SHOW_BEFORE_AND_AFTER_MAP, False                               )
-    printconfig( 'SHOW_PYGAME_IF_NONHUMAN_PLAYER'       ,        SHOW_PYGAME_IF_NONHUMAN_PLAYER, False                               )
     printconfig( 'STARTING_BLOCK_INDEX'                 ,                  STARTING_BLOCK_INDEX, 0                                   )
     printconfig( 'STARTING_SEQ_INDEX'                   ,                    STARTING_SEQ_INDEX, 0                                   )
     printconfig( 'TOTAL_NUM_TRIALS_IN_BLOCK'            ,             TOTAL_NUM_TRIALS_IN_BLOCK, 45                                  )
     printconfig( 'TRUST_MAX'                            ,             TRUST_MAX                , 100                                 )
     printconfig( 'USE_FIXED_BLOCK_SEQUENCES'            ,             USE_FIXED_BLOCK_SEQUENCES, True                                )
     printconfig( 'VERBOSE'                              ,                               VERBOSE, True                                )
-    printconfig( 'BIOSEMI_CONNECTED'                    ,                     BIOSEMI_CONNECTED, False                               )
     printconfig( 'SEQ_LENGTHS_FILE'                     ,                      SEQ_LENGTHS_FILE, 'sequence_lengths.csv'              )
     printconfig( 'INITIAL_SEVERITY_FILE'                ,                 INITIAL_SEVERITY_FILE, 'initial_severity.csv'              )
 

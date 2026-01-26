@@ -31,7 +31,6 @@ from .. import MIN_ALLOCATABLE_RESOURCES
 from .. import AVAILABLE_RESOURCES_PER_SEQUENCE
 from .. import INPUTS_PATH
 from .. import NUM_SEQUENCES
-from .. import LOBBY_PLAYERS
 from ..src.pygameMediator import Agent
 from ..ext.pandemic import Pandemic
 

@@ -98,7 +98,7 @@ if __name__=='__main__':
     plt.show()
 
 
-    if (False):
+    if (True):
         confsrl = []
 
         def qf(env,state, seqid):
@@ -150,8 +150,6 @@ if __name__=='__main__':
         plt.xlim(0,64)
         plt.show()
 
-
-    if (True):
         fig = plt.figure(figsize=(16,4))
         plt.scatter(numpy.asarray(range(len(confsrl))), confsrl)
         plt.title('Reported confidences from the RLAgent')

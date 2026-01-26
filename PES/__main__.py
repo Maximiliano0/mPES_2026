@@ -54,7 +54,6 @@ from . import INITIAL_SEVERITY_FILE
 from . import INIT_NO_OF_CITIES
 from . import INPUTS_PATH
 from . import LIVE_EXPERIMENT
-from . import LOBBY_PLAYERS
 from . import MAX_INIT_RESOURCES
 from . import MAX_INIT_SEVERITY
 from . import MIN_INIT_RESOURCES
@@ -68,6 +67,7 @@ from . import OUTPUTS_PATH, OUTPUT_FILE_PREFIX
 from . import PLAYER_TYPE
 from . import RANDOM_INITIAL_SEVERITY
 from . import RESOURCES_PATH
+from . import SAVE_INITIAL_SEVERITY_TO_FILE
 from . import SAVE_RESULTS
 from . import SHOW_BEFORE_AND_AFTER_MAP
 from . import SHOW_PYGAME_IF_NONHUMAN_PLAYER
@@ -85,6 +85,9 @@ from . src import exp_utils
 from . src import lobbyManager
 from . src import log_utils
 from . src import pygameMediator
+
+# Import random_severity_generator utility
+from .src.exp_utils import random_severity_generator
 
 
 # -----------------------------------------
@@ -129,58 +132,46 @@ def main():
   # If BioSemi is used, report MySubjectId and confirm proper initialisation of Actiview before creating a pygame window
     if BIOSEMI_CONNECTED:   exp_utils.confirm_biosemi_properly_initialised( MySubjectId )
 
-  # Create the initial window appropriately
-    if DEBUG                   :   pygameMediator.init_pygame_display( DEBUG_RESOLUTION                       )
-    elif DETECT_USER_RESOLUTION:   pygameMediator.init_pygame_display( 'Autodetect'       , Fullscreen = True )
-    else                       :   pygameMediator.init_pygame_display( FALLBACK_RESOLUTION, Fullscreen = True )
-
-  # Set current window title (which is superfluous since we're running fullscreen, but, doesn't hurt either ... )
-    pygameMediator.set_window_title( "BARI - Experiment 3f (full)" )
-
-  # Hide mouse cursor and show user a 'welcome' message
-#    pygameMediator.hide_mouse_cursor()
-
-    Message = "Welcome.\n" \
-              "\n" \
-              "Please click the left mouse button\n" \
-              "to begin the experiment."
-    pygameMediator.show_message_and_wait( Message, colour = WHITE )
-
-
-    # -------------------------------------------------------
-    # Create 'lobby' and set up UDP server for communications
-    # -------------------------------------------------------
-
-    if LOBBY_PLAYERS > 1:
-        Message = "Connecting to other players.\n" \
-                  "\n" \
-                  "Please wait ..."
-
+  # Create the initial window appropriately (skip for RL-Agent to avoid graphics overhead)
+    if PLAYER_TYPE == 'RL-Agent':
+        if VERBOSE:   printinfo( "__main__: Skipping pygame initialization for RL-Agent mode" )
     else:
-        Message = "Setting up experiment.\n" \
+        if DEBUG                   :   pygameMediator.init_pygame_display( DEBUG_RESOLUTION                       )
+        elif DETECT_USER_RESOLUTION:   pygameMediator.init_pygame_display( 'Autodetect'       , Fullscreen = True )
+        else                       :   pygameMediator.init_pygame_display( FALLBACK_RESOLUTION, Fullscreen = True )
+
+      # Set current window title (which is superfluous since we're running fullscreen, but, doesn't hurt either ... )
+        pygameMediator.set_window_title( "BARI - Experiment 3f (full)" )
+
+      # Hide mouse cursor and show user a 'welcome' message
+    #    pygameMediator.hide_mouse_cursor()
+
+        Message = "Welcome.\n" \
                   "\n" \
-                  "Please wait ..."
+                  "Please click the left mouse button\n" \
+                  "to begin the experiment."
+        pygameMediator.show_message_and_wait( Message, colour = WHITE )
 
-    pygameMediator.show_message_and_wait( Message, colour = WHITE, wait = False )
 
-    if VERBOSE:   printinfo( "__main__: Creating lobby ... ", end = '', flush = True )
-    lobbyManager.set_up_lobby( MySubjectId )
-    if VERBOSE:   printstatus( 'Done', ANSI.GREEN )
+    # -------------------------------------------------------
+    # Single Agent Setup (Lobby removed for single agent)
+    # -------------------------------------------------------
 
-    if VERBOSE:   printinfo( "__main__: List of participants:" )
-    Players = lobbyManager.Lobby
-    for PlayerAddr, PlayerId in Players.items():
-        if PlayerId == MySubjectId:
-            log_utils.tee( f'{ANSI.ORANGE} - Player {PlayerId} -- {PlayerAddr}{ANSI.RESET} <-- active player' )
-        else:
-            log_utils.tee( f'{ANSI.ORANGE} - Player {PlayerId} -- {PlayerAddr}{ANSI.RESET}' )
+    Message = "Setting up experiment.\n" \
+              "\n" \
+              "Please wait ..."
 
-    NumPlayers = len( Players )
+    if PLAYER_TYPE != 'RL-Agent':
+        pygameMediator.show_message_and_wait( Message, colour = WHITE, wait = False )
 
-    if VERBOSE:   printinfo( "__main__: Setting up TCP server ... ", end = '', flush = True )
-    lobbyManager.set_up_TCP_server()
+    if VERBOSE:   printinfo( "__main__: Initializing single agent experiment ... ", end = '', flush = True )
 
     if VERBOSE:   printstatus( 'Done', ANSI.GREEN )
+
+    if VERBOSE:   printinfo( "__main__: Active player:" )
+    log_utils.tee( f'{ANSI.ORANGE} - Player {MySubjectId}{ANSI.RESET} <-- active player' )
+
+    NumPlayers = 1
 
 
     # ------------------------------------
@@ -227,15 +218,17 @@ def main():
     total_movement         = {}
 
 
-    pygame.event.clear()
+    if PLAYER_TYPE != 'RL-Agent':
+        pygame.event.clear()
 
-    pygameMediator         \
-    .show_message_and_wait \
-    ( "Loading Images.\n\nPlease wait",
-      colour = WHITE,
-      wait   = False
-    )
+        pygameMediator         \
+        .show_message_and_wait \
+        ( "Loading Images.\n\nPlease wait",
+          colour = WHITE,
+          wait   = False
+        )
 
+    # Always load coordinates, but load_image() will skip pygame rendering for RL-Agent
     images, all_coordinates = pygameMediator.load_image()
 
     NumTrials__blocks_x_sequences__2darray = numpy.zeros( (NUM_BLOCKS, NUM_SEQUENCES) )   # each slot contains the
@@ -467,20 +460,21 @@ def main():
         ResourcesType = 'will be SHARED among all players!' if exp_utils.AllocationType == 'shared' else 'will NOT be shared among players.'
 
       # Inform user of time left, and give chance for a short break
-        pygameMediator.show_message_and_wait(
-                               "\n".join([  EndOfBlock_str,
-                                            " ",
-                                            TimeLeft_str,
-                                            " ",
-                                            "Available resources in this block",
-                                            f"{ResourcesType}",
-                                            " ",
-                                            "Press the LEFT MOUSE BUTTON to start"
-                                         ]),
-                               colour = WHITE
-                              )
+        if PLAYER_TYPE != 'RL-Agent':
+            pygameMediator.show_message_and_wait(
+                                   "\n".join([  EndOfBlock_str,
+                                                " ",
+                                                TimeLeft_str,
+                                                " ",
+                                                "Available resources in this block",
+                                                f"{ResourcesType}",
+                                                " ",
+                                                "Press the LEFT MOUSE BUTTON to start"
+                                             ]),
+                                   colour = WHITE
+                                  )
 
-        if LOBBY_PLAYERS > 1 or PLAYER_TYPE == 'human' or SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay( 1000 )
+        if PLAYER_TYPE == 'human' or SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay( 1000 )
 
 
         CurrentBlockMapIndices = MapIndices__blocks_x_sequences__2darray[ CurrentBlockIndex, : ]
@@ -516,7 +510,10 @@ def main():
                                     f"experiment prematurely, press ESC now.)"
                                   )
 
-            ESC_was_pressed = pygameMediator.show_message_and_wait( ScreenMessage, colour = WHITE )
+            if PLAYER_TYPE != 'RL-Agent':
+                ESC_was_pressed = pygameMediator.show_message_and_wait( ScreenMessage, colour = WHITE )
+            else:
+                ESC_was_pressed = False
 
           # Handle "exit game" requests gracefully
             if ESC_was_pressed:
@@ -581,31 +578,32 @@ def main():
             resources_left = resources_to_allocate - numpy.sum( ResourceAllocationsAtCurrentlyVisibleCities )   # Note: resources_left: i.e. in this sequence (i.e. as opposed to in block)
                                                                               # Note: resources_to_allocate == AVAILABLE_RESOURCES_PER_SEQUENCE == 49
 
-            pygameMediator.show_message_and_wait( "Initial Locations.\n\n(Do not Respond yet!)",
-                                                  colour = WHITE,
-                                                  wait = False
-                                                )
+            if PLAYER_TYPE != 'RL-Agent':
+                pygameMediator.show_message_and_wait( "Initial Locations.\n\n(Do not Respond yet!)",
+                                                      colour = WHITE,
+                                                      wait = False
+                                                    )
 
-            pygame.time.delay( 500 )
+                pygame.time.delay( 500 )
 
-          # update pygame screen with current map, severity heatmap and direction arrows
-            pygameMediator.show_images( image,
-                                        init_severity[ : INIT_NO_OF_CITIES ],
-                                        ResourceAllocationsAtCurrentlyVisibleCities    [ : INIT_NO_OF_CITIES ],
-                                        INIT_NO_OF_CITIES,
-                                        coordinates[ : INIT_NO_OF_CITIES, 0 ],
-                                        coordinates[ : INIT_NO_OF_CITIES, 1 ],
-                                        circle_radius,
-                                        direction = []
-                                      )
+              # update pygame screen with current map, severity heatmap and direction arrows
+                pygameMediator.show_images( image,
+                                            init_severity[ : INIT_NO_OF_CITIES ],
+                                            ResourceAllocationsAtCurrentlyVisibleCities    [ : INIT_NO_OF_CITIES ],
+                                            INIT_NO_OF_CITIES,
+                                            coordinates[ : INIT_NO_OF_CITIES, 0 ],
+                                            coordinates[ : INIT_NO_OF_CITIES, 1 ],
+                                            circle_radius,
+                                            direction = []
+                                          )
 
-            if LOBBY_PLAYERS > 1 or PLAYER_TYPE == 'human' or SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay( 3000 )
+                if SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay( 3000 )
 
-            ResourcesType = 'SHARED!' if exp_utils.AllocationType == 'shared' else 'NOT shared!'
-            Message = f"Ok, prepare to start!\n\nResources available for allocation: {resources_left}\n\nResources are {ResourcesType}"
-            pygameMediator.show_message_and_wait( Message, colour = WHITE, wait = False )
+                ResourcesType = 'SHARED!' if exp_utils.AllocationType == 'shared' else 'NOT shared!'
+                Message = f"Ok, prepare to start!\n\nResources available for allocation: {resources_left}\n\nResources are {ResourcesType}"
+                pygameMediator.show_message_and_wait( Message, colour = WHITE, wait = False )
 
-            if LOBBY_PLAYERS > 1 or PLAYER_TYPE == 'human' or SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay(2000)
+                if SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay(2000)
 
             SeveritiesOfCurrentlyVisibleCities  = exp_utils.get_updated_severity( INIT_NO_OF_CITIES, ResourceAllocationsAtCurrentlyVisibleCities, init_severity )
             direction = []
@@ -664,16 +662,19 @@ def main():
 
 
               # Present the stimulus!
-                new_img = pygameMediator.show_images( image,
-                                                      init_severity,
-                                                      ResourceAllocationsAtCurrentlyVisibleCities,
-                                                      new_locations,
-                                                      coordinates[ : new_locations, 0 ],
-                                                      coordinates[ : new_locations, 1 ],
-                                                      circle_radius,
-                                                      direction = direction,
-                                                      show_arrow = True
-                                                    )
+                if PLAYER_TYPE != 'RL-Agent':
+                    new_img = pygameMediator.show_images( image,
+                                                          init_severity,
+                                                          ResourceAllocationsAtCurrentlyVisibleCities,
+                                                          new_locations,
+                                                          coordinates[ : new_locations, 0 ],
+                                                          coordinates[ : new_locations, 1 ],
+                                                          circle_radius,
+                                                          direction = direction,
+                                                          show_arrow = True
+                                                        )
+                else:
+                    new_img = None
 
 # NOTE: A seemingly useless delay of 2000ms was removed from here
 # NOTE: A seemingly useless if statement (trial_no < num. trials in sequence) was removed from here
@@ -722,16 +723,12 @@ def main():
                     log_utils.tee( f'PressEvent_seconds was: {rt_h}'     )
                     log_utils.tee( f'ReleaseEvent_seconds was: {rt_rel}' )
 
-                    if NumPlayers > 1:
-                        pygameMediator.screen_messages( "Waiting for other players...", colour = DARK_CYAN )
+                    # Single agent - no need to wait for other players
 
 
                 else:   # i.e. resources_left NOT > 0
 
-                    if NumPlayers > 1 and exp_utils.AllocationType == 'shared':
-                        pygameMediator.screen_messages( "The group has run out of resources.\nBut, the pandemic continues...", colour = DARK_RED )
-                    else:
-                        pygameMediator.screen_messages( "You have run out of resources.\nBut, the pandemic continues... ", colour = DARK_RED )
+                    pygameMediator.screen_messages( "You have run out of resources.\nBut, the pandemic continues... ", colour = DARK_RED )
 
                     confidence[ CurrentBlockIndex ][ CurrentSequenceIndex ].append( -1 )
 
@@ -740,7 +737,7 @@ def main():
                     release_response_times[ CurrentBlockIndex ][ CurrentSequenceIndex ].append(  0  )
                     total_movement        [ CurrentBlockIndex ][ CurrentSequenceIndex ].append( [0] )
 
-                    if LOBBY_PLAYERS > 1 or PLAYER_TYPE == 'human' or SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay( 2000 )
+                    if PLAYER_TYPE == 'human' or SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay( 2000 )
 
 
 
@@ -779,11 +776,9 @@ def main():
               # Optimal final severity for this sequence
                 optimal_seq_final_severity = optimal_final_severity[AbsoluteSequenceIndex]
 
-              # Collect your own response and that of all the other players
-                PlayerIds, PlayerMessages = lobbyManager.send_and_request_stream(AbsoluteTrialCount, MyMessage)
-
-                AllPlayerIds = [ MySubjectId ] + PlayerIds
-                AllMessages  = [ MyMessage   ] + PlayerMessages
+              # Single agent - only use own message
+                AllPlayerIds = [ MySubjectId ]
+                AllMessages  = [ MyMessage   ]
 
               # Obtain aggregated allocations/severity per step (note: severity of past cities keep changing!)
                 AggregatedAllocations, AggregatedFinalSeverities = call_nominated_aggregator( AllMessages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount )
@@ -818,8 +813,9 @@ def main():
             # final severity, so we can compare the performance and show some feedback.
 
           # Inform player the current map/sequence is over before showing feedback
-            Message = "End of sequence.\n\nPreparing feedback..."
-            pygameMediator.show_message_and_wait( Message, colour = WHITE, wait = False )
+            if PLAYER_TYPE != 'RL-Agent':
+                Message = "End of sequence.\n\nPreparing feedback..."
+                pygameMediator.show_message_and_wait( Message, colour = WHITE, wait = False )
 
 
           ## Send a message to all other players (contains response, confidence, and final severities).
@@ -866,21 +862,8 @@ def main():
                    )
                 log_utils.tee()
 
+                # Single agent - use index 1 for aggregated performance (same as agent in this case)
                 count = 1
-                for _, PlayerId in Players.items():
-
-                    if (PlayerId != MySubjectId ):
-
-                      ## As lobby is sorted, we are accumulatting the values for all the players in the same order.
-                        # XXX however, we should change this, to also take into account Player Id, and create a proper
-                        # legend.
-                        Performance, *_ = exp_utils.calculate_normalised_final_severity_performance_metric(
-                            AllMessages[count][:,2],
-                            InitialSeveritiesInSequence
-                        )
-
-                        AllPerformances[count].append( Performance )
-                        count = count + 1
 
               # Add the aggregated performance.
                 aggregated_allocations, aggregated_final_severity = call_nominated_aggregator( AllMessages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount )
@@ -896,19 +879,24 @@ def main():
 
               # Plot all the accumulated performance for all the players.
                 StartingAbsoluteSequence = STARTING_BLOCK_INDEX * NUM_SEQUENCES + STARTING_SEQ_INDEX
-                canvas, raw_data = exp_utils.generate_feedback( numpy.arange( StartingAbsoluteSequence, AbsoluteSequenceIndex + 1 ), AllPerformances, AllMessages, aggregated_allocations, InitialSeveritiesInSequence )
+                
+                if PLAYER_TYPE != 'RL-Agent':
+                    canvas, raw_data = exp_utils.generate_feedback( numpy.arange( StartingAbsoluteSequence, AbsoluteSequenceIndex + 1 ), AllPerformances, AllMessages, aggregated_allocations, InitialSeveritiesInSequence )
 
-              # Show a 'before and after' screen, showing the difference between individual and group performance
-                if SHOW_BEFORE_AND_AFTER_MAP:
-                    pygameMediator.show_before_and_after_map( MyMessage[ :, 2 ], aggregated_final_severity  )
+                  # Show a 'before and after' screen, showing the difference between individual and group performance
+                    if SHOW_BEFORE_AND_AFTER_MAP:
+                        pygameMediator.show_before_and_after_map( MyMessage[ :, 2 ], aggregated_final_severity  )
 
-              # Show normal feedback
-                FeedbackMsg = "\n".join(
-                                [ "NOTE: You will be asked to rate\nyour team in the next screen!\n" if AbsoluteSequenceIndex % NUM_SEQUENCES == NUM_SEQUENCES - 1 else "",
-                                  "Press the left mouse button to continue"
-                                ]   )
+                  # Show normal feedback
+                    FeedbackMsg = "\n".join(
+                                    [ "NOTE: You will be asked to rate\nyour team in the next screen!\n" if AbsoluteSequenceIndex % NUM_SEQUENCES == NUM_SEQUENCES - 1 else "",
+                                      "Press the left mouse button to continue"
+                                    ]   )
 
-                pygameMediator.show_feedback( canvas, raw_data, FeedbackMsg )
+                    pygameMediator.show_feedback( canvas, raw_data, FeedbackMsg )
+                else:
+                    # For RL-Agent, print results to console
+                    log_utils.tee( f"Sequence {AbsoluteSequenceIndex}: Performance = {AggregatedPerformance:.4f}" )
 
             #
             ### END OF `if feedback`
@@ -920,9 +908,10 @@ def main():
         ### END OF `for CurrentSequenceIndex, CurrentSequenceMapIndex in enumerate( CurrentBlockMapIndices )`
 
 
-      # Update TrustRatings
-        TrustRatingsInBlock = pygameMediator.ask_player_to_rate_colleagues_using_sliders( TrustRatings[-1,:].tolist() )
-        TrustRatings = numpy.vstack( (TrustRatings, TrustRatingsInBlock) )
+      # Update TrustRatings (skip for RL-Agent)
+        if PLAYER_TYPE != 'RL-Agent':
+            TrustRatingsInBlock = pygameMediator.ask_player_to_rate_colleagues_using_sliders( TrustRatings[-1,:].tolist() )
+            TrustRatings = numpy.vstack( (TrustRatings, TrustRatingsInBlock) )
 
         log_utils.tee( "Trust Ratings:\n", TrustRatings )
 
@@ -932,11 +921,14 @@ def main():
 
 
   # Also save a numpy array npy file of the movements involved, in case we need these for future analysis
-    pygameMediator.show_message_and_wait(
-                     "Thank you for your participation" \
-                     + '\n' \
-                     + "Press the left mouse button to end",
-                     colour = WHITE  )
+    if PLAYER_TYPE != 'RL-Agent':
+        pygameMediator.show_message_and_wait(
+                         "Thank you for your participation" \
+                         + '\n' \
+                         + "Press the left mouse button to end",
+                         colour = WHITE  )
+    else:
+        log_utils.tee( "\n--- Experiment completed successfully ---\n" )
 
 
 

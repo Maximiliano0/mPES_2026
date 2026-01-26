@@ -693,9 +693,7 @@ def confirm_biosemi_properly_initialised( MySubjectId ):
 
 
 def remind_biosemi_properly_finalised():
-    print()
-    print(f"{ANSI.RED}Note to Experimenter: Please remember to pause and save Actiview before you start taking off electrodes!{ANSI.RESET}")
-    print()
+    pass
 
 
 

@@ -57,29 +57,21 @@ COLORS = {  0: (245, 243, 243),     # Faint pink, almost white   ## Define the (
 CONFIDENCE_TIMEOUT = 5000                  # Suggested Value: 5000         ## Delay (in milliseconds) after which it is assumed the user has failed to provide a confidence.
 
 # Note: The product of MOVEMENT_REFRESH_RATE and CONFIDENCE_UPDATE_AMOUNT should ideally be between 0.05 and 0.1. See below at the MOVEMENT_REFRESH_RATE entry for details.
-CONFIDENCE_UPDATE_AMOUNT= 0.05  # Suggested Value: 0.01 for online, 0.05 for biosemi on server.  ## Determines by how much confidence is increased per pygame event (e.g. mousewheel)
+CONFIDENCE_UPDATE_AMOUNT= 0.05  # Confidence update per event
 
-DEBUG_RESOLUTION = (962, 920 )                # Suggested Value: (762, 720)   ## This resolution will be applied if running in DEBUG = False mode.
-DEBUG = False                                 # Suggested Value: False        ## Set to True to test the experimental setup without having to go through entire experiment Set to False to conduct a proper experiment, without the ability to escape.
-BIOSEMI_CONNECTED = False                     # Whether or not the biosemi device is connected.
-DETECT_USER_RESOLUTION = True                 # Suggested Value: True         ## If True, the user's resolution will be detected automatically, and used to create a fullscreen window for the experiment. Ignored when DEBUG is True.
-DISPLAY_FEEDBACK = True                       # Suggested Value: True
-FALLBACK_RESOLUTION = (1143, 1080)            # Suggested Value: (1143,1080)  ## This resolution will be applied if DETECT_USER_RESOLUTION = False (and not running in DEBUG mode)
-FEEDBACK_SHOW_COMBINED_ALLOCATIONS = False    # Suggested Value: False  ## If True, the combined allocations (i.e. the allocation resulting from the group vote) will also be shown in the top feedback graph showing allocation decisions by players.
-FEEDBACK_SHOW_INDIVIDUAL_PERFORMANCES = True  # Suggested Value: False  ## If True, the theoretical performance of each individual will be shown alongside the group performance.
-FEEDBACK_SHOW_GROUP_PERFORMANCE = False        # Suggested Value: True   ## If true, the group performance is shown. Note: this will always be forced to true in-game if 'feedback_show_individual_performances' is false.
-FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE = True     # Suggested Value: False  ## If False, default confidence marking is point-to-click, except when biosemi is connected. Setting this to true forces the scroll interface regardless of a biosemi connection. Mostly for testing purposes.
-SHOW_PYGAME_IF_NONHUMAN_PLAYER = False        # Suggested Value: False
-INIT_NO_OF_CITIES = 2                         # Suggested Value: 2            ## This specifies the number of cities that will be given answers already at the start of each map, before the user starts making decisions
+# RL Execution Settings
+DEBUG = False                                 # Set to False for proper experiment
+DISPLAY_FEEDBACK = True                       # Show feedback after sequences
+DETECT_USER_RESOLUTION = True                 # Auto-detect user resolution
+FALLBACK_RESOLUTION = (1143, 1080)            # Fallback resolution
+INIT_NO_OF_CITIES = 2                         # Initial cities per sequence
 
-INITIAL_SEVERITY_FILE = {  1: 'initial_severity.csv',   # Suggested value
-                           2: 'practice_severity.csv'   # Alternative, used for practice session
-                        }[ 1 ]   # <-- select option here
+INITIAL_SEVERITY_FILE = 'initial_severity.csv'   # Initial severity data file
 
-LIVE_EXPERIMENT = True                    # Suggested Value: False        ## If this is True, it means we are using this on an actual participant, and we will be generating a subject Id and asking about age, gender, etc. If False, we are simply testing, and therefore only test files will be generated.
+LIVE_EXPERIMENT = True                        # RL training session
 
 LOBBY_PLAYERS = 1      # Suggested Value: 4
-LOBBY_TIMEOUT = 300    # Suggested Value: 300  (i.e. 5 minute timeout period)   ## Set amount of time for which lobby will be accepting connections (per client)
+LOBBY_TIMEOUT = 3000    # Suggested Value: 300  (i.e. 5 minute timeout period)   ## Set amount of time for which lobby will be accepting connections (per client)
 
 MAX_ALLOCATABLE_RESOURCES = 10  # Suggested Value: 10
 MAX_INIT_RESOURCES = 6          # Suggested Value: 6
@@ -101,19 +93,15 @@ NUM_MIN_TRIALS = 3              # Suggested Value: 3       ## Minimum number of 
 NUM_PREDEFINED_CITY_COORDS = 25 # Suggested Value: 25      ## For each map, there exists a file containing a collection of 25 possible coordinate-pairs, that have been predefined by hand
 NUM_SEQUENCES = 8               # Suggested Value: 8       ## Number of Sequences (i.e. 'maps') per Block (between 8 and 12 according to spec)
 
-OUTPUT_FILE_PREFIX = 'PES_full_'    # Suggested Value: 'PES_full_'   ## This will be prepended to any output files placed in the 'results' folder
+OUTPUT_FILE_PREFIX = 'PES_'    # Prefix for output files
 
-   ## Select kind of player. Uncomment as needed to choose between 'human', 'ai', or 'playback'. If the type is 'playback', also specify the Subject ID that will be played back.
-PLAYER_TYPE = {  1: 'human'       ,
-                 2: 'ai'          ,
-                 3: 'humanised_ai',
-                 4: 'playback'    ,
+# Player Configuration - Select player type
+PLAYER_TYPE = {  1: 'human',
                  5: 'RL-Agent'
-              }[ 5 ]   # <-- select option here
+              }[ 5 ]   # <-- select option here (1=human, 5=RL-Agent)
 
-PLAYBACK_ID = '001'   # only used during 'playback' mode
 AGENT_NOISE_VARIANCE = 8.0
-AGENT_WAIT = True
+AGENT_WAIT = False  # False to skip pygame delays for RL-Agent
 RANDOM_INITIAL_SEVERITY = False       # Suggested Value: False   ## If False, initial severities are loaded from INITIAL_SEVERITY_FILE
 PANDEMIC_PARAMETER = 0.4              # This gets converted to a severity multiplier and a response multiplier at initialisation
 RESPONSE_TIMEOUT = 10000              # Suggested Value: 10000   ## Delay (in milliseconds) after which it is assumed the user has failed to provide a response.

@@ -1241,7 +1241,7 @@ def provide_user_response( img,   # list of (surface, rect) tuples - XXX is this
                     first_position = event.pos
                     hold_clock.tick()
                     rt_hold = hold_clock.get_time() / 1000.0
-                    evmrk.responsehold()
+                    if BIOSEMI_CONNECTED:   evmrk.responsehold()
                   # Mark that the 'HOLD event' begins -- i.e. mouse button has been pressed, but not released yet.
                     status = 1
 
@@ -1314,7 +1314,7 @@ def provide_user_response( img,   # list of (surface, rect) tuples - XXX is this
                     release_clock.tick()
 
                     rt_release    = release_clock.get_time() / 1000.0
-                    evmrk.responserelease()
+                    if BIOSEMI_CONNECTED:   evmrk.responserelease()
                     status        = 2
                     last_position = event.pos
 
