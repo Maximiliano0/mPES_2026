@@ -849,3 +849,103 @@ python3 -m PES      # ~30+ min, interactivo con pygame
 ```
 
 El RL-Agent usa la **confianza** (entropía normalizada de Q-values) para reflejar qué tan seguro está de su decisión, permitiendo un análisis metacognitivo similar al comportamiento humano pero de forma determinística y escalable.
+
+---
+
+## SECCIÓN ADICIONAL: ENTRENAMIENTO DEL RL-AGENT
+
+### Cómo Entrenar un Nuevo RL-Agent
+
+El sistema PES v2.0 incluye un módulo de entrenamiento completo en `PES/ext/train_rl.py`. Este módulo implementa Q-Learning desde cero.
+
+#### Paso 1: Configurar Parámetros de Entrenamiento
+```python
+# PES/ext/train_rl.py - línea ~50
+NUM_EPISODES = 20000        # Número de episodios de entrenamiento
+LEARNING_RATE = 0.1         # α (alpha)
+DISCOUNT_FACTOR = 0.95      # γ (gamma) - importancia de recompensas futuras
+EXPLORATION_RATE = 0.1      # ε (epsilon) - probabilidad de exploración vs explotación
+```
+
+#### Paso 2: Ejecutar el Entrenamiento
+```bash
+cd /home/mecatronica/Documentos/maximiliano/mPES
+python3 -m PES.ext.train_rl
+```
+
+**Tiempo estimado**: 5-10 minutos (depende de tu máquina)
+
+**Salida esperada**:
+- `PES/inputs/q.npy`: Q-Table entrenada (nuevo archivo)
+- `PES/inputs/rewards.npy`: Historial de recompensas
+- Gráficos de convergencia (si está habilitado)
+
+#### Paso 3: Usar la Q-Table Entrenada
+Una vez entrenada, el archivo `q.npy` se carga automáticamente en `provide_rl_agent_response()`:
+```python
+# Se carga automáticamente
+Q = numpy.load(os.path.join(INPUTS_PATH, 'q.npy'))
+```
+
+No hay necesidad de cambiar el código - el experimento usará la nueva Q-Table automáticamente.
+
+#### Paso 4: Comparar Rendimiento
+Para comparar el rendimiento de diferentes Q-Tables:
+```bash
+# Usar Q-Table actual
+python3 -m PES > experimento_actual.log 2>&1
+
+# Reemplazar inputs/q.npy con versión anterior
+cp inputs/q.npy.backup inputs/q.npy
+python3 -m PES > experimento_anterior.log 2>&1
+
+# Comparar métricas en outputs/
+```
+
+### Monitorización del Entrenamiento
+
+Durante el entrenamiento, el script imprime:
+```
+Episodio 1000/20000 - Recompensa media: 125.43
+Episodio 2000/20000 - Recompensa media: 142.87
+...
+Episodio 20000/20000 - Recompensa media: 185.62
+```
+
+**Señales de buen entrenamiento**:
+- ✅ Recompensa media aumenta gradualmente
+- ✅ Convergencia se alcanza alrededor del episodio 15000+
+- ✅ Q-values son razonables (típicamente 100-200 en casos buenos)
+
+**Señales de problema**:
+- ❌ Recompensa media no aumenta
+- ❌ Valores NaN en Q-Table
+- ❌ Entrenam iento muy lento (> 30 minutos)
+
+### Técnicas de Mejora del Entrenamiento
+
+Si el entrenamiento no converge bien:
+
+1. **Aumentar episodios**:
+   ```python
+   NUM_EPISODES = 50000  # Más oportunidades de aprendizaje
+   ```
+
+2. **Ajustar learning rate**:
+   ```python
+   LEARNING_RATE = 0.05  # Más conservador
+   # o
+   LEARNING_RATE = 0.2   # Más agresivo
+   ```
+
+3. **Modificar exploration**:
+   ```python
+   EXPLORATION_RATE = 0.15  # Más exploración
+   ```
+
+4. **Usar decaimiento de learning rate**:
+   ```python
+   LEARNING_RATE = 0.1 * (0.99 ** episode)  # Disminuye por episodio
+   ```
+
+Ver `PES/ext/train_rl.py` para detalles técnicos completos de la implementación.
