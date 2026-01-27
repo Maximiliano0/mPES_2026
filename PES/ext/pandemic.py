@@ -217,7 +217,7 @@ class Pandemic(Env):
         plt.ylabel('Severity', fontsize=16)
         plt.ylim([0,12])
         plt.title('City severities across trials', fontsize=16)
-        plt.show()
+        plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
         return plt
 
