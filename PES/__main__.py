@@ -85,6 +85,7 @@ from . src import exp_utils
 from . src import lobbyManager
 from . src import log_utils
 from . src import pygameMediator
+from . src import result_formatter
 
 # Import random_severity_generator utility
 from .src.exp_utils import random_severity_generator
@@ -641,7 +642,7 @@ def main():
 
 
                 log_utils.tee(
-                     'Resources remaining: ', resources_left
+                     'Resources remaining: ', int(resources_left) if hasattr(resources_left, 'numpy') else resources_left
                    )
 
 
@@ -930,6 +931,24 @@ def main():
     else:
         log_utils.tee( "\n--- Experiment completed successfully ---\n" )
 
+    # Generate result summary JSON and visualization PNG
+    if PLAYER_TYPE == 'RL-Agent' and len(MyPerformances) > 0:
+        try:
+            # Extract performances from AllPerformances (skip first empty element if present)
+            all_perf_data = [perf_list for perf_list in AllPerformances[1:] if len(perf_list) > 0]
+            if not all_perf_data:
+                all_perf_data = [MyPerformances]
+            
+            json_path, png_path = result_formatter.generate_results_report(
+                MySubjectId,
+                OUTPUTS_PATH,
+                MyPerformances,
+                all_perf_data
+            )
+            log_utils.tee(f"\n✓ Results summary JSON: {json_path}")
+            log_utils.tee(f"✓ Results visualization PNG: {png_path}\n")
+        except Exception as e:
+            log_utils.tee(f"Warning: Could not generate result reports: {str(e)}")
 
 
   # Insert 'successful completion' marker in logfile.

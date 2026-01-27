@@ -179,6 +179,13 @@ def print_settings( **kwargs ):
 
 
 
+def _convert_tensorflow_types(value):
+    """Convert TensorFlow types to native Python types."""
+    if hasattr(value, 'numpy'):  # TensorFlow Variable or Tensor
+        return value.numpy().item() if value.numpy().ndim == 0 else value.numpy()
+    return value
+
+
 def tee( *Strings, **kwargs ):
     """
     Utility to simultaneously print a string to the terminal and also write it
@@ -195,6 +202,8 @@ def tee( *Strings, **kwargs ):
     if 'file'  in kwargs:   kwargs.pop( 'file' )
     if 'flush' in kwargs:   kwargs.pop( 'flush' )
 
+    # Convert TensorFlow types to native Python types
+    Strings = [ _convert_tensorflow_types(Str) for Str in Strings ]
     Strings = [ ANSI.BLUE + str(Str) + ANSI.RESET for Str in Strings ]
 
     ColorlessStrings = []

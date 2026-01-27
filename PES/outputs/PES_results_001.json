@@ -1,0 +1,30 @@
+{
+  "subject_id": "001",
+  "timestamp": "2026-01-27T20:52:37.039174",
+  "statistics": {
+    "overall_mean": 0.8379193838098851,
+    "overall_median": 0.83146243969437,
+    "overall_std": 0.08436022954999442,
+    "overall_min": 0.6321510979854807,
+    "overall_max": 1.0,
+    "total_sequences": 64,
+    "first_block_mean": 0.8432364744399092,
+    "last_block_mean": 0.8410053152570717,
+    "improvement": -0.002231159182837561,
+    "percentile_25": 0.7962270149624496,
+    "percentile_75": 0.9154851037833691,
+    "per_block_statistics": [
+      {
+        "block_number": 1,
+        "mean": 0.8379193838098851,
+        "median": 0.83146243969437,
+        "std": 0.08436022954999442,
+        "min": 0.6321510979854807,
+        "max": 1.0,
+        "num_sequences": 64
+      }
+    ]
+  },
+  "resources": {},
+  "report_type": "PES_Experiment_Results"
+}

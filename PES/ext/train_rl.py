@@ -60,16 +60,16 @@ if __name__=='__main__':
     plt.xlabel('Trial')
     plt.ylabel('Final severity achieved')
     plt.title('Performance on each sequence for a Random Player')
-    #plt.savefig('rewards.pdf')     
-    #plt.close()  
-    plt.show()
+    plt.savefig(os.path.join(INPUTS_PATH, '../outputs/random_player_sequence_performance.png'))
+    plt.close()
 
     fig = plt.figure(figsize=(10,5))
     plt.plot(perfs1)
     plt.ylabel('Normalised final severity performances for a Random Player')
     plt.xlabel('Trial')
     plt.ylim(0,1)
-    plt.show()
+    plt.savefig(os.path.join(INPUTS_PATH, '../outputs/random_player_normalised_performance.png'))
+    plt.close()
 
 
     env = Pandemic()
@@ -93,9 +93,8 @@ if __name__=='__main__':
     plt.xlabel('Episodes')
     plt.ylabel('Average Reward')
     plt.title('RL-Agent to minimize severity: Average Rewards vs Episodes')
-    #plt.savefig('rewards.pdf')     
-    #plt.close()  
-    plt.show()
+    plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_rewards_vs_episodes.png'))
+    plt.close()
 
 
     if (True):
@@ -123,9 +122,8 @@ if __name__=='__main__':
         plt.ylabel('Final severity achieved')
         plt.title('Performance on each sequence')
         plt.legend()
-        #plt.savefig('rewards.pdf')     
-        #plt.close()  
-        plt.show()
+        plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_sequence_performance.png'))
+        plt.close()
 
         fig = plt.figure(figsize=(10,5))
         plt.plot(perfs, 'b', label='RL-Agent')
@@ -135,7 +133,8 @@ if __name__=='__main__':
         plt.xlim(0,64)
         plt.grid()
         plt.legend()
-        plt.show()
+        plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_normalised_performance.png'))
+        plt.close()
 
         cumperfs  = numpy.cumsum(perfs)
 
@@ -148,14 +147,16 @@ if __name__=='__main__':
         plt.legend()
         plt.ylim(0.5,1)
         plt.xlim(0,64)
-        plt.show()
+        plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_cumulative_performance.png'))
+        plt.close()
 
         fig = plt.figure(figsize=(16,4))
         plt.scatter(numpy.asarray(range(len(confsrl))), confsrl)
         plt.title('Reported confidences from the RLAgent')
         plt.ylim(-0.1,1.1)
         plt.xlim(0,360)
-        plt.show()
+        plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_confidences.png'))
+        plt.close()
 
 
         confsrl = numpy.asarray( confsrl, dtype=numpy.float32)
@@ -188,7 +189,8 @@ if __name__=='__main__':
         plt.xlabel('Trials')
         plt.ylim(-0.1,1.1)
         plt.xlim(0,360)
-        plt.show()
+        plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_remapped_confidences.png'))
+        plt.close()
 
         plot_confidences(remapconfrl, 'Remapped Confidences')
 

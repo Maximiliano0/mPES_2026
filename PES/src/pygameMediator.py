@@ -1001,7 +1001,7 @@ def provide_rl_agent_response( img,
 
     if VERBOSE:
         printinfo( 'Resources remaining...' )
-        printcolor( resources_remaining, ANSI.ORANGE )
+        printcolor( int(resources_remaining.numpy()) if hasattr(resources_remaining, 'numpy') else resources_remaining, ANSI.ORANGE )
         print()
 
     SequenceLengthsCsv = os.path.join( INPUTS_PATH, SEQ_LENGTHS_FILE )
@@ -1011,8 +1011,8 @@ def provide_rl_agent_response( img,
     sever = sevs[ session_no * NUM_SEQUENCES + sequence_no ][ trial_no ]
     city_number = trial_no
 
-    print( resources_left )
-    print( city_number )
+    print( int(resources_left.numpy()) if hasattr(resources_left, 'numpy') else resources_left )
+    print( int(city_number.numpy()) if hasattr(city_number, 'numpy') else city_number )
     print( sever )
   # Calculate the response and confidence feeding the NN with noisy inputs, getting the mean and entropy from the responses.
     resp, confidence, rt_hold, rt_release = rl_agent_meta_cognitive(Q[int(resources_left), int(city_number),int(sever)],resources_left,RESPONSE_TIMEOUT)
@@ -1053,7 +1053,7 @@ def provide_agent_response( img,
 
     if VERBOSE:
         printinfo( 'Resources remaining...' )
-        printcolor( resources_remaining, ANSI.ORANGE )
+        printcolor( int(resources_remaining.numpy()) if hasattr(resources_remaining, 'numpy') else resources_remaining, ANSI.ORANGE )
         print()
 
     SequenceLengthsCsv = os.path.join( INPUTS_PATH, SEQ_LENGTHS_FILE )
