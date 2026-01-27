@@ -59,19 +59,11 @@ import tensorflow as tf
 # internal imports
 # ----------------
 
+# ===== VALID IMPORTS FOR RL-AGENT MODE =====
 from .. import ANSI
 from .. import AVAILABLE_RESOURCES_PER_SEQUENCE
-from .. import AVATAR_ICONS_SET
-from .. import BIOSEMI_CONNECTED
-from .. import COLORS
-from .. import CONFIDENCE_TIMEOUT
-from .. import CONFIDENCE_UPDATE_AMOUNT
-from .. import DEBUG_RESOLUTION
-from .. import FALLBACK_RESOLUTION
-from .. import FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE
 from .. import INPUTS_PATH
 from .. import LOBBY_PLAYERS
-from .. import MOVEMENT_REFRESH_RATE
 from .. import MAX_ALLOCATABLE_RESOURCES
 from .. import MIN_ALLOCATABLE_RESOURCES
 from .. import NUM_SEQUENCES
@@ -80,20 +72,33 @@ from .. import OUTPUTS_PATH
 from .. import PLAYER_TYPE
 from .. import RESOURCES_PATH
 from .. import RESPONSE_TIMEOUT
-from .. import TRUST_MAX
 from .. import VERBOSE
 from .. import WHITE, YELLOW, BLACK, DARK_RED, DARK_CYAN, DARK_GREEN, GREEN, RED, GRAY, LIGHTGRAY, LIGHTBLUE
 from .. import SEQ_LENGTHS_FILE
-from .. import SHOW_PYGAME_IF_NONHUMAN_PLAYER
 from .. import AGENT_NOISE_VARIANCE
-from .. import AGENT_WAIT 
+
+# ===== LEGACY GUI VARIABLES - PLACEHOLDER DEFAULTS FOR COMPATIBILITY =====
+# These were removed from CONFIG for RL-Agent-only mode
+# Providing defaults to prevent ImportError if this module is still imported
+AGENT_WAIT = False  # No waiting in RL-Agent mode
+AVATAR_ICONS_SET = 'PlaceholderAvatars'
+BIOSEMI_CONNECTED = False  # No BioSemi equipment in RL-Agent mode
+COLORS = {i: (128, 128, 128) for i in range(11)}  # Default gray
+CONFIDENCE_TIMEOUT = 5000
+CONFIDENCE_UPDATE_AMOUNT = 0.05
+DEBUG_RESOLUTION = (962, 920)
+FALLBACK_RESOLUTION = (1143, 1080)
+FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE = False
+MOVEMENT_REFRESH_RATE = 7
+SHOW_PYGAME_IF_NONHUMAN_PLAYER = False  # No pygame in RL-Agent mode
+TRUST_MAX = 100 
 
 if PLAYER_TYPE == 'playback': from .. import PLAYBACK_ID
 
 from . import exp_utils
 from . import log_utils
 from . import Agent
-from . Agent import agent_meta_cognitive, adjust_response_decay, boltzmann_decay, get_random_confidence 
+from . Agent import agent_meta_cognitive, adjust_response_decay, boltzmann_decay
 from . exp_utils import chain_ops
 from .. import printinfo
 from .. import printcolor
@@ -116,13 +121,23 @@ number_of_trials      = None
 # elsewhere, and are unlikely to require any adjustments, so there is little
 # need to include them in the main CONFIG.py file
 
-MedicImage_filename = os.path.join( RESOURCES_PATH, 'medic.png' )
-Avatar_filenames    = os.listdir( os.path.join( RESOURCES_PATH, 'Avatars', AVATAR_ICONS_SET, 'png' ) )
-Avatar_filenames    = [ os.path.join( RESOURCES_PATH, 'Avatars', AVATAR_ICONS_SET, 'png', Filename ) for Filename in sorted( Avatar_filenames ) ]
+# In RL-Agent mode, GUI resources may not be available, so wrap in try-except
+try:
+    MedicImage_filename = os.path.join( RESOURCES_PATH, 'medic.png' )
+    Avatar_filenames    = os.listdir( os.path.join( RESOURCES_PATH, 'Avatars', AVATAR_ICONS_SET, 'png' ) )
+    Avatar_filenames    = [ os.path.join( RESOURCES_PATH, 'Avatars', AVATAR_ICONS_SET, 'png', Filename ) for Filename in sorted( Avatar_filenames ) ]
 
-MedicImage_pgsurface = pygame.image.load( MedicImage_filename )
-MedicImage_pgsurface = pygame.transform.scale( MedicImage_pgsurface, (16, 16) )
-Avatar_pgsurfaces    = [ pygame.image.load( Filename ) for Filename in Avatar_filenames ]
+    MedicImage_pgsurface = pygame.image.load( MedicImage_filename )
+    MedicImage_pgsurface = pygame.transform.scale( MedicImage_pgsurface, (16, 16) )
+    Avatar_pgsurfaces    = [ pygame.image.load( Filename ) for Filename in Avatar_filenames ]
+except (FileNotFoundError, OSError) as e:
+    # GUI resources not available - acceptable in RL-Agent autonomous mode
+    MedicImage_filename = None
+    Avatar_filenames = []
+    Avatar_pgsurfaces = []
+    MedicImage_pgsurface = None
+    if VERBOSE:
+        printinfo(f"pygameMediator: GUI resources not available ({e}) - continuing in RL-Agent mode")
 
 FONT              = 'ubuntumono'   # previously: Arial
 BACKGROUND_COLOUR = GRAY
@@ -206,11 +221,23 @@ def load_image():
     NOTE: This function does not actually cause pygame to 'load' anything on the display
     """
 
-    img_filenames = chain_ops(
-        os.path.join( RESOURCES_PATH, 'bg_image', '*.png' )
-        , glob.glob
-        , sorted
-    )
+    try:
+        img_filenames = chain_ops(
+            os.path.join( RESOURCES_PATH, 'bg_image', '*.png' )
+            , glob.glob
+            , sorted
+        )
+    except (FileNotFoundError, OSError):
+        # No image resources available - create empty lists for RL-Agent mode
+        if VERBOSE:
+            printinfo("pygameMediator.load_image: No image resources found - continuing in RL-Agent mode")
+        return None, []
+
+    if len(img_filenames) == 0:
+        # No PNG files found - RL-Agent mode without GUI
+        if VERBOSE:
+            printinfo("pygameMediator.load_image: No PNG files found in bg_image directory")
+        return None, []
 
 
     if SHOW_PYGAME:
@@ -992,7 +1019,6 @@ def provide_rl_agent_response( img,
            "The 'first_severity' module-global variable needs to be set by caller before calling this function"
 
     Q = numpy.load(os.path.join( INPUTS_PATH,'q.npy'))
-    rewards = numpy.load(os.path.join( INPUTS_PATH,'rewards.npy'))
 
     if VERBOSE:
         printinfo( "Reading preloaded Q-Table for RL-Agent" )
@@ -1109,7 +1135,7 @@ def provide_agent_response( img,
             resp = numpy.clip( resp,0, resources_left)
 
         if (confidence == 0):
-            confidence = get_random_confidence(3)
+            confidence = (numpy.random.randint(3) + 1) / 10.0
             confidence = numpy.clip( confidence, 0.0, 1.0)
 
         if (resp == 0):

@@ -38,22 +38,14 @@ import getpass
 # ----------------
 
 # Import project variables (provided via __init__)
-from . import AGGREGATION_METHOD
 from . import ALLOCATION_TYPE
 from . import ANSI
 from . import AVAILABLE_RESOURCES_PER_SEQUENCE
-from . import BIOSEMI_CONNECTED
 from . import BLOCK_MODE_INDICES
-from . import CITY_RADIUS_REFLECTS_SEVERITY
 from . import DEBUG
-from . import DEBUG_RESOLUTION
-from . import DETECT_USER_RESOLUTION
-from . import DISPLAY_FEEDBACK
-from . import FALLBACK_RESOLUTION
 from . import INITIAL_SEVERITY_FILE
 from . import INIT_NO_OF_CITIES
 from . import INPUTS_PATH
-from . import LIVE_EXPERIMENT
 from . import MAX_INIT_RESOURCES
 from . import MAX_INIT_SEVERITY
 from . import MIN_INIT_RESOURCES
@@ -64,17 +56,13 @@ from . import NUM_MIN_TRIALS, NUM_MAX_TRIALS
 from . import NUM_PREDEFINED_CITY_COORDS
 from . import NUM_SEQUENCES
 from . import OUTPUTS_PATH, OUTPUT_FILE_PREFIX
-from . import PLAYER_TYPE
 from . import RANDOM_INITIAL_SEVERITY
 from . import RESOURCES_PATH
 from . import SAVE_INITIAL_SEVERITY_TO_FILE
 from . import SAVE_RESULTS
-from . import SHOW_BEFORE_AND_AFTER_MAP
-from . import SHOW_PYGAME_IF_NONHUMAN_PLAYER
 from . import STARTING_BLOCK_INDEX
 from . import STARTING_SEQ_INDEX
 from . import TOTAL_NUM_TRIALS_IN_BLOCK
-from . import TRUST_MAX
 from . import USE_FIXED_BLOCK_SEQUENCES
 from . import VERBOSE
 from . import WHITE, YELLOW, BLACK, DARK_RED, DARK_CYAN, DARK_GREEN, GREEN, RED, GRAY
@@ -82,7 +70,6 @@ from . import WHITE, YELLOW, BLACK, DARK_RED, DARK_CYAN, DARK_GREEN, GREEN, RED,
 # Import internal modules and functions
 from . import printinfo, printstatus
 from . src import exp_utils
-from . src import lobbyManager
 from . src import log_utils
 from . src import pygameMediator
 
@@ -94,10 +81,8 @@ from .src.exp_utils import random_severity_generator
 # Initialization of Module-global variables
 # -----------------------------------------
 
-call_nominated_aggregator = { 'confidence_weighted_median' : exp_utils.get_confidence_weighted_median,
-                              'confidence_weighted_mean'   : exp_utils.get_confidence_weighted_mean,
-                              'confidence_weighted_mode'   : exp_utils.get_confidence_weighted_mode
-                            } [ AGGREGATION_METHOD ]
+# Note: In RL-Agent mode, aggregation is not used (single agent)
+call_nominated_aggregator = None  # Not used in RL-Agent autonomous mode
 
 Responses_filehandle = None
 
@@ -123,48 +108,23 @@ def main():
 
   # Set Subject id automatically in 'minimum three digit' format (e.g. '001')
     MySubjectId = exp_utils.create_subject_id()
-    if  LIVE_EXPERIMENT:   pass
-    else               :   MySubjectId += '_TEST'
+    MySubjectId += '_TEST'  # RL-Agent mode always uses TEST suffix
 
   # Create a log file to tee console output to (see: exp3f.src.log_utils.tee)
     log_utils.create_ConsoleLog_filehandle_singleton( MySubjectId )
 
-  # If BioSemi is used, report MySubjectId and confirm proper initialisation of Actiview before creating a pygame window
-    if BIOSEMI_CONNECTED:   exp_utils.confirm_biosemi_properly_initialised( MySubjectId )
+  # In RL-Agent mode, BioSemi is not connected
+    # No need to initialize BioSemi for autonomous RL training
 
-  # Create the initial window appropriately (skip for RL-Agent to avoid graphics overhead)
-    if PLAYER_TYPE == 'RL-Agent':
-        if VERBOSE:   printinfo( "__main__: Skipping pygame initialization for RL-Agent mode" )
-    else:
-        if DEBUG                   :   pygameMediator.init_pygame_display( DEBUG_RESOLUTION                       )
-        elif DETECT_USER_RESOLUTION:   pygameMediator.init_pygame_display( 'Autodetect'       , Fullscreen = True )
-        else                       :   pygameMediator.init_pygame_display( FALLBACK_RESOLUTION, Fullscreen = True )
-
-      # Set current window title (which is superfluous since we're running fullscreen, but, doesn't hurt either ... )
-        pygameMediator.set_window_title( "BARI - Experiment 3f (full)" )
-
-      # Hide mouse cursor and show user a 'welcome' message
-    #    pygameMediator.hide_mouse_cursor()
-
-        Message = "Welcome.\n" \
-                  "\n" \
-                  "Please click the left mouse button\n" \
-                  "to begin the experiment."
-        pygameMediator.show_message_and_wait( Message, colour = WHITE )
+  # RL-Agent mode: skip pygame window initialization to avoid graphics overhead
+    if VERBOSE:   printinfo( "__main__: Skipping pygame initialization for RL-Agent mode" )
 
 
     # -------------------------------------------------------
     # Single Agent Setup (Lobby removed for single agent)
     # -------------------------------------------------------
 
-    Message = "Setting up experiment.\n" \
-              "\n" \
-              "Please wait ..."
 
-    if PLAYER_TYPE != 'RL-Agent':
-        pygameMediator.show_message_and_wait( Message, colour = WHITE, wait = False )
-
-    if VERBOSE:   printinfo( "__main__: Initializing single agent experiment ... ", end = '', flush = True )
 
     if VERBOSE:   printstatus( 'Done', ANSI.GREEN )
 
@@ -182,10 +142,10 @@ def main():
 
         experiment_date = datetime.date.today().strftime( "%d/%m/%Y" )
 
-      # Inquire the user for age, gender, and handedness.
-        age     = pygameMediator.get_age_from_user()        if LIVE_EXPERIMENT else 'TEST'
-        gender  = pygameMediator.get_gender_from_user()     if LIVE_EXPERIMENT else 'TEST'
-        hand    = pygameMediator.get_handedness_from_user() if LIVE_EXPERIMENT else 'TEST'
+      # For RL-Agent, use default values
+        age     = 'N/A'
+        gender  = 'N/A'
+        hand    = 'N/A'
 
         SubjectInfo_filename   = os.path.join( OUTPUTS_PATH, f'{OUTPUT_FILE_PREFIX}info_{MySubjectId}.txt' )
         SubjectInfo_filehandle = open( SubjectInfo_filename, 'w')
@@ -217,16 +177,6 @@ def main():
     confidence             = {}
     total_movement         = {}
 
-
-    if PLAYER_TYPE != 'RL-Agent':
-        pygame.event.clear()
-
-        pygameMediator         \
-        .show_message_and_wait \
-        ( "Loading Images.\n\nPlease wait",
-          colour = WHITE,
-          wait   = False
-        )
 
     # Always load coordinates, but load_image() will skip pygame rendering for RL-Agent
     images, all_coordinates = pygameMediator.load_image()
@@ -286,31 +236,16 @@ def main():
 
             CoordinateIndicesPerTrial__nestedDict_by_block_and_sequence[ blk ][ seq ] = []
 
-            counter_seq = NUM_ATTEMPTS_TO_ASSIGN_SEQ   # Τhis constant dictates how many attempts at assignment will be
-                                                       # made per sequence (XXX why?). Each attempt overrides the
-                                                       # previous one, unless the same map already exists in the block,
-                                                       # or the default map '0' is selected. If no valid attempts have
-                                                       # occurred after this number of attempts, the default map '0' is
-                                                       # used. Also see explanation below.
+            counter_seq = NUM_ATTEMPTS_TO_ASSIGN_SEQ   # This constant dictates how many attempts at assignment will be
+                                                       # made per sequence. Each attempt overrides the previous one,
+                                                       # unless the same map already exists in the block, or the default
+                                                       # map '0' is selected. If no valid attempts occur, map '0' is used.
 
             numpy.random.seed( 100 + blk )
 
 
-            # XXX Given a pair of 'block, sequence' indices intended to serve as subscripts to the
-            #     'MapIndices__blocks_x_sequences__2darray' array, the while loop below assigns to that subscript a
-            #     random value between 0 and 8, excluding values already present at that row (including 0, which exists
-            #     due to initialization!). The 'counter_seq' variable ensures that at each such subscripts pair, the
-            #     process is performed 8 times, overwriting the previously selected random value each time, unless the
-            #     candidate needs to be excluded as above - however, if all attempts fail after 8 runs, the slot
-            #     defaults to its initialization value of 0. In practice this means that by the end of the containing
-            #     double-for-loop we will create a random permutation of a particular length for each row of the
-            #     MapIndices__blocks_x_sequences__2darray array, which may or may not manage to go through all 9
-            #     available maps, and which is also more likely to result in a 0 value (i.e. choosing the first map in
-            #     the set) the more one moves to the right of the row. It is unclear to me if this is an intentional
-            #     strategy (and if so what is the special significance of over-representing the 1st map of the set as
-            #     one moves further into a block in the context of the experiment), or if it is simply one algorithm to
-            #     obtain a permutation of map-presentations per block. It is also not clear to me why we only choose
-            #     from 9 maps when there are 10 in the set (i.e. maps number 0 to 9 inclusive)
+            # Assign a random map index to each sequence, excluding duplicates within the block.
+            # The process is repeated counter_seq times.
 
             while counter_seq > 0:
 
@@ -360,9 +295,8 @@ def main():
     # ----------------------------
 
 
-  ## Generate initial severity for all 360 trials (i.e. 8 blocks of 45 trials each) in the experiment, taking values
-    # from 2 to 8 (inclusive). XXX Should this be random or from file? In the NN code, the .csv file seems to be used.
-    # For PES_full we have decided to use prescripted configuration for the experiments (check minute 2020-10-06)
+  ## Generate initial severity for all trials in the experiment (values 2-8 inclusive).
+    # Configuration: use prescripted values from CSV file or generate randomly based on RANDOM_INITIAL_SEVERITY flag
 
     InitialSeverityCsv = os.path.join( INPUTS_PATH, INITIAL_SEVERITY_FILE)
 
@@ -377,9 +311,8 @@ def main():
     if VERBOSE: printinfo( f'__main__: Passing {ANSI.ORANGE}first_severity{ANSI.BLUE} to {ANSI.GREEN}pygameMediator{ANSI.BLUE} module' )
     pygameMediator.first_severity = first_severity
 
-  ## Load optimal resource allocation and associated final severity
-    # XXX How are these obtained? Are they relevant in the calculations, or just here for comparison?
-    # These are obtained from the running of the neural network
+  ## Load optimal resource allocation and associated final severity (for reference/comparison)
+    # These values are obtained from neural network training and used for performance benchmarking
     optimal_resources_allocated = numpy.load( os.path.join( INPUTS_PATH, 'optimal_resources.npy' ), allow_pickle = True )
     optimal_final_severity      = numpy.load( os.path.join( INPUTS_PATH, 'optimal_severity.npy'  ), allow_pickle = True )
 
@@ -404,9 +337,10 @@ def main():
 
 
   # Initialise Performance lists
-    MyPerformances  = []
-    AllPerformances = [ [] for i in range( NumPlayers + 1) ]   # XXX Why +1?
-    TrustRatings    = numpy.full( (1, NumPlayers-1), TRUST_MAX )   # A blockindex-by-playerindex array (only other players). Initial value: TRUST_MAX (i.e. full trust)
+    MyPerformances  = []  # Agent performance per sequence
+    AllPerformances = [ [] for i in range( NumPlayers + 1) ]  # Index 0: agent, Index 1: aggregated
+    # TrustRatings not used in RL-Agent single-agent mode
+    TrustRatings    = numpy.full( (1, max(1, NumPlayers-1)), 100 )   # Placeholder for compatibility
 
   # Start experimental blocks
     for CurrentBlockIndex in range( NUM_BLOCKS ):
@@ -459,22 +393,7 @@ def main():
       # Determine whether resources will be shared or not during this block
         ResourcesType = 'will be SHARED among all players!' if exp_utils.AllocationType == 'shared' else 'will NOT be shared among players.'
 
-      # Inform user of time left, and give chance for a short break
-        if PLAYER_TYPE != 'RL-Agent':
-            pygameMediator.show_message_and_wait(
-                                   "\n".join([  EndOfBlock_str,
-                                                " ",
-                                                TimeLeft_str,
-                                                " ",
-                                                "Available resources in this block",
-                                                f"{ResourcesType}",
-                                                " ",
-                                                "Press the LEFT MOUSE BUTTON to start"
-                                             ]),
-                                   colour = WHITE
-                                  )
-
-        if PLAYER_TYPE == 'human' or SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay( 1000 )
+      # Continue to next block without GUI messages
 
 
         CurrentBlockMapIndices = MapIndices__blocks_x_sequences__2darray[ CurrentBlockIndex, : ]
@@ -504,16 +423,8 @@ def main():
                )
 
 
-            ScreenMessage       = ( f"Map Number #{AbsoluteSequenceIndex + 1} / {total_number_of_sequences}\n\n\n"
-                                    f"Press the LEFT MOUSE BUTTON to start.\n\n\n"
-                                    f"(Note: If you need to terminate the\n"
-                                    f"experiment prematurely, press ESC now.)"
-                                  )
-
-            if PLAYER_TYPE != 'RL-Agent':
-                ESC_was_pressed = pygameMediator.show_message_and_wait( ScreenMessage, colour = WHITE )
-            else:
-                ESC_was_pressed = False
+            # Starting sequence without showing message to human
+            ESC_was_pressed = False
 
           # Handle "exit game" requests gracefully
             if ESC_was_pressed:
@@ -533,11 +444,17 @@ def main():
           # Initialise image and coordinate structures
             try:
                 image = images[ int( CurrentSequenceMapIndex ) ]            # A PyGame surface representing a map
-            except TypeError:
-                print( 'Try/Catch: Note - image object set to None due to SHOW_PYGAME_IF_NONHUMAN_PLAYER config option' )
+            except (TypeError, IndexError):
+                print( 'Try/Catch: Note - image object set to None for RL-Agent mode' )
                 image = None
 
-            img_coordinates   = all_coordinates[ int( CurrentSequenceMapIndex ) ]   # Returns a (25, 2) numpy array of coordinates for all potential cities on that map
+            # Handle missing coordinate files in RL-Agent mode (no GUI resources)
+            try:
+                img_coordinates   = all_coordinates[ int( CurrentSequenceMapIndex ) ]   # Returns a (25, 2) numpy array of coordinates for all potential cities on that map
+            except (IndexError, TypeError):
+                # No coordinate files available - generate placeholder coordinates for RL-Agent
+                img_coordinates = numpy.random.rand(25, 2) * 100  # Placeholder coordinates
+                
             nCitiesInSequence = int( NumTrials__blocks_x_sequences__2darray[ CurrentBlockIndex ][ CurrentSequenceIndex ] + INIT_NO_OF_CITIES )
             coordinates       = numpy.empty( (nCitiesInSequence, 2) )
 
@@ -578,32 +495,7 @@ def main():
             resources_left = resources_to_allocate - numpy.sum( ResourceAllocationsAtCurrentlyVisibleCities )   # Note: resources_left: i.e. in this sequence (i.e. as opposed to in block)
                                                                               # Note: resources_to_allocate == AVAILABLE_RESOURCES_PER_SEQUENCE == 49
 
-            if PLAYER_TYPE != 'RL-Agent':
-                pygameMediator.show_message_and_wait( "Initial Locations.\n\n(Do not Respond yet!)",
-                                                      colour = WHITE,
-                                                      wait = False
-                                                    )
-
-                pygame.time.delay( 500 )
-
-              # update pygame screen with current map, severity heatmap and direction arrows
-                pygameMediator.show_images( image,
-                                            init_severity[ : INIT_NO_OF_CITIES ],
-                                            ResourceAllocationsAtCurrentlyVisibleCities    [ : INIT_NO_OF_CITIES ],
-                                            INIT_NO_OF_CITIES,
-                                            coordinates[ : INIT_NO_OF_CITIES, 0 ],
-                                            coordinates[ : INIT_NO_OF_CITIES, 1 ],
-                                            circle_radius,
-                                            direction = []
-                                          )
-
-                if SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay( 3000 )
-
-                ResourcesType = 'SHARED!' if exp_utils.AllocationType == 'shared' else 'NOT shared!'
-                Message = f"Ok, prepare to start!\n\nResources available for allocation: {resources_left}\n\nResources are {ResourcesType}"
-                pygameMediator.show_message_and_wait( Message, colour = WHITE, wait = False )
-
-                if SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay(2000)
+            # Skipping GUI presentation for RL-Agent
 
             SeveritiesOfCurrentlyVisibleCities  = exp_utils.get_updated_severity( INIT_NO_OF_CITIES, ResourceAllocationsAtCurrentlyVisibleCities, init_severity )
             direction = []
@@ -653,28 +545,17 @@ def main():
                 init_severity.append( severity_new_location )   # Severity values of cities on map, before update (used
                                                                 # in the update step).
 
-                ResourceAllocationsAtCurrentlyVisibleCities.append( -1 )   # XXX what does this do?
+                ResourceAllocationsAtCurrentlyVisibleCities.append( -1 )   # Placeholder for compatibility
 
                 circle_radius.append( init_circle_radius )
 
-                if CITY_RADIUS_REFLECTS_SEVERITY:
-                    circle_radius[ -1 ] -= (init_severity[ -1 ] * 1.5)
+                # City radius visualization not used in RL-Agent mode
+                # if CITY_RADIUS_REFLECTS_SEVERITY:
+                #     circle_radius[ -1 ] -= (init_severity[ -1 ] * 1.5)
 
 
-              # Present the stimulus!
-                if PLAYER_TYPE != 'RL-Agent':
-                    new_img = pygameMediator.show_images( image,
-                                                          init_severity,
-                                                          ResourceAllocationsAtCurrentlyVisibleCities,
-                                                          new_locations,
-                                                          coordinates[ : new_locations, 0 ],
-                                                          coordinates[ : new_locations, 1 ],
-                                                          circle_radius,
-                                                          direction = direction,
-                                                          show_arrow = True
-                                                        )
-                else:
-                    new_img = None
+                # Skipping GUI presentation for RL-Agent
+                new_img = None
 
 # NOTE: A seemingly useless delay of 2000ms was removed from here
 # NOTE: A seemingly useless if statement (trial_no < num. trials in sequence) was removed from here
@@ -728,7 +609,7 @@ def main():
 
                 else:   # i.e. resources_left NOT > 0
 
-                    pygameMediator.screen_messages( "You have run out of resources.\nBut, the pandemic continues... ", colour = DARK_RED )
+                    log_utils.tee( "No resources left for allocation." )
 
                     confidence[ CurrentBlockIndex ][ CurrentSequenceIndex ].append( -1 )
 
@@ -736,8 +617,6 @@ def main():
                     hold_response_times   [ CurrentBlockIndex ][ CurrentSequenceIndex ].append(  0  )
                     release_response_times[ CurrentBlockIndex ][ CurrentSequenceIndex ].append(  0  )
                     total_movement        [ CurrentBlockIndex ][ CurrentSequenceIndex ].append( [0] )
-
-                    if PLAYER_TYPE == 'human' or SHOW_PYGAME_IF_NONHUMAN_PLAYER:   pygame.time.delay( 2000 )
 
 
 
@@ -775,13 +654,17 @@ def main():
 
               # Optimal final severity for this sequence
                 optimal_seq_final_severity = optimal_final_severity[AbsoluteSequenceIndex]
-
               # Single agent - only use own message
                 AllPlayerIds = [ MySubjectId ]
                 AllMessages  = [ MyMessage   ]
 
-              # Obtain aggregated allocations/severity per step (note: severity of past cities keep changing!)
-                AggregatedAllocations, AggregatedFinalSeverities = call_nominated_aggregator( AllMessages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount )
+              # In RL-Agent single-agent mode, no aggregation needed
+              # AggregatedAllocations = MyMessage allocations
+                if call_nominated_aggregator is not None:
+                    AggregatedAllocations, AggregatedFinalSeverities = call_nominated_aggregator( AllMessages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount )
+                else:
+                    # Single RL-Agent mode: use direct allocation without aggregation
+                    AggregatedAllocations = MyMessage[ :, 0 ]
 
                 if resources_left > 0:
 
@@ -801,9 +684,7 @@ def main():
 
 
                 resources_left = exp_utils.get_resources_left_given_allocation_type( resources_left, AggregatedAllocations, MyMessage, AllMessages )
-
-                if ShowEndOfTrialFeedback:   pygameMediator.show_end_of_trial_feedback( AllMessages, AggregatedAllocations[-1], AggregatedFinalSeverities[-1], resources_left )
-                if resources_left <= 0   :   ShowEndOfTrialFeedback = False   # Placing this here allows one last feedback screen on the first 0, turning it off afterwards.
+                # Skip feedback screen for RL-Agent
 
 
             #
@@ -812,10 +693,7 @@ def main():
           ## Ok, at this point I need to propagate to all the others my final severity, and get from the others their
             # final severity, so we can compare the performance and show some feedback.
 
-          # Inform player the current map/sequence is over before showing feedback
-            if PLAYER_TYPE != 'RL-Agent':
-                Message = "End of sequence.\n\nPreparing feedback..."
-                pygameMediator.show_message_and_wait( Message, colour = WHITE, wait = False )
+          # Sequence completed, continuing to feedback processing
 
 
           ## Send a message to all other players (contains response, confidence, and final severities).
@@ -841,7 +719,8 @@ def main():
             log_utils.tee()
             log_utils.tee( f'Number of available responses:{len(AllMessages)}')
 
-            if DISPLAY_FEEDBACK:
+            # In RL-Agent mode, always process feedback (no GUI display)
+            if True:  # Was: if DISPLAY_FEEDBACK
 
                 NumTrialsInSequence = int( NumTrialsPerSequence_list[ AbsoluteSequenceIndex ] )
                 StartingIndex = int( sum( NumTrialsPerSequence_list[ : AbsoluteSequenceIndex ] ) )
@@ -866,7 +745,13 @@ def main():
                 count = 1
 
               # Add the aggregated performance.
-                aggregated_allocations, aggregated_final_severity = call_nominated_aggregator( AllMessages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount )
+                if call_nominated_aggregator is not None:
+                    aggregated_allocations, aggregated_final_severity = call_nominated_aggregator( AllMessages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount )
+                else:
+                    # Single RL-Agent mode: compute aggregated performance directly
+                    aggregated_allocations = AllMessages[0][ :, 0 ]  # Use allocations from single agent
+                    aggregated_final_severity = SeveritiesOfCurrentlyVisibleCities  # Use computed severities
+                
                 AggregatedPerformance, *_ = exp_utils.calculate_normalised_final_severity_performance_metric(
                                             aggregated_final_severity,
                                             InitialSeveritiesInSequence
@@ -874,29 +759,11 @@ def main():
 
                 AllPerformances[count].append( AggregatedPerformance )
 
-                print("All Performances:")
-                log_utils.tee( AllPerformances )   # XXX Log against Player Ids
-
               # Plot all the accumulated performance for all the players.
                 StartingAbsoluteSequence = STARTING_BLOCK_INDEX * NUM_SEQUENCES + STARTING_SEQ_INDEX
                 
-                if PLAYER_TYPE != 'RL-Agent':
-                    canvas, raw_data = exp_utils.generate_feedback( numpy.arange( StartingAbsoluteSequence, AbsoluteSequenceIndex + 1 ), AllPerformances, AllMessages, aggregated_allocations, InitialSeveritiesInSequence )
-
-                  # Show a 'before and after' screen, showing the difference between individual and group performance
-                    if SHOW_BEFORE_AND_AFTER_MAP:
-                        pygameMediator.show_before_and_after_map( MyMessage[ :, 2 ], aggregated_final_severity  )
-
-                  # Show normal feedback
-                    FeedbackMsg = "\n".join(
-                                    [ "NOTE: You will be asked to rate\nyour team in the next screen!\n" if AbsoluteSequenceIndex % NUM_SEQUENCES == NUM_SEQUENCES - 1 else "",
-                                      "Press the left mouse button to continue"
-                                    ]   )
-
-                    pygameMediator.show_feedback( canvas, raw_data, FeedbackMsg )
-                else:
-                    # For RL-Agent, print results to console
-                    log_utils.tee( f"Sequence {AbsoluteSequenceIndex}: Performance = {AggregatedPerformance:.4f}" )
+                # For RL-Agent, print results to console
+                log_utils.tee( f"Sequence {AbsoluteSequenceIndex}: Performance = {AggregatedPerformance:.4f}" )
 
             #
             ### END OF `if feedback`
@@ -908,29 +775,20 @@ def main():
         ### END OF `for CurrentSequenceIndex, CurrentSequenceMapIndex in enumerate( CurrentBlockMapIndices )`
 
 
-      # Update TrustRatings (skip for RL-Agent)
-        if PLAYER_TYPE != 'RL-Agent':
-            TrustRatingsInBlock = pygameMediator.ask_player_to_rate_colleagues_using_sliders( TrustRatings[-1,:].tolist() )
-            TrustRatings = numpy.vstack( (TrustRatings, TrustRatingsInBlock) )
-
-        log_utils.tee( "Trust Ratings:\n", TrustRatings )
+      # Skip trust ratings for RL-Agent
+        log_utils.tee( "Trust Ratings: N/A for RL-Agent" )
 
 
     #
     ### END OF `for CurrentBlockIndex in range( NUM_BLOCKS )`
 
 
-  # Also save a numpy array npy file of the movements involved, in case we need these for future analysis
-    if PLAYER_TYPE != 'RL-Agent':
-        pygameMediator.show_message_and_wait(
-                         "Thank you for your participation" \
-                         + '\n' \
-                         + "Press the left mouse button to end",
-                         colour = WHITE  )
-    else:
-        log_utils.tee( "\n--- Experiment completed successfully ---\n" )
+  # Experiment completed
+    log_utils.tee( "\n--- Experiment completed successfully ---\n" )
 
-
+  # Print results summary and generate plots
+    exp_utils.print_experiment_results_summary( MyPerformances, AllPerformances, log_utils )
+    exp_utils.plot_experiment_results( MyPerformances, AllPerformances, OUTPUTS_PATH, MySubjectId, log_utils )
 
   # Insert 'successful completion' marker in logfile.
     exp_utils.exit_experiment_gracefully( Message        = "--- Experiment completed successfully ---",

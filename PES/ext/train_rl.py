@@ -61,15 +61,14 @@ if __name__=='__main__':
     plt.ylabel('Final severity achieved')
     plt.title('Performance on each sequence for a Random Player')
     #plt.savefig('rewards.pdf')     
-    #plt.close()  
-    plt.show()
+    plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
     fig = plt.figure(figsize=(10,5))
     plt.plot(perfs1)
     plt.ylabel('Normalised final severity performances for a Random Player')
     plt.xlabel('Trial')
     plt.ylim(0,1)
-    plt.show()
+    plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
 
     env = Pandemic()
@@ -81,21 +80,28 @@ if __name__=='__main__':
     # Run Q-learning algorithm
     if os.path.isfile(os.path.join( INPUTS_PATH,'q.npy')):
         Q = numpy.load(os.path.join( INPUTS_PATH,'q.npy'))
-        rewards = numpy.load(os.path.join( INPUTS_PATH,'rewards.npy'))
+        # Try to load rewards, but it's optional - only used for visualization
+        rewards_path = os.path.join( INPUTS_PATH,'rewards.npy')
+        if os.path.isfile(rewards_path):
+            rewards = numpy.load(rewards_path)
+        else:
+            rewards = None  # No rewards file, skip visualization
     else:
         rewards, Q, confsrl = QLearning(env, 0.2, 0.9, 0.8, 0, 20000) # 100000000
         numpy.save( os.path.join( INPUTS_PATH,'q.npy'), Q)
         numpy.save( os.path.join( INPUTS_PATH,'rewards.npy'), rewards)
 
 
-    # Plot Rewards
-    plt.plot(100*(numpy.arange(len(rewards)) + 1), rewards)
-    plt.xlabel('Episodes')
-    plt.ylabel('Average Reward')
-    plt.title('RL-Agent to minimize severity: Average Rewards vs Episodes')
-    #plt.savefig('rewards.pdf')     
-    #plt.close()  
-    plt.show()
+    # Plot Rewards (only if available)
+    if rewards is not None:
+        plt.plot(100*(numpy.arange(len(rewards)) + 1), rewards)
+        plt.xlabel('Episodes')
+        plt.ylabel('Average Reward')
+        plt.title('RL-Agent to minimize severity: Average Rewards vs Episodes')
+        #plt.savefig('rewards.pdf')     
+        plt.close()  # Close instead of show (non-GUI RL-Agent mode)
+    else:
+        print("Note: rewards.npy not found - skipping rewards visualization")
 
 
     if (True):
@@ -124,8 +130,7 @@ if __name__=='__main__':
         plt.title('Performance on each sequence')
         plt.legend()
         #plt.savefig('rewards.pdf')     
-        #plt.close()  
-        plt.show()
+        plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
         fig = plt.figure(figsize=(10,5))
         plt.plot(perfs, 'b', label='RL-Agent')
@@ -135,7 +140,7 @@ if __name__=='__main__':
         plt.xlim(0,64)
         plt.grid()
         plt.legend()
-        plt.show()
+        plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
         cumperfs  = numpy.cumsum(perfs)
 
@@ -148,14 +153,14 @@ if __name__=='__main__':
         plt.legend()
         plt.ylim(0.5,1)
         plt.xlim(0,64)
-        plt.show()
+        plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
         fig = plt.figure(figsize=(16,4))
         plt.scatter(numpy.asarray(range(len(confsrl))), confsrl)
         plt.title('Reported confidences from the RLAgent')
         plt.ylim(-0.1,1.1)
         plt.xlim(0,360)
-        plt.show()
+        plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
 
         confsrl = numpy.asarray( confsrl, dtype=numpy.float32)
@@ -188,7 +193,7 @@ if __name__=='__main__':
         plt.xlabel('Trials')
         plt.ylim(-0.1,1.1)
         plt.xlim(0,360)
-        plt.show()
+        plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
         plot_confidences(remapconfrl, 'Remapped Confidences')
 

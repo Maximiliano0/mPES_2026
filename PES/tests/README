@@ -1,4 +1,0 @@
-This folder holds unit tests for the package.
-
-The __main__ module contained here is designed such that tests can be run independently from the package.
-See __main__.py in this folder for details.

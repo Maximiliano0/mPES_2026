@@ -3,7 +3,7 @@ PES - Pandemic Experiment Scenario
 
 Various logging utility functions:
  - create_ConsoleLog_filehandle_singleton
- - get_subject_id   # TODO confirm if necessary
+ - get_subject_id
  - print_settings
  - print_with_colour
  - tee
@@ -87,57 +87,43 @@ def print_settings( **kwargs ):
     #   variable name, variable value, optional default value check
       ( 'PKG_ROOT',                           PKG_ROOT                                                                 ),
       ( 'CONFIG_FILE',                        CONFIG_FILE                                                              ),
-      ( 'AGGREGATION_METHOD',                 AGGREGATION_METHOD                 , 'confidence_weighted_median'        ),
-      ( 'AVAILABLE_RESOURCES_PER_SEQUENCE',   AVAILABLE_RESOURCES_PER_SEQUENCE   , 49                                  ),
-      ( 'AVATAR_ICONS_SET',                   AVATAR_ICONS_SET                   , 'PlaceholderAvatars'                ),
-      ( 'CITY_RADIUS_REFLECTS_SEVERITY',      CITY_RADIUS_REFLECTS_SEVERITY      , False                               ),
-      ( 'COLORS',                             COLORS                                                                   ),
-      ( 'CONFIDENCE_TIMEOUT',                 CONFIDENCE_TIMEOUT                 , 5000                                ),
-      ( 'CONFIDENCE_UPDATE_AMOUNT',           CONFIDENCE_UPDATE_AMOUNT           , 0.05                                ),
+      ( 'ALLOCATION_TYPE',                    ALLOCATION_TYPE                    , 'individual'                        ),
+      ( 'AVAILABLE_RESOURCES_PER_SEQUENCE',   AVAILABLE_RESOURCES_PER_SEQUENCE   , 39                                  ),
       ( 'DEBUG',                              DEBUG                              , False                               ),
-      ( 'DEBUG_RESOLUTION',                   DEBUG_RESOLUTION                   , (762, 720)                          ),
-      ( 'DETECT_USER_RESOLUTION',             DETECT_USER_RESOLUTION             , True                                ),
-      ( 'DISPLAY_FEEDBACK',                   DISPLAY_FEEDBACK                   , True                                ),
-      ( 'FALLBACK_RESOLUTION',                FALLBACK_RESOLUTION                , (1143, 1080)                        ),
-      ( 'FEEDBACK_SHOW_COMBINED_ALLOCATIONS', FEEDBACK_SHOW_COMBINED_ALLOCATIONS , False                               ),
-      ( 'FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE', FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE , False                               ),
       ( 'INIT_NO_OF_CITIES',                  INIT_NO_OF_CITIES                  , 2                                   ),
       ( 'INPUTS_PATH',                        INPUTS_PATH                        , os.path.join( PKG_ROOT, 'inputs' )  ),
-      ( 'LIVE_EXPERIMENT',                    LIVE_EXPERIMENT                    , True                                ),
-      ( 'LOBBY_PLAYERS',                      LOBBY_PLAYERS                      , 4                                   ),
-      ( 'LOBBY_TIMEOUT',                      LOBBY_TIMEOUT                      , 300                                 ),
+      ( 'LOBBY_PLAYERS',                      LOBBY_PLAYERS                      , 1                                   ),
       ( 'MAX_ALLOCATABLE_RESOURCES',          MAX_ALLOCATABLE_RESOURCES          , 10                                  ),
       ( 'MAX_INIT_RESOURCES',                 MAX_INIT_RESOURCES                 , 6                                   ),
       ( 'MAX_INIT_SEVERITY',                  MAX_INIT_SEVERITY                  , 5                                   ),
       ( 'MIN_ALLOCATABLE_RESOURCES',          MIN_ALLOCATABLE_RESOURCES          , 0                                   ),
       ( 'MIN_INIT_RESOURCES',                 MIN_INIT_RESOURCES                 , 3                                   ),
       ( 'MIN_INIT_SEVERITY',                  MIN_INIT_SEVERITY                  , 2                                   ),
-      ( 'MOVEMENT_REFRESH_RATE',              MOVEMENT_REFRESH_RATE              , 7                                   ),
       ( 'NUM_ATTEMPTS_TO_ASSIGN_SEQ',         NUM_ATTEMPTS_TO_ASSIGN_SEQ         , 8                                   ),
       ( 'NUM_BLOCKS',                         NUM_BLOCKS                         , 8                                   ),
       ( 'NUM_MAX_TRIALS',                     NUM_MAX_TRIALS                     , 10                                  ),
       ( 'NUM_MIN_TRIALS',                     NUM_MIN_TRIALS                     , 3                                   ),
       ( 'NUM_PREDEFINED_CITY_COORDS',         NUM_PREDEFINED_CITY_COORDS         , 25                                  ),
       ( 'NUM_SEQUENCES',                      NUM_SEQUENCES                      , 8                                   ),
-      ( 'OUTPUT_FILE_PREFIX',                 OUTPUT_FILE_PREFIX                 , 'PES_full_'                       ),
+      ( 'OUTPUT_FILE_PREFIX',                 OUTPUT_FILE_PREFIX                 , 'PES_'                             ),
       ( 'OUTPUTS_PATH',                       OUTPUTS_PATH                       , os.path.join( PKG_ROOT, 'outputs' ) ),
-      ( 'PLAYER_TYPE',                        PLAYER_TYPE                        , 'human'                             ),
+      ( 'PANDEMIC_PARAMETER',                 PANDEMIC_PARAMETER                 , 0.4                                 ),
+      ( 'PLAYER_TYPE',                        PLAYER_TYPE                        , 'RL-Agent'                          ),
       ( 'PLAYBACK_ID',                        PLAYBACK_ID                                                              ),
       ( 'RANDOM_INITIAL_SEVERITY',            RANDOM_INITIAL_SEVERITY            , False                               ),
       ( 'RESPONSE_TIMEOUT',                   RESPONSE_TIMEOUT                   , 10000                               ),
-      ( 'RESPONSE_MULTIPLIER',                RESPONSE_MULTIPLIER                , 0.2                                 ),
+      ( 'RESPONSE_MULTIPLIER',                RESPONSE_MULTIPLIER                , 0.4                                 ),
       ( 'SAVE_INITIAL_SEVERITY_TO_FILE',      SAVE_INITIAL_SEVERITY_TO_FILE      , False                               ),
       ( 'SAVE_RESULTS',                       SAVE_RESULTS                       , True                                ),
-      ( 'SEVERITY_MULTIPLIER',                SEVERITY_MULTIPLIER                , 1.2                                 ),
-      ( 'SHOW_PYGAME_IF_NONHUMAN_PLAYER',     SHOW_PYGAME_IF_NONHUMAN_PLAYER     , False                               ),
+      ( 'SEVERITY_MULTIPLIER',                SEVERITY_MULTIPLIER                , 1.4                                 ),
       ( 'STARTING_BLOCK_INDEX',               STARTING_BLOCK_INDEX               , 0                                   ),
       ( 'STARTING_SEQ_INDEX',                 STARTING_SEQ_INDEX                 , 0                                   ),
       ( 'TOTAL_NUM_TRIALS_IN_BLOCK',          TOTAL_NUM_TRIALS_IN_BLOCK          , 45                                  ),
       ( 'USE_FIXED_BLOCK_SEQUENCES',          USE_FIXED_BLOCK_SEQUENCES          , True                                ),
       ( 'VERBOSE',                            VERBOSE                            , True                                ),
-      ( 'BIOSEMI_CONNECTED',                  BIOSEMI_CONNECTED                  , False                               ),
       ( 'SEQ_LENGTHS_FILE',                   SEQ_LENGTHS_FILE                   , 'sequence_lengths.csv'              ),
-      ( 'INITIAL_SEVERITY_FILE',              INITIAL_SEVERITY_FILE              , 'initial_severity.csv'              )
+      ( 'INITIAL_SEVERITY_FILE',              INITIAL_SEVERITY_FILE              , 'initial_severity.csv'              ),
+      ( 'AGENT_NOISE_VARIANCE',               AGENT_NOISE_VARIANCE               , 8.0                                 )
     ]
 
 

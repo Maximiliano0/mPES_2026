@@ -1,1 +1,0 @@
-#InitialSeverity, Response, Confidence, PressEvent_seconds, ReleaseEvent_seconds

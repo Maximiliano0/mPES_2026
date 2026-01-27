@@ -264,7 +264,7 @@ def plot_response_times(number_of_trials, sequence_length, PressEvents, ReleaseE
     y_av = movingaverage( ReleaseEvents, 40)
     plt.plot( numpy.arange(1, number_of_trials+1), y_av, color='green')
     #plt.savefig('../../analysis/resource_allocated_per_subj%d.pdf'%subject)
-    plt.show()
+    plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
 
 
@@ -315,7 +315,7 @@ def plot_all_data(number_of_trials, sequence_length, InitialSeverities, Confiden
         vline_res += seq
         plt.vlines(vline_res, -1, 11, color = 'k')
     #plt.savefig('../../analysis/resource_allocated_per_subj%d.pdf'%subject)
-    plt.show()
+    plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
 
 
@@ -342,7 +342,7 @@ def plot_confidences( ConfidencesPerSubject, title, Show=True, ExcludeUnanswered
 
     plt.hist( confidences, bins=val_confidences )
     plt.title( title )
-    if (Show): plt.show()
+    if (Show): plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
     return confidences
 
@@ -359,7 +359,7 @@ def plotconfidence(confidences):
     plt.ylabel('#')
     plt.xlabel('Confidences')
     plt.legend()
-    plt.show()
+    plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
 
 
@@ -403,7 +403,7 @@ def remap(confidences):
     plt.plot(pdf1, f1, 'r', label='Beta to fit')
     plt.plot(pdf2, f2, 'b', label='Real Distribution')
     plt.legend()
-    plt.show()
+    plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
 
     T = numpy.zeros((len(confidences),2))
@@ -468,7 +468,7 @@ def confidence_calibrations():
     ax.set_xlabel('Histogram matching')
 
 
-    plt.show()
+    plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
 
 
@@ -604,7 +604,7 @@ def plot_confidence_calibration_schemes(agent_confidences, title):
     ax.set_xlabel(f'{title}')
     ax.legend()
 
-    plt.show()
+    plt.close()  # Close instead of show (non-GUI RL-Agent mode)
 
 
 
