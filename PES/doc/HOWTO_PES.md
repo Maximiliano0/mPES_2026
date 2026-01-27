@@ -329,7 +329,8 @@ PES/outputs/
 ├─ PES_responses_{SubjectId}.csv      (respuestas por trial)
 ├─ PES_log_{SubjectId}.log            (log de ejecución)
 ├─ PES_performance_plot_{SubjectId}.png    (gráficos de rendimiento)
-└─ PES_performance_stats_{SubjectId}.png   (estadísticas en barras)
+├─ PES_performance_stats_{SubjectId}.png   (estadísticas en barras)
+└─ PES_balance_{SubjectId}.json            (balance de resultados para comparación)
 ```
 
 ### 5.2 Archivo de Respuestas CSV
@@ -365,15 +366,10 @@ Agent Performance Statistics:
   - Median Performance:      0.8420
   - Number of Sequences:     64
 
-Aggregated Performance Statistics:
-  - Mean Performance:        0.8234  (igual en modo single-agent)
-  - Std Deviation:           0.0847
-  - Minimum Performance:     0.5362
-  - Maximum Performance:     1.0000
 ================================================================================
 ```
 
-**Referencia en Código**: `exp_utils.py:640-654`
+**Referencia en Código**: `exp_utils.py:595-617`
 
 #### Gráficos PNG: `plot_experiment_results()`
 
@@ -384,13 +380,42 @@ Aggregated Performance Statistics:
 | (1,1) | Rendimiento a lo largo de secuencias (línea con área sombreada) |
 | (1,2) | Distribución de rendimientos (histograma con media/mediana) |
 | (2,1) | Curva de aprendizaje (media acumulativa) |
-| (2,2) | Comparación Agent vs Agregado (barras lado a lado) |
+| (2,2) | Box plot de distribución de rendimientos |
 
 **Archivo 2: `PES_performance_stats_{SubjectId}.png`** (gráfico de barras)
 
 Muestra estadísticas resumidas (media, std, min, max, mediana) en formato visual.
 
-**Referencia en Código**: `exp_utils.py:505-585`
+**Archivo 3: `PES_balance_{SubjectId}.json`** (exportación de resultados)
+
+Archivo JSON con balance detallado de resultados para comparación con otros modelos:
+```json
+{
+  "subject_id": "RL_AGENT_001",
+  "experiment_metadata": {
+    "total_sequences": 64,
+    "export_timestamp": "2026-01-27T19:06:00+00:00",
+    "start_time": "2026-01-27T19:00:00+00:00",
+    "end_time": "2026-01-27T19:06:00+00:00",
+    "duration_seconds": 360
+  },
+  "performance_statistics": {
+    "mean": 0.8234,
+    "std_deviation": 0.0847,
+    "median": 0.8420,
+    "min": 0.5362,
+    "max": 1.0000,
+    "q25": 0.7654,
+    "q75": 0.8921
+  },
+  "performance_data": {
+    "all_scores": [0.85, 0.92, 0.78, ...],
+    "sequence_count": 64
+  }
+}
+```
+
+**Referencia en Código**: `exp_utils.py:620-680`
 
 ---
 
@@ -579,8 +604,8 @@ EXPERIMENT RESULTS SUMMARY
 
 ## 11. Preguntas Frecuentes
 
-### P: ¿Qué significa "Aggregated Score" en modo single-agent?
-**R**: En modo single-agent, es el mismo que el score del agente, porque solo hay un agente asignando recursos. La arquitectura permite múltiples agentes, pero actualmente solo se usa uno.
+### P: ¿Dónde está el archivo JSON con los resultados?
+**R**: Se genera automáticamente al finalizar el experimento: `PES_balance_{SubjectId}.json`. Contiene todas las estadísticas de rendimiento (media, desviación estándar, percentiles, scores individuales) y puede usarse para comparación directa con otros modelos o agentes.
 
 ### P: ¿Por qué varían los trials por secuencia?
 **R**: Simula ambientes reales donde pandemias afectan diferentes números de ciudades. El rango 3-10 es configurable en CONFIG.py.

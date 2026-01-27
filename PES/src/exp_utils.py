@@ -512,6 +512,81 @@ def toggle_experiment_mode( Mode = 'Solo' ):
         raise ValueError( f"Invalid experiment mode given: {Mode}" )
 
 
+def save_experiment_balance_json( MyPerformances, OutputPath, SubjectId, LogUtils, ExperimentStartTime=None, ExperimentEndTime=None ):
+    """
+    Save experiment results balance to a JSON file for comparison with other models.
+    
+    Parameters:
+    -----------
+    MyPerformances : list
+        List of performance scores for each sequence
+    OutputPath : str
+        Directory where the JSON file will be saved
+    SubjectId : str
+        Subject/Agent identifier
+    LogUtils : object
+        Logger utility for console output
+    ExperimentStartTime : datetime, optional
+        Experiment start time
+    ExperimentEndTime : datetime, optional
+        Experiment end time
+    
+    Returns:
+    --------
+    str : Path to the saved JSON file
+    """
+    import json
+    import datetime
+    
+    if len(MyPerformances) == 0:
+        LogUtils.tee("Warning: No performance data to save")
+        return None
+    
+    my_perf_array = numpy.array(MyPerformances)
+    
+    # Calculate statistics
+    balance_data = {
+        "subject_id": str(SubjectId),
+        "experiment_metadata": {
+            "total_sequences": len(MyPerformances),
+            "export_timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+        },
+        "performance_statistics": {
+            "mean": float(numpy.mean(my_perf_array)),
+            "std_deviation": float(numpy.std(my_perf_array)),
+            "median": float(numpy.median(my_perf_array)),
+            "min": float(numpy.min(my_perf_array)),
+            "max": float(numpy.max(my_perf_array)),
+            "q25": float(numpy.percentile(my_perf_array, 25)),
+            "q75": float(numpy.percentile(my_perf_array, 75)),
+        },
+        "performance_data": {
+            "all_scores": [float(x) for x in MyPerformances],
+            "sequence_count": len(MyPerformances)
+        }
+    }
+    
+    # Add timing information if available
+    if ExperimentStartTime and ExperimentEndTime:
+        duration = (ExperimentEndTime - ExperimentStartTime).total_seconds()
+        balance_data["experiment_metadata"]["start_time"] = ExperimentStartTime.isoformat()
+        balance_data["experiment_metadata"]["end_time"] = ExperimentEndTime.isoformat()
+        balance_data["experiment_metadata"]["duration_seconds"] = duration
+    
+    # Save to JSON file
+    json_filename = os.path.join(OutputPath, f'{OUTPUT_FILE_PREFIX}balance_{SubjectId}.json')
+    
+    try:
+        with open(json_filename, 'w') as f:
+            json.dump(balance_data, f, indent=2)
+        
+        LogUtils.tee(f"Experiment balance saved to: {json_filename}")
+        return json_filename
+    except Exception as e:
+        LogUtils.tee(f"Warning: Could not save balance JSON: {str(e)}")
+        return None
+
+
 def print_experiment_results_summary( MyPerformances, AllPerformances, LogUtils ):
     """
     Print a summary/balance of experiment results including statistics.
@@ -533,15 +608,6 @@ def print_experiment_results_summary( MyPerformances, AllPerformances, LogUtils 
         LogUtils.tee( f"  - Median Performance:      {numpy.median(my_perf_array):.4f}" )
         LogUtils.tee( f"  - Number of Sequences:     {len(MyPerformances)}" )
     
-    if len(AllPerformances) > 1 and len(AllPerformances[1]) > 0:
-        agg_perf_array = numpy.array(AllPerformances[1])
-        LogUtils.tee()
-        LogUtils.tee( f"Aggregated Performance Statistics:" )
-        LogUtils.tee( f"  - Mean Performance:        {numpy.mean(agg_perf_array):.4f}" )
-        LogUtils.tee( f"  - Std Deviation:           {numpy.std(agg_perf_array):.4f}" )
-        LogUtils.tee( f"  - Minimum Performance:     {numpy.min(agg_perf_array):.4f}" )
-        LogUtils.tee( f"  - Maximum Performance:     {numpy.max(agg_perf_array):.4f}" )
-    
     LogUtils.tee( "=" * 80 )
     LogUtils.tee()
 
@@ -554,7 +620,7 @@ def plot_experiment_results( MyPerformances, AllPerformances, OutputPath, Subjec
     import matplotlib.pyplot as plt
     
     try:
-        # Create figure with subplots
+        # Create figure with subplots (now 2x2 with agent-only focus)
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         fig.suptitle(f'Experiment Results - Subject {SubjectId}', fontsize=16, fontweight='bold')
         
@@ -593,16 +659,16 @@ def plot_experiment_results( MyPerformances, AllPerformances, OutputPath, Subjec
             ax.grid(True, alpha=0.3)
             ax.set_ylim([0, 1.05])
         
-        # Plot 4: Agent vs Aggregated Performance
-        if len(MyPerformances) > 0 and len(AllPerformances) > 1 and len(AllPerformances[1]) > 0:
+        # Plot 4: Box plot of Performance Distribution
+        if len(MyPerformances) > 0:
             ax = axes[1, 1]
-            ax.plot(MyPerformances, 'b-o', linewidth=2, markersize=4, label='Agent Performance')
-            ax.plot(AllPerformances[1], 'r-s', linewidth=2, markersize=4, label='Aggregated Performance')
-            ax.set_xlabel('Sequence Number')
+            box_data = [MyPerformances]
+            bp = ax.boxplot(box_data, labels=['Agent'], patch_artist=True)
+            for patch in bp['boxes']:
+                patch.set_facecolor('#87CEEB')
             ax.set_ylabel('Performance Score')
-            ax.set_title('Agent vs Aggregated Performance')
-            ax.legend()
-            ax.grid(True, alpha=0.3)
+            ax.set_title('Performance Box Plot')
+            ax.grid(True, alpha=0.3, axis='y')
             ax.set_ylim([0, 1.05])
         
         plt.tight_layout()

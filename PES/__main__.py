@@ -784,11 +784,15 @@ def main():
 
 
   # Experiment completed
+    ExperimentEndTime = datetime.datetime.now( tz = datetime.timezone.utc )
     log_utils.tee( "\n--- Experiment completed successfully ---\n" )
 
   # Print results summary and generate plots
     exp_utils.print_experiment_results_summary( MyPerformances, AllPerformances, log_utils )
     exp_utils.plot_experiment_results( MyPerformances, AllPerformances, OUTPUTS_PATH, MySubjectId, log_utils )
+    
+  # Save experiment balance to JSON for model comparison
+    exp_utils.save_experiment_balance_json( MyPerformances, OUTPUTS_PATH, MySubjectId, log_utils, ExperimentStartTime, ExperimentEndTime )
 
   # Insert 'successful completion' marker in logfile.
     exp_utils.exit_experiment_gracefully( Message        = "--- Experiment completed successfully ---",
