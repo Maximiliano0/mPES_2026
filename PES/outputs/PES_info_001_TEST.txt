@@ -1,2 +1,0 @@
-#Age, Gender, Handedness, ExperimentDate
-  84,      M,          L,     27/01/2026
