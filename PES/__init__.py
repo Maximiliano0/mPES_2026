@@ -1,50 +1,18 @@
-# Package initialisation file.
-#
-# This file's role is to grab the relevant configuration preferences from
-# /config/CONFIG.py and initialise the package.
-#
-# Do not add variables here that would be considered configuration parameters;
-# only use this file to load the relevant configuration preferences from the
-# CONFIG.py file, and to make them available to the other modules.
-
-# To actually add/edit configuration options, edit the /config/CONFIG.py file
-# directly (using normal python syntax), and then import / export here as
-# needed.
-
-
-
-#################################################################
-### Initial imports and sanity checks required for initialization
-#################################################################
+#####################################################################
+### Initial imports and sanity checks required for initialization ###
+#####################################################################
 
 import os
 import sys
 import numpy
-import importlib
+from config import CONFIG
 
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-import pygame
+# Relevant directories and files paths
+PKG_ROOT    = os.path.dirname( os.path.abspath( __file__ ) )
 
-# Check if --config was specified. If not, load the default CONFIG.py file.
-if '--config' in sys.argv:
-    ConfigParam  = sys.argv[ sys.argv.index( '--config' ) + 1 ]
-    ConfigPath   = os.path.abspath( os.path.dirname( ConfigParam ) )
-    ConfigModule = os.path.basename( ConfigParam )
-    assert ConfigModule.endswith('py'), "The specified config file needs to be a valid python module"
-    ConfigModule = ConfigModule[ : -3 ]
-    sys.path.append( ConfigPath )
-    CONFIG = importlib.import_module( ConfigModule )
-else:
-    from . config import CONFIG
-
-
-# Detect package directory, and use to create standard paths relative to package
-# root.
-
-PKG_ROOT           = os.path.abspath( os.path.dirname(  __file__ ) )
-CONFIG_FILE        = CONFIG.__file__
 DOCUMENTATION_PATH = os.path.join( PKG_ROOT, 'doc' )
-RESOURCES_PATH     = os.path.join( PKG_ROOT, 'res' )
+OUTPUTS_PATH      = os.path.join( PKG_ROOT, 'outputs' )
+INPUTS_PATH       = os.path.join( PKG_ROOT, 'inputs' )
 
 # ANSI colour escape codes (for use in logging/debug messages)
 class ANSI:
@@ -57,10 +25,7 @@ class ANSI:
     RESET  = '\033[0m'
 
 
-# Check that we are running in the context of a python virtual env, to ensure
-# consistency/reproducibility between runs, in terms of what python
-# packages/versions are installed and used in the experiment.
-
+# Suggest virtual-environment usage if none detected
 if not os.getenv( 'VIRTUAL_ENV' ):
     print(
 f"""{ANSI.PURPLE}
@@ -79,44 +44,19 @@ Press ENTER if you'd like to continue regardless (or Ctrl-C to abort).
     except KeyboardInterrupt: print( '\n\nExiting...' ); exit()
 
 
+#######################################
+### Process selected CONFIG.py file ###
+#######################################
 
-###################################
-### Process selected CONFIG.py file
-###################################
-
-# Import all configuration constants for RL execution
-AGGREGATION_METHOD                          = CONFIG.AGGREGATION_METHOD
-ALLOCATION_TYPE                             = CONFIG.ALLOCATION_TYPE
 AVAILABLE_RESOURCES_PER_SEQUENCE            = CONFIG.AVAILABLE_RESOURCES_PER_SEQUENCE
-AVATAR_ICONS_SET                            = 'PlaceholderAvatars'  # RL-Agent uses placeholder
-BIOSEMI_CONNECTED                           = False  # Not used in RL mode
-BLOCK_MODE_INDICES                          = CONFIG.BLOCK_MODE_INDICES
-CITY_RADIUS_REFLECTS_SEVERITY               = CONFIG.CITY_RADIUS_REFLECTS_SEVERITY
-COLORS                                      = CONFIG.COLORS
-CONFIDENCE_TIMEOUT                          = CONFIG.CONFIDENCE_TIMEOUT
-CONFIDENCE_UPDATE_AMOUNT                    = CONFIG.CONFIDENCE_UPDATE_AMOUNT
-DEBUG                                       = CONFIG.DEBUG
-DEBUG_RESOLUTION                            = (962, 920)  # Default for RL-Agent
-DETECT_USER_RESOLUTION                      = CONFIG.DETECT_USER_RESOLUTION
-DISPLAY_FEEDBACK                            = CONFIG.DISPLAY_FEEDBACK
-FALLBACK_RESOLUTION                         = CONFIG.FALLBACK_RESOLUTION
-FEEDBACK_SHOW_COMBINED_ALLOCATIONS          = False  # RL-Agent specific
-FEEDBACK_SHOW_INDIVIDUAL_PERFORMANCES       = True   # RL-Agent specific
-FEEDBACK_SHOW_GROUP_PERFORMANCE             = False  # RL-Agent specific
-FORCE_MOUSEWHEEL_SCROLL_CONFIDENCE          = True   # RL-Agent specific
 INIT_NO_OF_CITIES                           = CONFIG.INIT_NO_OF_CITIES
 INITIAL_SEVERITY_FILE                       = CONFIG.INITIAL_SEVERITY_FILE
-INPUTS_PATH                                 = CONFIG.get_INPUTS_PATH( PKG_ROOT )
-LIVE_EXPERIMENT                             = CONFIG.LIVE_EXPERIMENT
-LOBBY_PLAYERS                               = 1  # Single agent only
-LOBBY_TIMEOUT                               = 300  # Not used in single agent
 MAX_ALLOCATABLE_RESOURCES                   = CONFIG.MAX_ALLOCATABLE_RESOURCES
 MAX_INIT_RESOURCES                          = CONFIG.MAX_INIT_RESOURCES
 MAX_INIT_SEVERITY                           = CONFIG.MAX_INIT_SEVERITY
 MIN_ALLOCATABLE_RESOURCES                   = CONFIG.MIN_ALLOCATABLE_RESOURCES
 MIN_INIT_RESOURCES                          = CONFIG.MIN_INIT_RESOURCES
 MIN_INIT_SEVERITY                           = CONFIG.MIN_INIT_SEVERITY
-MOVEMENT_REFRESH_RATE                       = CONFIG.MOVEMENT_REFRESH_RATE
 NUM_ATTEMPTS_TO_ASSIGN_SEQ                  = CONFIG.NUM_ATTEMPTS_TO_ASSIGN_SEQ
 NUM_BLOCKS                                  = CONFIG.NUM_BLOCKS
 NUM_MAX_TRIALS                              = CONFIG.NUM_MAX_TRIALS
@@ -124,71 +64,22 @@ NUM_MIN_TRIALS                              = CONFIG.NUM_MIN_TRIALS
 NUM_PREDEFINED_CITY_COORDS                  = CONFIG.NUM_PREDEFINED_CITY_COORDS
 NUM_SEQUENCES                               = CONFIG.NUM_SEQUENCES
 OUTPUT_FILE_PREFIX                          = CONFIG.OUTPUT_FILE_PREFIX
-OUTPUTS_PATH                                = CONFIG.get_OUTPUTS_PATH( PKG_ROOT )
 PANDEMIC_PARAMETER                          = CONFIG.PANDEMIC_PARAMETER
 PLAYER_TYPE                                 = CONFIG.PLAYER_TYPE
-RANDOM_INITIAL_SEVERITY                     = CONFIG.RANDOM_INITIAL_SEVERITY
-RESOURCES_PATH                              = CONFIG.get_OUTPUTS_PATH( PKG_ROOT ).replace('outputs', 'res')  # Path to resources
-RESPONSE_TIMEOUT                            = CONFIG.RESPONSE_TIMEOUT
-SAVE_INITIAL_SEVERITY_TO_FILE               = CONFIG.SAVE_INITIAL_SEVERITY_TO_FILE
 SAVE_RESULTS                                = CONFIG.SAVE_RESULTS
-SHOW_BEFORE_AND_AFTER_MAP                   = CONFIG.SHOW_BEFORE_AND_AFTER_MAP
-SHOW_PYGAME_IF_NONHUMAN_PLAYER              = False  # Don't show pygame for RL-Agent (to avoid graphics overhead)
-SEQ_LENGTHS_FILE                            = CONFIG.SEQ_LENGTHS_FILE
 STARTING_BLOCK_INDEX                        = CONFIG.STARTING_BLOCK_INDEX
 STARTING_SEQ_INDEX                          = CONFIG.STARTING_SEQ_INDEX
 TOTAL_NUM_TRIALS_IN_BLOCK                   = CONFIG.TOTAL_NUM_TRIALS_IN_BLOCK
 TRUST_MAX                                   = CONFIG.TRUST_MAX
 USE_FIXED_BLOCK_SEQUENCES                   = CONFIG.USE_FIXED_BLOCK_SEQUENCES
 VERBOSE                                     = CONFIG.VERBOSE
-AGENT_NOISE_VARIANCE                        = CONFIG.AGENT_NOISE_VARIANCE
-AGENT_WAIT                                  = CONFIG.AGENT_WAIT
 
-
-##########################################
-### Process imported configuration options
-##########################################
-
-PLAYBACK_ID = 'N/A'
-
-RESPONSE_MULTIPLIER = PANDEMIC_PARAMETER
-SEVERITY_MULTIPLIER = 1 + PANDEMIC_PARAMETER
-
-
-
-##################################################################
-### Continue with non-configuration-related package initialization
-##################################################################
-
-# Let's define some some quick utility functions for logging purposes
-def printcolor ( Str, AnsiColor, *args, **kwargs ):   print( f"{AnsiColor}{Str}{ANSI.RESET}", *args, **kwargs )
-def printstatus( Str, AnsiColor, *args, **kwargs ):   print( f"{AnsiColor}[{ANSI.RESET}{Str}{AnsiColor}]{ANSI.RESET}", *args, **kwargs )
-def printinfo ( Str, *args, **kwargs )            :   printcolor( Str , ANSI.BLUE, *args, **kwargs )
-def printconfig( Varname, Var, SuggestedValue = None )   :
-    if SuggestedValue is None or Var == SuggestedValue:
-        printinfo( f"__init__: Setting { Varname } to { ANSI.ORANGE }{ Var }" )
-    else:
-        printinfo( f"__init__: Setting { Varname } to { ANSI.BOLD + ANSI.RED }{ Var }{ ANSI.RESET } (Suggested: {SuggestedValue})" )
-
-printinfo( "\n--- Initializing experiment ---\n" )
-
-# Import package documentation (to avoid having to dump it all on the top of this file instead). You could follow a
-# similar strategy in other modules if they are to contain significant documentation that would clutter the sources.
-PkgDoc = os.path.join( DOCUMENTATION_PATH, 'PES.__doc__' )
-with open( PkgDoc, 'r' ) as f:   __doc__ = f.read()
-
-# RGB tuples of frequently used colours
-WHITE      = (255, 255, 255)
-YELLOW     = (255, 255,   0)
-BLACK      = (  0,   0,   0)
-DARK_RED   = (128,   0,   0)
-DARK_CYAN  = (  0, 128, 128)
-DARK_GREEN = (  0, 128,   0)
-GREEN      = (  0, 255,   0)
-RED        = (255,   0,   0)
-GRAY       = ( 50,  50,  50)
-LIGHTGRAY  = (180, 180, 180)
-LIGHTBLUE  = (210, 220, 255)
+##############################################
+### Process imported configuration options ###
+##############################################
+# sev_n = * β * sev_(n-1) - α * a  --> a is allocated resources, sev is severity
+RESPONSE_MULTIPLIER = PANDEMIC_PARAMETER # α (Alpha)
+SEVERITY_MULTIPLIER = 1 + PANDEMIC_PARAMETER # β (Beta)
 
 # The experiment uses tensorflow, which has a nasty habit of dumping lots of
 # warning messages for missing nvidia libraries etc. The following environmental
