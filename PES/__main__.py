@@ -4,10 +4,9 @@ whole package at a high-level, delegating implementation details to the package'
 manner.
 """
 
-
-# -------------------------------------------------------
-# Ensure we're running in package mode before proceeding!
-# -------------------------------------------------------
+##############################################################
+## Ensure we're running in package mode before proceeding!  ##
+##############################################################
 
 assert len( __package__ ) > 0, """
 
@@ -18,46 +17,27 @@ Usage: python3 -m <packagename>
 
 """
 
-
-# ----------------
-# external imports
-# ----------------
-
+######################
+## External Imports ##
+######################
 import os
-import pygame
-import socket
-import datetime
 import numpy
-import pickle
-import sys
-import getpass
+import datetime
 
-
-# ----------------
-# internal imports
-# ----------------
-
-# Import project variables (provided via __init__)
-from . import AGGREGATION_METHOD
-from . import ALLOCATION_TYPE
+######################
+## Internal Imports ##
+######################
 from . import ANSI
 from . import AVAILABLE_RESOURCES_PER_SEQUENCE
-from . import BIOSEMI_CONNECTED
-from . import BLOCK_MODE_INDICES
-from . import CITY_RADIUS_REFLECTS_SEVERITY
-from . import DEBUG
-from . import DEBUG_RESOLUTION
-from . import DETECT_USER_RESOLUTION
-from . import DISPLAY_FEEDBACK
-from . import FALLBACK_RESOLUTION
 from . import INITIAL_SEVERITY_FILE
 from . import INIT_NO_OF_CITIES
 from . import INPUTS_PATH
-from . import LIVE_EXPERIMENT
 from . import MAX_INIT_RESOURCES
 from . import MAX_INIT_SEVERITY
+from . import MAX_ALLOCATABLE_RESOURCES
 from . import MIN_INIT_RESOURCES
 from . import MIN_INIT_SEVERITY
+from . import MIN_ALLOCATABLE_RESOURCES
 from . import NUM_ATTEMPTS_TO_ASSIGN_SEQ
 from . import NUM_BLOCKS
 from . import NUM_MIN_TRIALS, NUM_MAX_TRIALS
@@ -65,172 +45,93 @@ from . import NUM_PREDEFINED_CITY_COORDS
 from . import NUM_SEQUENCES
 from . import OUTPUTS_PATH, OUTPUT_FILE_PREFIX
 from . import PLAYER_TYPE
-from . import RANDOM_INITIAL_SEVERITY
-from . import RESOURCES_PATH
-from . import SAVE_INITIAL_SEVERITY_TO_FILE
 from . import SAVE_RESULTS
-from . import SHOW_BEFORE_AND_AFTER_MAP
-from . import SHOW_PYGAME_IF_NONHUMAN_PLAYER
 from . import STARTING_BLOCK_INDEX
 from . import STARTING_SEQ_INDEX
 from . import TOTAL_NUM_TRIALS_IN_BLOCK
 from . import TRUST_MAX
 from . import USE_FIXED_BLOCK_SEQUENCES
 from . import VERBOSE
-from . import WHITE, YELLOW, BLACK, DARK_RED, DARK_CYAN, DARK_GREEN, GREEN, RED, GRAY
 
-# Import internal modules and functions
-from . import printinfo, printstatus
 from . src import exp_utils
-from . src import lobbyManager
 from . src import log_utils
 from . src import pygameMediator
 from . src import result_formatter
 
-# Import random_severity_generator utility
-from .src.exp_utils import random_severity_generator
-
-
-# -----------------------------------------
-# Initialization of Module-global variables
-# -----------------------------------------
-
-call_nominated_aggregator = { 'confidence_weighted_median' : exp_utils.get_confidence_weighted_median,
-                              'confidence_weighted_mean'   : exp_utils.get_confidence_weighted_mean,
-                              'confidence_weighted_mode'   : exp_utils.get_confidence_weighted_mode
-                            } [ AGGREGATION_METHOD ]
-
+#################################################
+##  Initialization of Module-global variables  ##
+#################################################
 Responses_filehandle = None
-
 Starting_sequence_cumulative_index = STARTING_BLOCK_INDEX * NUM_SEQUENCES + STARTING_SEQ_INDEX
 
-
-
-########
-### Main
-########
-
+###################################
+##             Main             ###
+###################################
 def main():
-    printinfo( "--- Entering main execution block ---\n" )
+  
+  print( "--- Entering main execution block ---\n" )
 
-    global Responses_filehandle
+  global Responses_filehandle
 
-    init_circle_radius  = 20
+  # --------------------------------- #
+  #       Single Agent Setup          #
+  # --------------------------------- #
+  if SAVE_RESULTS:
 
+    experiment_date = datetime.date.today().strftime( "%d/%m/%Y" )
 
-    # -----------------------------------
-    # Initialise experimental environment
-    # -----------------------------------
+    MySubjectId = f"{experiment_date}_{PLAYER_TYPE}"
+    
+    SubjectInfo_filename   = os.path.join( OUTPUTS_PATH, f'{OUTPUT_FILE_PREFIX}_{MySubjectId}.txt' )
+    SubjectInfo_filehandle = open( SubjectInfo_filename, 'w')
+    
+    # Write experiment configuration parameters
+    SubjectInfo_filehandle.write( "=" * 80 + "\n" )
+    SubjectInfo_filehandle.write( "EXPERIMENT CONFIGURATION PARAMETERS\n" )
+    SubjectInfo_filehandle.write( "=" * 80 + "\n\n" )
+    
+    SubjectInfo_filehandle.write( f"{'Variable Name':<45} {'Value':<35}\n" )
+    SubjectInfo_filehandle.write( "-" * 80 + "\n" )
+    
+    SubjectInfo_filehandle.write( f"{'AVAILABLE_RESOURCES_PER_SEQUENCE':<45} {AVAILABLE_RESOURCES_PER_SEQUENCE}\n" )
+    SubjectInfo_filehandle.write( f"{'INIT_NO_OF_CITIES':<45} {INIT_NO_OF_CITIES}\n" )
+    SubjectInfo_filehandle.write( f"{'INITIAL_SEVERITY_FILE':<45} {INITIAL_SEVERITY_FILE}\n" )
+    SubjectInfo_filehandle.write( f"{'MAX_ALLOCATABLE_RESOURCES':<45} {MAX_ALLOCATABLE_RESOURCES}\n" )
+    SubjectInfo_filehandle.write( f"{'MAX_INIT_RESOURCES':<45} {MAX_INIT_RESOURCES}\n" )
+    SubjectInfo_filehandle.write( f"{'MAX_INIT_SEVERITY':<45} {MAX_INIT_SEVERITY}\n" )
+    SubjectInfo_filehandle.write( f"{'MIN_ALLOCATABLE_RESOURCES':<45} {MIN_ALLOCATABLE_RESOURCES}\n" )
+    SubjectInfo_filehandle.write( f"{'MIN_INIT_RESOURCES':<45} {MIN_INIT_RESOURCES}\n" )
+    SubjectInfo_filehandle.write( f"{'MIN_INIT_SEVERITY':<45} {MIN_INIT_SEVERITY}\n" )
+    SubjectInfo_filehandle.write( f"{'NUM_ATTEMPTS_TO_ASSIGN_SEQ':<45} {NUM_ATTEMPTS_TO_ASSIGN_SEQ}\n" )
+    SubjectInfo_filehandle.write( f"{'NUM_BLOCKS':<45} {NUM_BLOCKS}\n" )
+    SubjectInfo_filehandle.write( f"{'NUM_MIN_TRIALS':<45} {NUM_MIN_TRIALS}\n" )
+    SubjectInfo_filehandle.write( f"{'NUM_MAX_TRIALS':<45} {NUM_MAX_TRIALS}\n" )
+    SubjectInfo_filehandle.write( f"{'NUM_SEQUENCES':<45} {NUM_SEQUENCES}\n" )
+    SubjectInfo_filehandle.write( f"{'PLAYER_TYPE':<45} {PLAYER_TYPE}\n" )
+    SubjectInfo_filehandle.write( f"{'STARTING_BLOCK_INDEX':<45} {STARTING_BLOCK_INDEX}\n" )
+    SubjectInfo_filehandle.write( f"{'STARTING_SEQ_INDEX':<45} {STARTING_SEQ_INDEX}\n" )
+    SubjectInfo_filehandle.write( f"{'TOTAL_NUM_TRIALS_IN_BLOCK':<45} {TOTAL_NUM_TRIALS_IN_BLOCK}\n" )
+    SubjectInfo_filehandle.write( f"{'TRUST_MAX':<45} {TRUST_MAX}\n" )
+    SubjectInfo_filehandle.write( f"{'USE_FIXED_BLOCK_SEQUENCES':<45} {USE_FIXED_BLOCK_SEQUENCES}\n" )
+    SubjectInfo_filehandle.write( "\n" + "=" * 80 + "\n" )
+    
+    SubjectInfo_filehandle.close()
 
-  # Set Subject id automatically in 'minimum three digit' format (e.g. '001')
-    MySubjectId = exp_utils.create_subject_id()
-    if  LIVE_EXPERIMENT:   pass
-    else               :   MySubjectId += '_TEST'
+    Responses_filename = os.path.join(
+         OUTPUTS_PATH,
+         f'{OUTPUT_FILE_PREFIX}responses_{ MySubjectId }.txt'
+    )
 
-  # Create a log file to tee console output to (see: exp3f.src.log_utils.tee)
-    log_utils.create_ConsoleLog_filehandle_singleton( MySubjectId )
+    Responses_filehandle = open( Responses_filename, 'w' )
 
-  # If BioSemi is used, report MySubjectId and confirm proper initialisation of Actiview before creating a pygame window
-    if BIOSEMI_CONNECTED:   exp_utils.confirm_biosemi_properly_initialised( MySubjectId )
-
-  # Create the initial window appropriately (skip for RL-Agent to avoid graphics overhead)
-    if PLAYER_TYPE == 'RL-Agent':
-        if VERBOSE:   printinfo( "__main__: Skipping pygame initialization for RL-Agent mode" )
-    else:
-        if DEBUG                   :   pygameMediator.init_pygame_display( DEBUG_RESOLUTION                       )
-        elif DETECT_USER_RESOLUTION:   pygameMediator.init_pygame_display( 'Autodetect'       , Fullscreen = True )
-        else                       :   pygameMediator.init_pygame_display( FALLBACK_RESOLUTION, Fullscreen = True )
-
-      # Set current window title (which is superfluous since we're running fullscreen, but, doesn't hurt either ... )
-        pygameMediator.set_window_title( "BARI - Experiment 3f (full)" )
-
-      # Hide mouse cursor and show user a 'welcome' message
-    #    pygameMediator.hide_mouse_cursor()
-
-        Message = "Welcome.\n" \
-                  "\n" \
-                  "Please click the left mouse button\n" \
-                  "to begin the experiment."
-        pygameMediator.show_message_and_wait( Message, colour = WHITE )
-
-
-    # -------------------------------------------------------
-    # Single Agent Setup (Lobby removed for single agent)
-    # -------------------------------------------------------
-
-    Message = "Setting up experiment.\n" \
-              "\n" \
-              "Please wait ..."
-
-    if PLAYER_TYPE != 'RL-Agent':
-        pygameMediator.show_message_and_wait( Message, colour = WHITE, wait = False )
-
-    if VERBOSE:   printinfo( "__main__: Initializing single agent experiment ... ", end = '', flush = True )
-
-    if VERBOSE:   printstatus( 'Done', ANSI.GREEN )
-
-    if VERBOSE:   printinfo( "__main__: Active player:" )
-    log_utils.tee( f'{ANSI.ORANGE} - Player {MySubjectId}{ANSI.RESET} <-- active player' )
-
-    NumPlayers = 1
-
-
-    # ------------------------------------
-    # Save experimental parameters to file
-    # ------------------------------------
-
-    if SAVE_RESULTS:
-
-        experiment_date = datetime.date.today().strftime( "%d/%m/%Y" )
-
-      # Inquire the user for age, gender, and handedness.
-        age     = pygameMediator.get_age_from_user()        if LIVE_EXPERIMENT else 'TEST'
-        gender  = pygameMediator.get_gender_from_user()     if LIVE_EXPERIMENT else 'TEST'
-        hand    = pygameMediator.get_handedness_from_user() if LIVE_EXPERIMENT else 'TEST'
-
-        SubjectInfo_filename   = os.path.join( OUTPUTS_PATH, f'{OUTPUT_FILE_PREFIX}info_{MySubjectId}.txt' )
-        SubjectInfo_filehandle = open( SubjectInfo_filename, 'w')
-
-        SubjectInfo_filehandle.write(  '#Age, Gender, Handedness, ExperimentDate\n')
-        SubjectInfo_filehandle.write( f'{age:>4}, {gender:>6}, {hand:>10}, {experiment_date:>14}\n' )
-        SubjectInfo_filehandle.close()
-
-        Responses_filename = os.path.join(
-            OUTPUTS_PATH,
-            f'{OUTPUT_FILE_PREFIX}responses_{ MySubjectId }.txt'
-        )
-
-        Responses_filehandle = open( Responses_filename, 'w' )
-
-        if VERBOSE:   log_utils.print_settings(
-            Date      = str( datetime.datetime.now( tz = datetime.timezone.utc ) ),
-            SubjectId = MySubjectId
-        )
-
-
-    # ----------------------------------------------------------------------------
-    # Initialize necessary structures for experiment over all blocks and sequences (i.e. chosen maps, no. trials etc)
-    # ----------------------------------------------------------------------------
-
+    # ---------------------------------------------------------------------------- #
+    # Initialize necessary structures for experiment over all blocks and sequences #
+    # ---------------------------------------------------------------------------- #
     response               = {}
     hold_response_times    = {}
     release_response_times = {}
     confidence             = {}
     total_movement         = {}
-
-
-    if PLAYER_TYPE != 'RL-Agent':
-        pygame.event.clear()
-
-        pygameMediator         \
-        .show_message_and_wait \
-        ( "Loading Images.\n\nPlease wait",
-          colour = WHITE,
-          wait   = False
-        )
-
-    # Always load coordinates, but load_image() will skip pygame rendering for RL-Agent
-    images, all_coordinates = pygameMediator.load_image()
 
     NumTrials__blocks_x_sequences__2darray = numpy.zeros( (NUM_BLOCKS, NUM_SEQUENCES) )   # each slot contains the
                                                                                           # number of trials (i.e.

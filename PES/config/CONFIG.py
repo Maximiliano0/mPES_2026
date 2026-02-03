@@ -33,7 +33,6 @@ NUM_ATTEMPTS_TO_ASSIGN_SEQ = 8  # Suggested Value: 8       ## Number of attempts
 NUM_BLOCKS = 8                  # Suggested Value: 8       ## Number of Blocks in the Experiment (between 6 and 8 according to spec document)
 NUM_MAX_TRIALS = 10             # Suggested Value: 10      ## Maximum number of trials that can be allocated to a sequence
 NUM_MIN_TRIALS = 3              # Suggested Value: 3       ## Minimum number of trials that can be allocated to a sequence
-NUM_PREDEFINED_CITY_COORDS = 25 # Suggested Value: 25      ## For each map, there exists a file containing a collection of 25 possible coordinate-pairs, that have been predefined by hand
 NUM_SEQUENCES = 8               # Suggested Value: 8       ## Number of Sequences (i.e. 'maps') per Block (between 8 and 12 according to spec)
 
 OUTPUT_FILE_PREFIX = 'PES_'    # Prefix for output files
