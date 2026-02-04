@@ -1,19 +1,22 @@
-#############################################################
-#        Configuration file for the PES experiment          #
-#############################################################
-#                                                           #
-# Experimento (1)                                           #
-#   ├─ Bloque (8)                                           #
-#   │    ├─ Secuencia / Mapa (8)                            #
-#   │    │    ├─ Trial / Ciudad (3~10)                      #
-#   │    │    │    └─ Decision de Recursos (0-10)           #
-#                                                           #                                                           #
-# Total: 1 Experimento, 8 Bloques, 8 Secuencias por Bloque, #
-#          entre 3 y 10 Trials por Secuencia                #
-#                                                           #
-# Nota: Las configuraciones de cada Experimento se definen  #
-#       en este archivo.                                    #
-#############################################################
+"""
+Configuration file for the PES experiment
+
+Experiment Structure:
+    Experimento (1)
+    ├─ Bloque (8)
+    │    ├─ Secuencia / Mapa (8)
+    │    │    ├─ Trial / Ciudad (3~10)
+    │    │    │    └─ Decision de Recursos (0-10)
+
+Summary:
+    - Total: 1 Experimento
+    - 8 Bloques
+    - 8 Secuencias por Bloque
+    - Entre 3 y 10 Trials por Secuencia
+
+Note:
+    Las configuraciones de cada Experimento se definen en este archivo.
+"""
 
 #------------------ Configuration Constants ---------------#
 AVAILABLE_RESOURCES_PER_SEQUENCE = 39   # Total resources available to be allocated per sequence      
@@ -21,6 +24,14 @@ AVAILABLE_RESOURCES_PER_SEQUENCE = 39   # Total resources available to be alloca
 INIT_NO_OF_CITIES = 2   # Initial cities per sequence
 
 INITIAL_SEVERITY_FILE = 'initial_severity.csv'   # Initial severity data file
+SEQ_LENGTHS_FILE = 'sequence_lengths.csv'       # Sequence lengths data file
+RANDOM_INITIAL_SEVERITY = False # If True, initial severity will be randomly generated instead of using the file
+SAVE_INITIAL_SEVERITY_TO_FILE = False # If True, the randomly generated initial severity will be saved to a CSV file for record-keeping
+
+AGGREGATION_METHOD = {  1: 'confidence_weighted_median',
+                        2: 'confidence_weighted_mean',
+                        3: 'confidence_weighted_mode'
+                     }[ 2 ]    # <-- select option here
 
 MAX_ALLOCATABLE_RESOURCES = 10  # Suggested Value: 10
 MAX_INIT_RESOURCES = 6          # Suggested Value: 6

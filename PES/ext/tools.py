@@ -7,7 +7,7 @@ Set of handy functions to deal with several calculations in the PES game.
 '''
 
 import numpy
-import os,sys
+import os
 import matplotlib.pyplot as plt
 
 
@@ -97,7 +97,6 @@ def convert_globalseq_to_seqs(sequence_map,seqin360):
         rsp.append( seqin360[offset:offset+int(seq)] )
         offset = offset + int(seq)
     return rsp
-
 
 
 def adjust_unrealistic_responses_wrt_actual_resources( TrialResponses ):

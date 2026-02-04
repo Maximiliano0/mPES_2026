@@ -32,7 +32,6 @@ from .. import *
 ConsoleLog_filehandle = None
 
 
-
 ####################
 ### Module functions
 ####################
@@ -57,7 +56,6 @@ def create_ConsoleLog_filehandle_singleton( SubjectId : str ):
 
 
     return ConsoleLog_filehandle
-
 
 
 

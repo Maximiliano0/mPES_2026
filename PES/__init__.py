@@ -13,9 +13,8 @@ Handles package setup including:
 ## External Imports ##
 ######################
 import os
-import sys
 import numpy
-from config import CONFIG
+from .config import CONFIG
 
 ###########
 ## PATHs ##
@@ -36,6 +35,7 @@ class ANSI:
     ORANGE = '\033[93m'
     BLUE   = '\033[94m'
     PURPLE = '\033[95m'
+    GRAY   = '\033[90m'
     RESET  = '\033[0m'
 
 #################################
@@ -63,6 +63,7 @@ Press ENTER if you'd like to continue regardless (or Ctrl-C to abort).
 AVAILABLE_RESOURCES_PER_SEQUENCE            = CONFIG.AVAILABLE_RESOURCES_PER_SEQUENCE
 INIT_NO_OF_CITIES                           = CONFIG.INIT_NO_OF_CITIES
 INITIAL_SEVERITY_FILE                       = CONFIG.INITIAL_SEVERITY_FILE
+SEQ_LENGTHS_FILE                            = CONFIG.SEQ_LENGTHS_FILE    
 MAX_ALLOCATABLE_RESOURCES                   = CONFIG.MAX_ALLOCATABLE_RESOURCES
 MAX_INIT_RESOURCES                          = CONFIG.MAX_INIT_RESOURCES
 MAX_INIT_SEVERITY                           = CONFIG.MAX_INIT_SEVERITY
@@ -77,6 +78,8 @@ NUM_SEQUENCES                               = CONFIG.NUM_SEQUENCES
 OUTPUT_FILE_PREFIX                          = CONFIG.OUTPUT_FILE_PREFIX
 PANDEMIC_PARAMETER                          = CONFIG.PANDEMIC_PARAMETER
 PLAYER_TYPE                                 = CONFIG.PLAYER_TYPE
+RANDOM_INITIAL_SEVERITY                     = CONFIG.RANDOM_INITIAL_SEVERITY
+SAVE_INITIAL_SEVERITY_TO_FILE               = CONFIG.SAVE_INITIAL_SEVERITY_TO_FILE
 SAVE_RESULTS                                = CONFIG.SAVE_RESULTS
 STARTING_BLOCK_INDEX                        = CONFIG.STARTING_BLOCK_INDEX
 STARTING_SEQ_INDEX                          = CONFIG.STARTING_SEQ_INDEX
@@ -84,6 +87,7 @@ TOTAL_NUM_TRIALS_IN_BLOCK                   = CONFIG.TOTAL_NUM_TRIALS_IN_BLOCK
 TRUST_MAX                                   = CONFIG.TRUST_MAX
 USE_FIXED_BLOCK_SEQUENCES                   = CONFIG.USE_FIXED_BLOCK_SEQUENCES
 VERBOSE                                     = CONFIG.VERBOSE
+AGGREGATION_METHOD                          = CONFIG.AGGREGATION_METHOD
 
 ##############################################
 ### Process imported configuration options ###
@@ -124,6 +128,8 @@ if VERBOSE:
     print(f"{'TOTAL_NUM_TRIALS_IN_BLOCK':<40} {str(TOTAL_NUM_TRIALS_IN_BLOCK):<30} {ANSI.RED}{'45':<20}{ANSI.RESET}")
     print(f"{'USE_FIXED_BLOCK_SEQUENCES':<40} {str(USE_FIXED_BLOCK_SEQUENCES):<30} {ANSI.RED}{'  ':<20}{ANSI.RESET}")
     print(f"{'INITIAL_SEVERITY_FILE':<40} {str(INITIAL_SEVERITY_FILE):<30} {ANSI.RED}{' ':<20}{ANSI.RESET}")
+    print(f"{'SEQ_LENGTHS_FILE':<40} {str(SEQ_LENGTHS_FILE):<30} {ANSI.RED}{' ':<20}{ANSI.RESET}")
+    print(f"{'AGGREGATION_METHOD':<40} {str(AGGREGATION_METHOD):<30} {ANSI.RED}{'confidence_weighted_mean':<20}{ANSI.RESET}")
 
 ##############################
 ### Define package exports ###
@@ -137,6 +143,7 @@ __all__ = [
     'AVAILABLE_RESOURCES_PER_SEQUENCE',
     'INIT_NO_OF_CITIES',
     'INITIAL_SEVERITY_FILE',
+    'SEQ_LENGTHS_FILE',
     'MAX_ALLOCATABLE_RESOURCES',
     'MAX_INIT_RESOURCES',
     'MAX_INIT_SEVERITY',
@@ -158,7 +165,9 @@ __all__ = [
     'TRUST_MAX',
     'USE_FIXED_BLOCK_SEQUENCES',
     'VERBOSE',
+    'RANDOM_INITIAL_SEVERITY',
+    'SAVE_INITIAL_SEVERITY_TO_FILE',
     'RESPONSE_MULTIPLIER',
     'SEVERITY_MULTIPLIER',
-    'CONFIG'
+    'AGGREGATION_METHOD'
 ]

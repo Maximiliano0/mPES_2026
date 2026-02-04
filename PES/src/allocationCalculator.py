@@ -25,7 +25,6 @@ import numpy
 from .. import AVAILABLE_RESOURCES_PER_SEQUENCE
 
 
-
 #############################
 ### General utility functions
 #############################
