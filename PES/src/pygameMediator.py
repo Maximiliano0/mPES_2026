@@ -51,8 +51,6 @@ import glob
 import math
 import numpy
 import os
-import pygame
-import sys
 import tensorflow as tf
 
 # ----------------
@@ -82,6 +80,7 @@ number_of_trials      = None
 # need to include them in the main CONFIG.py file
 FONT              = 'ubuntumono'   # previously: Arial
 BACKGROUND_COLOUR = ANSI.GRAY
+RESPONSE_TIMEOUT  = 5000  # in milliseconds
 
 ######################
 ## Module functions ##
@@ -170,6 +169,9 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     confidence = (1./(m_entropy-M_entropy)) * (dec_entropy - M_entropy)
 
     response = numpy.argmax(options)
+    
+    # Ensure response never exceeds available resources
+    response = int(numpy.clip(response, 0, int(resources_left)))
 
     map_to_response_time = lambda x: x * (-2) + 1
 
@@ -194,8 +196,31 @@ def provide_rl_agent_response(
     assert first_severity is not None, \
            "The 'first_severity' module-global variable needs to be set by caller before calling this function"
 
-    Q = numpy.load(os.path.join(INPUTS_PATH,'q.npy'))
-    rewards = numpy.load(os.path.join(INPUTS_PATH,'rewards.npy'))
+    # Load and validate Q-Table
+    q_file = os.path.join(INPUTS_PATH, 'q.npy')
+    rewards_file = os.path.join(INPUTS_PATH, 'rewards.npy')
+    
+    if not os.path.isfile(q_file):
+        raise FileNotFoundError(
+            f"\nFATAL ERROR: Q-Table file not found at {q_file}\n"
+            f"Please train the RL-Agent first by running: python3 -m PES.ext.train_rl\n"
+        )
+    
+    if not os.path.isfile(rewards_file):
+        raise FileNotFoundError(
+            f"\nFATAL ERROR: Rewards file not found at {rewards_file}\n"
+            f"Please train the RL-Agent first by running: python3 -m PES.ext.train_rl\n"
+        )
+    
+    try:
+        Q = numpy.load(q_file)
+        rewards = numpy.load(rewards_file)
+    except Exception as e:
+        raise RuntimeError(
+            f"\nFATAL ERROR: Failed to load training files!\n"
+            f"Error: {str(e)}\n"
+            f"Files may be corrupted. Please retrain by running: python3 -m PES.ext.train_rl\n"
+        )
 
     if VERBOSE:
         print( "Reading preloaded Q-Table for RL-Agent" )
@@ -214,11 +239,41 @@ def provide_rl_agent_response(
     sever = sevs[ session_no * NUM_SEQUENCES + sequence_no ][ trial_no ]
     city_number = trial_no
 
-    print( int(resources_left.numpy()) if hasattr(resources_left, 'numpy') else resources_left )
-    print( int(city_number.numpy()) if hasattr(city_number, 'numpy') else city_number )
-    print( sever )
-  # Calculate the response and confidence feeding the NN with noisy inputs, getting the mean and entropy from the responses.
-    resp, confidence, rt_hold, rt_release = rl_agent_meta_cognitive(Q[int(resources_left), int(city_number),int(sever)],resources_left,RESPONSE_TIMEOUT)
+    # Convert to integers for array indexing (handle numpy types and tensors)
+    try:
+        resources_idx = int(resources_left)
+    except (ValueError, TypeError):
+        resources_idx = int(resources_left.numpy())
+    
+    try:
+        city_idx = int(city_number)
+    except (ValueError, TypeError):
+        city_idx = int(city_number.numpy())
+    
+    try:
+        sever_idx = int(sever)
+    except (ValueError, TypeError):
+        sever_idx = int(sever.numpy())
+    
+    # Clamp indices to valid ranges
+    resources_idx = max(0, min(resources_idx, Q.shape[0]-1))
+    city_idx = max(0, min(city_idx, Q.shape[1]-1))
+    sever_idx = max(0, min(sever_idx, Q.shape[2]-1))
+    
+    if VERBOSE:
+        print(f"State indices - Resources: {resources_idx}, City: {city_idx}, Severity: {sever_idx}")
+        print(f"Q-Table shape: {Q.shape}")
+        print(f"Q values for this state: {Q[resources_idx, city_idx, sever_idx]}")
+
+    # Calculate the response and confidence feeding the NN with noisy inputs, getting the mean and entropy from the responses.
+    resp, confidence, rt_hold, rt_release = rl_agent_meta_cognitive(Q[resources_idx, city_idx, sever_idx], resources_left, RESPONSE_TIMEOUT)
+    
+    # Final validation: ensure response never exceeds available resources
+    resp = int(numpy.clip(resp, 0, int(resources_left)))
+    
+    if VERBOSE:
+        print(f"RL-Agent Response: {resp}, Confidence: {confidence}")
+        print(f"Resources available: {int(resources_left)}, Response clamped to: {resp}")
 
     movement = []
 

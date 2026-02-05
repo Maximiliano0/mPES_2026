@@ -8,6 +8,7 @@ The trained Q-Table and the log of the obtained rewards are stored into the INPU
 '''
 
 from hashlib import new
+import warnings
 import numpy
 import cv2
 import matplotlib.pyplot as plt
@@ -16,6 +17,10 @@ import gym
 import random
 import os 
 import tensorflow as tf
+
+# Suppress non-critical warnings
+warnings.filterwarnings('ignore', category=UserWarning, message='.*Box bound precision.*')
+warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 
 from gym import Env, spaces
 import time
@@ -34,13 +39,26 @@ from ..src.Agent import agent_meta_cognitive
 from ..src.Agent import adjust_response_decay, boltzmann_decay
 from .pandemic import Pandemic, rl_agent_meta_cognitive, run_experiment, QLearning  
 from .tools import plot_confidences 
-from .tools import humanise_this_reported_confidence 
+from .tools import humanise_this_reported_confidence
+from ..src.terminal_utils import header, section, success, error, info, list_item, data_row, separator 
 
 if __name__=='__main__':
         
+    header("RL-AGENT TRAINING PIPELINE", width=80)
+    
+    # Create train_rl output directory
+    train_rl_outputs = os.path.join(INPUTS_PATH, '../outputs/train_rl')
+    os.makedirs(train_rl_outputs, exist_ok=True)
+    info(f"Output directory: {train_rl_outputs}")
+    
+    section("Loading Training Data", width=80)
     trials_per_sequence = numpy.loadtxt(os.path.join( INPUTS_PATH,'sequence_lengths.csv'), delimiter=',')
     all_severities = numpy.loadtxt(os.path.join( INPUTS_PATH, 'initial_severity.csv'), delimiter=',')
-    print(trials_per_sequence.shape, all_severities.shape, sum(trials_per_sequence))
+    
+    list_item(f"Sequence lengths shape: {trials_per_sequence.shape}")
+    list_item(f"Initial severities shape: {all_severities.shape}")
+    list_item(f"Total trials: {int(sum(trials_per_sequence))}")
+    print()
 
     sevs = convert_globalseq_to_seqs(trials_per_sequence, all_severities)
 
@@ -54,22 +72,28 @@ if __name__=='__main__':
     def qf(env, state, seqid):
         return env.sample()
 
+    section("Random Player Baseline", width=80)
+    info("Training random agent for comparison...")
     seqs1, perfs1, _ = run_experiment(env, qf, False, trials_per_sequence,sevs)
+    success("Random player experiment completed")
 
     plt.plot(seqs1)
     plt.xlabel('Trial')
     plt.ylabel('Final severity achieved')
     plt.title('Performance on each sequence for a Random Player')
-    plt.savefig(os.path.join(INPUTS_PATH, '../outputs/random_player_sequence_performance.png'))
+    plt.savefig(os.path.join(train_rl_outputs, 'random_player_sequence_performance.png'))
     plt.close()
+    list_item("Saved: random_player_sequence_performance.png")
 
     fig = plt.figure(figsize=(10,5))
     plt.plot(perfs1)
     plt.ylabel('Normalised final severity performances for a Random Player')
     plt.xlabel('Trial')
     plt.ylim(0,1)
-    plt.savefig(os.path.join(INPUTS_PATH, '../outputs/random_player_normalised_performance.png'))
+    plt.savefig(os.path.join(train_rl_outputs, 'random_player_normalised_performance.png'))
     plt.close()
+    list_item("Saved: random_player_normalised_performance.png")
+    print()
 
 
     env = Pandemic()
@@ -78,43 +102,58 @@ if __name__=='__main__':
     env.severity_prob = severity_prob
     env.verbose = False
 
-    # Run Q-learning algorithm
-    if os.path.isfile(os.path.join( INPUTS_PATH,'q.npy')):
-        Q = numpy.load(os.path.join( INPUTS_PATH,'q.npy'))
-        rewards = numpy.load(os.path.join( INPUTS_PATH,'rewards.npy'))
-    else:
-        rewards, Q, confsrl = QLearning(env, 0.2, 0.9, 0.8, 0, 20000) # 100000000
-        numpy.save( os.path.join( INPUTS_PATH,'q.npy'), Q)
-        numpy.save( os.path.join( INPUTS_PATH,'rewards.npy'), rewards)
+    # Run Q-learning algorithm (always trains and overwrites previous files)
+    section("Q-Learning Training", width=80)
+    info("Starting Q-Table training (1,000,000 episodes)...")
+    info("(This may take several minutes)")
+    print()
+    rewards, Q, confsrl = QLearning(env, 0.2, 0.9, 0.8, 0, 1000000)
+    print()
+    success(f"Training completed")
+    list_item(f"Q-Table shape: {Q.shape}")
+    list_item(f"Rewards history length: {len(rewards)}")
+    
+    info("Saving trained models...")
+    numpy.save( os.path.join( INPUTS_PATH,'q.npy'), Q)
+    numpy.save( os.path.join( INPUTS_PATH,'rewards.npy'), rewards)
+    success("✓ Q-Table saved to q.npy")
+    success("✓ Rewards saved to rewards.npy")
+    print()
 
 
+    section("Training Performance Analysis", width=80)
+    info("Generating reward history visualization...")
     # Plot Rewards
     plt.plot(100*(numpy.arange(len(rewards)) + 1), rewards)
     plt.xlabel('Episodes')
     plt.ylabel('Average Reward')
     plt.title('RL-Agent to minimize severity: Average Rewards vs Episodes')
-    plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_rewards_vs_episodes.png'))
+    plt.savefig(os.path.join(train_rl_outputs, 'rl_agent_rewards_vs_episodes.png'))
     plt.close()
+    list_item("Saved: rl_agent_rewards_vs_episodes.png")
+    print()
 
 
     if (True):
+        section("RL-Agent Evaluation", width=80)
+        info("Running evaluation experiment with trained agent...")
         confsrl = []
 
-        def qf(env,state, seqid):
-            response, confidence, rt_hold, rt_release = rl_agent_meta_cognitive(Q[state[0], state[1], int(state[2])], state[0], 10000)
+        def qf(env, state, seqid):
+            response, confidence, rt_hold, rt_release = rl_agent_meta_cognitive(
+                Q[state[0], state[1], int(state[2])], state[0], 10000
+            )
 
-            if (state[0]==0):
+            if (state[0] == 0):
                 confidence = -1.0
-            
-            confsrl.append( confidence )
+
+            confsrl.append(confidence)
             return response
-            #return numpy.argmax(Q[state[0], state[1],int(state[2])])
 
+        seqs, perfs, _ = run_experiment(env, qf, False, trials_per_sequence, sevs)
+        success("Evaluation experiment completed")
 
-
-
-        seqs, perfs, _ = run_experiment(env,qf, False, trials_per_sequence,sevs)
-
+        info("Generating performance visualizations...")
 
         # Plot Rewards
         plt.plot(seqs, 'b', label='RL-Agent')
@@ -122,42 +161,45 @@ if __name__=='__main__':
         plt.ylabel('Final severity achieved')
         plt.title('Performance on each sequence')
         plt.legend()
-        plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_sequence_performance.png'))
+        plt.savefig(os.path.join(train_rl_outputs, 'rl_agent_sequence_performance.png'))
         plt.close()
+        list_item("Saved: rl_agent_sequence_performance.png")
 
-        fig = plt.figure(figsize=(10,5))
+        fig = plt.figure(figsize=(10, 5))
         plt.plot(perfs, 'b', label='RL-Agent')
         plt.ylabel('Normalised final severity performances')
         plt.xlabel('Trial')
-        plt.ylim(0,1)
-        plt.xlim(0,64)
+        plt.ylim(0, 1)
+        plt.xlim(0, 64)
         plt.grid()
         plt.legend()
-        plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_normalised_performance.png'))
+        plt.savefig(os.path.join(train_rl_outputs, 'rl_agent_normalised_performance.png'))
         plt.close()
+        list_item("Saved: rl_agent_normalised_performance.png")
 
-        cumperfs  = numpy.cumsum(perfs)
+        cumperfs = numpy.cumsum(perfs)
 
-        Domain = numpy.arange(1,1+64)
-        fig = plt.figure(figsize=(10,5))
-        plt.plot(cumperfs/Domain, 'b', label='RL-Agent')
+        Domain = numpy.arange(1, 1 + 64)
+        fig = plt.figure(figsize=(10, 5))
+        plt.plot(cumperfs / Domain, 'b', label='RL-Agent')
         plt.ylabel('Cumulative normalised final severity performances')
         plt.xlabel('Trial')
         plt.grid()
         plt.legend()
-        plt.ylim(0.5,1)
-        plt.xlim(0,64)
-        plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_cumulative_performance.png'))
+        plt.ylim(0.5, 1)
+        plt.xlim(0, 64)
+        plt.savefig(os.path.join(train_rl_outputs, 'rl_agent_cumulative_performance.png'))
         plt.close()
+        list_item("Saved: rl_agent_cumulative_performance.png")
 
-        fig = plt.figure(figsize=(16,4))
+        fig = plt.figure(figsize=(16, 4))
         plt.scatter(numpy.asarray(range(len(confsrl))), confsrl)
         plt.title('Reported confidences from the RLAgent')
-        plt.ylim(-0.1,1.1)
-        plt.xlim(0,360)
-        plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_confidences.png'))
+        plt.ylim(-0.1, 1.1)
+        plt.xlim(0, 360)
+        plt.savefig(os.path.join(train_rl_outputs, 'rl_agent_confidences.png'))
         plt.close()
-
+        list_item("Saved: rl_agent_confidences.png")
 
         confsrl = numpy.asarray( confsrl, dtype=numpy.float32)
 
@@ -165,7 +207,7 @@ if __name__=='__main__':
         confsrl_hist = numpy.histogram( confsrl, bins = val_confidences)
 
 
-        plot_confidences(confsrl, 'Confidences')
+        plot_confidences(confsrl, 'Confidences', Show=False)
 
         numpy.save( os.path.join( INPUTS_PATH, 'confsrl.npy'), confsrl )
 
@@ -189,9 +231,12 @@ if __name__=='__main__':
         plt.xlabel('Trials')
         plt.ylim(-0.1,1.1)
         plt.xlim(0,360)
-        plt.savefig(os.path.join(INPUTS_PATH, '../outputs/rl_agent_remapped_confidences.png'))
+        plt.savefig(os.path.join(train_rl_outputs, 'rl_agent_remapped_confidences.png'))
         plt.close()
 
-        plot_confidences(remapconfrl, 'Remapped Confidences')
+        plot_confidences(remapconfrl, 'Remapped Confidences', Show=False)
 
-
+    section("Training Complete", width=80)
+    success("RL-Agent training pipeline finished successfully!")
+    info(f"Output directory: {train_rl_outputs}")
+    print()

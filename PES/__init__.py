@@ -13,8 +13,12 @@ Handles package setup including:
 ## External Imports ##
 ######################
 import os
+import warnings
 import numpy
 from .config import CONFIG
+
+# Suppress non-critical NumPy/SciPy compatibility warnings
+warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 
 ###########
 ## PATHs ##
@@ -114,22 +118,27 @@ numpy.seterr( all = 'raise' )
 ### Print final init variables to log ###
 #########################################
 if VERBOSE:
-    print(f"{'Variable Name':<40} {'Variable Value':<30} {ANSI.RED}{'Suggested Value':<20}{ANSI.RESET}")
-    print(f"{'AVAILABLE_RESOURCES_PER_SEQUENCE':<40} {str(AVAILABLE_RESOURCES_PER_SEQUENCE):<30} {ANSI.RED}{'49':<20}{ANSI.RESET}")
-    print(f"{'INIT_NO_OF_CITIES':<40} {str(INIT_NO_OF_CITIES):<30} {ANSI.RED}{'  ':<20}{ANSI.RESET}")
-    print(f"{'NUM_BLOCKS':<40} {str(NUM_BLOCKS):<30} {ANSI.RED}{'8':<20}{ANSI.RESET}")
-    print(f"{'NUM_MAX_TRIALS':<40} {str(NUM_MAX_TRIALS):<30} {ANSI.RED}{'10':<20}{ANSI.RESET}")
-    print(f"{'NUM_MIN_TRIALS':<40} {str(NUM_MIN_TRIALS):<30} {ANSI.RED}{'3':<20}{ANSI.RESET}")
-    print(f"{'NUM_SEQUENCES':<40} {str(NUM_SEQUENCES):<30} {ANSI.RED}{'8':<20}{ANSI.RESET}")
-    print(f"{'PANDEMIC_PARAMETER':<40} {str(PANDEMIC_PARAMETER):<30} {ANSI.RED}{'0.6':<20}{ANSI.RESET}")
-    print(f"{'PLAYER_TYPE':<40} {str(PLAYER_TYPE):<30} {ANSI.RED}{'  ':<20}{ANSI.RESET}")
-    print(f"{'RESPONSE_MULTIPLIER':<40} {str(RESPONSE_MULTIPLIER):<30} {ANSI.RED}{'0.6':<20}{ANSI.RESET}")
-    print(f"{'SEVERITY_MULTIPLIER':<40} {str(SEVERITY_MULTIPLIER):<30} {ANSI.RED}{'1.6':<20}{ANSI.RESET}")
-    print(f"{'TOTAL_NUM_TRIALS_IN_BLOCK':<40} {str(TOTAL_NUM_TRIALS_IN_BLOCK):<30} {ANSI.RED}{'45':<20}{ANSI.RESET}")
-    print(f"{'USE_FIXED_BLOCK_SEQUENCES':<40} {str(USE_FIXED_BLOCK_SEQUENCES):<30} {ANSI.RED}{'  ':<20}{ANSI.RESET}")
-    print(f"{'INITIAL_SEVERITY_FILE':<40} {str(INITIAL_SEVERITY_FILE):<30} {ANSI.RED}{' ':<20}{ANSI.RESET}")
-    print(f"{'SEQ_LENGTHS_FILE':<40} {str(SEQ_LENGTHS_FILE):<30} {ANSI.RED}{' ':<20}{ANSI.RESET}")
-    print(f"{'AGGREGATION_METHOD':<40} {str(AGGREGATION_METHOD):<30} {ANSI.RED}{'confidence_weighted_mean':<20}{ANSI.RESET}")
+    print(f"\n{'='*100}")
+    print(f"  EXPERIMENT CONFIGURATION PARAMETERS")
+    print(f"{'='*100}\n")
+    print(f"{'Variable Name':<45} {'Variable Value':<30} {'Suggested Value':<20}")
+    print(f"{'-'*100}")
+    print(f"{'AVAILABLE_RESOURCES_PER_SEQUENCE':<45} {str(AVAILABLE_RESOURCES_PER_SEQUENCE):<30} {'49':<20}")
+    print(f"{'INIT_NO_OF_CITIES':<45} {str(INIT_NO_OF_CITIES):<30}")
+    print(f"{'NUM_BLOCKS':<45} {str(NUM_BLOCKS):<30} {'8':<20}")
+    print(f"{'NUM_MAX_TRIALS':<45} {str(NUM_MAX_TRIALS):<30} {'10':<20}")
+    print(f"{'NUM_MIN_TRIALS':<45} {str(NUM_MIN_TRIALS):<30} {'3':<20}")
+    print(f"{'NUM_SEQUENCES':<45} {str(NUM_SEQUENCES):<30} {'8':<20}")
+    print(f"{'PANDEMIC_PARAMETER':<45} {str(PANDEMIC_PARAMETER):<30} {'0.6':<20}")
+    print(f"{'PLAYER_TYPE':<45} {str(PLAYER_TYPE):<30}")
+    print(f"{'RESPONSE_MULTIPLIER':<45} {str(RESPONSE_MULTIPLIER):<30} {'0.6':<20}")
+    print(f"{'SEVERITY_MULTIPLIER':<45} {str(SEVERITY_MULTIPLIER):<30} {'1.6':<20}")
+    print(f"{'TOTAL_NUM_TRIALS_IN_BLOCK':<45} {str(TOTAL_NUM_TRIALS_IN_BLOCK):<30} {'45':<20}")
+    print(f"{'USE_FIXED_BLOCK_SEQUENCES':<45} {str(USE_FIXED_BLOCK_SEQUENCES):<30}")
+    print(f"{'INITIAL_SEVERITY_FILE':<45} {str(INITIAL_SEVERITY_FILE):<30}")
+    print(f"{'SEQ_LENGTHS_FILE':<45} {str(SEQ_LENGTHS_FILE):<30}")
+    print(f"{'AGGREGATION_METHOD':<45} {str(AGGREGATION_METHOD):<30}")
+    print(f"{'='*100}\n")
 
 ##############################
 ### Define package exports ###

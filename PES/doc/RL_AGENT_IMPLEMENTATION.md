@@ -12,12 +12,25 @@ El RL-Agent en PES implementa un algoritmo de **Q-Learning** clásico, diseñado
 
 El problema de PES se modela como un Markov Decision Process con:
 
-**Estado (s)**: Tupla de tres elementos
+**Estado (s)**: Tupla de tres elementos que define la situación de decisión
 ```
 s = (recursos_left, city_number, severity)
   - recursos_left: ∈ {0, 1, ..., 30}       [Eje 0 de Q-Table]
   - city_number:   ∈ {0, 1, ..., 12}       [Eje 1 de Q-Table] 
   - severity:      ∈ {0, 1, ..., 10}       [Eje 2 de Q-Table]
+```
+
+**Estructura del Q-Table**: Tabla multidimensional de valores
+```
+Q[recursos_left, city_number, severity] → array de 11 Q-valores
+
+Forma completa: (31, 13, 11, 11)
+  - Eje 0: 31 valores (0-30 recursos disponibles)
+  - Eje 1: 13 valores (0-12 ciudades/trials posibles)
+  - Eje 2: 11 valores (0-10 severidad posible)
+  - Eje 3: 11 valores (0-10 acciones posibles)
+
+En deployment: Q[s] extrae 11 Q-valores para las 11 acciones posibles
 ```
 
 **Código relevante** ([PES/src/pygameMediator.py](PES/src/pygameMediator.py):981):
@@ -88,19 +101,32 @@ def calculate_reward(current_severities, resources_allocated, beta=0.76, alpha=0
 
 ---
 
-### 2.2 Q-Learning: Actualización de Q-Values
+### 2.2 Q-Learning: Parámetros y Actualización de Q-Values
+
+**Parámetros de Entrenamiento** (definidos en [PES/ext/train_rl.py](PES/ext/train_rl.py):~105):
+```python
+# Llamada a QLearning en train_rl.py
+rewards, Q, confsrl = QLearning(
+    env, 
+    learning_rate=0.2,      # α (learning rate)
+    discount_factor=0.9,    # γ (gamma)
+    epsilon=0.8,            # ε (exploration rate)
+    episodes=1000000        # 1 millón de episodios de entrenamiento
+)
+```
 
 **Ecuación de Bellman (forma de Q-Learning)**:
 ```
 Q(s, a) ← Q(s, a) + α·[r + γ·max_a'(Q(s', a')) - Q(s, a)]
 ```
 
-Donde:
-- α = LEARNING_RATE (típicamente 0.1)
-- γ = DISCOUNT_FACTOR (típicamente 0.95)
-- r = recompensa inmediata
-- s' = siguiente estado
-- max_a'(Q(s', a')) = valor máximo del próximo estado
+Parámetros:
+- **α = 0.2** (LEARNING_RATE): Qué tan rápido se adapta Q-Table a nueva información
+- **γ = 0.9** (DISCOUNT_FACTOR): Importancia de recompensas futuras (0=miope, 1=global)
+- **ε = 0.8** (EXPLORATION_RATE): Probabilidad de exploración vs explotación al inicio
+- **r** = recompensa inmediata observada
+- **s'** = siguiente estado alcanzado
+- **max_a'(Q(s', a'))** = valor máximo del próximo estado
 
 **Código relevante** ([PES/ext/train_rl.py](PES/ext/train_rl.py):~160):
 ```python
@@ -504,3 +530,9 @@ critic = ValueNetwork()
 - **Policy Deployment**: [PES/src/pygameMediator.py](PES/src/pygameMediator.py):981-1020
 - **Recompensas**: [PES/src/exp_utils.py](PES/src/exp_utils.py):228-280
 
+
+---
+
+**Última actualización**: 5 de febrero de 2026
+**Versión**: PES v2.0 (Revisión)
+**Estado**: Documentación actualizada con estado actual del proyecto

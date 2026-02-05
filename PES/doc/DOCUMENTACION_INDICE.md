@@ -2,7 +2,9 @@
 
 ## Descripción General
 
-Este conjunto de documentos proporciona una cobertura completa del sistema PES (Pandemic Experiment Scenario) desde dos perspectivas: **implementación práctica** y **teoría fundamental de Reinforcement Learning**.
+Este conjunto de documentos proporciona una cobertura completa del sistema **PES v2.0** (Pandemic Experiment Scenario - versión 2.0) desde dos perspectivas: **implementación práctica** y **teoría fundamental de Reinforcement Learning**.
+
+PES es un sistema optimizado de simulación para la toma de decisiones bajo estrés en escenarios de pandemia, que asigna recursos limitados a ciudades para minimizar la propagación de enfermedades utilizando Agentes de Reinforcement Learning (RL-Agent).
 
 ---
 
@@ -280,7 +282,7 @@ python3 -m PES
 
 ---
 
-**Última actualización**: 26 de enero de 2026  
-**Versión del sistema**: PES v2.0  
-**Estado**: Documentación completa
+**Última actualización**: 5 de febrero de 2026  
+**Versión del sistema**: PES v2.0 (Actualización)  
+**Estado**: Documentación actualizada al estado actual del proyecto
 

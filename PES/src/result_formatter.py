@@ -82,14 +82,27 @@ def _calculate_statistics(performances, all_performances):
 
 
 def _save_json_report(subject_id, outputs_path, stats, resources_data):
-    """Save statistics to JSON file."""
+    """Save statistics to JSON file with comprehensive model comparison data."""
     
     report = {
-        'subject_id': subject_id,
-        'timestamp': datetime.now().isoformat(),
-        'statistics': stats,
-        'resources': resources_data if resources_data else {},
-        'report_type': 'PES_Experiment_Results'
+        'metadata': {
+            'subject_id': subject_id,
+            'timestamp': datetime.now().isoformat(),
+            'report_type': 'PES_Experiment_Results_v2',
+            'model_type': resources_data.get('agent_type', 'Unknown') if resources_data else 'Unknown'
+        },
+        'configuration': {
+            'total_resources_per_sequence': resources_data.get('total_resources_per_sequence') if resources_data else None,
+            'num_blocks': resources_data.get('num_blocks') if resources_data else None,
+            'num_sequences': resources_data.get('num_sequences') if resources_data else None,
+            'total_sessions': resources_data.get('total_trials') if resources_data else None,
+        },
+        'performance_statistics': stats,
+        'resources_allocation': resources_data if resources_data else {},
+        'file_references': {
+            'results_file': f'PES_results_{subject_id}.png',
+            'this_file': f'PES_results_{subject_id}.json'
+        }
     }
     
     json_filename = f'PES_results_{subject_id}.json'
@@ -120,8 +133,9 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
             normalized_all_perf = [[float(x) for x in performances]]
         
         # Create figure with multiple subplots
-        fig = plt.figure(figsize=(16, 12))
-        gs = gridspec.GridSpec(3, 3, figure=fig, hspace=0.35, wspace=0.3)
+        fig = plt.figure(figsize=(16, 10))
+        gs = gridspec.GridSpec(3, 3, figure=fig, hspace=0.40, wspace=0.35, 
+                              height_ratios=[1.2, 1.2, 0.6])
         
         # 1. Overall Performance Trend
         ax1 = fig.add_subplot(gs[0, :2])
@@ -188,32 +202,27 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
         ax6.axis('off')
         
         summary_data = [
-            ['Metric', 'Value'],
-            ['Overall Mean', f"{stats['overall_mean']:.4f}"],
-            ['Overall Median', f"{stats['overall_median']:.4f}"],
-            ['Std Deviation', f"{stats['overall_std']:.4f}"],
-            ['Min Performance', f"{stats['overall_min']:.4f}"],
-            ['Max Performance', f"{stats['overall_max']:.4f}"],
-            ['25th Percentile', f"{stats['percentile_25']:.4f}"],
-            ['75th Percentile', f"{stats['percentile_75']:.4f}"],
-            ['Total Sequences', f"{stats['total_sequences']}"],
+            ['Metric', 'Value', 'Metric', 'Value'],
+            ['Mean', f"{stats['overall_mean']:.4f}", 'Median', f"{stats['overall_median']:.4f}"],
+            ['Std Dev', f"{stats['overall_std']:.4f}", 'Min', f"{stats['overall_min']:.4f}"],
+            ['Max', f"{stats['overall_max']:.4f}", 'Q1', f"{stats['percentile_25']:.4f}"],
+            ['Q3', f"{stats['percentile_75']:.4f}", 'N Seq', f"{stats['total_sequences']}"],
         ]
         
         if stats['first_block_mean'] is not None:
-            summary_data.append(['First Block Mean', f"{stats['first_block_mean']:.4f}"])
-            summary_data.append(['Last Block Mean', f"{stats['last_block_mean']:.4f}"])
-            summary_data.append(['Improvement', f"{stats['improvement']:.4f}"])
+            summary_data.append(['First', f"{stats['first_block_mean']:.4f}", 'Last', f"{stats['last_block_mean']:.4f}"])
+            summary_data.append(['Improvement', f"{stats['improvement']:.4f}", '', ''])
         
         table = ax6.table(cellText=summary_data, cellLoc='center', loc='center',
-                         colWidths=[0.4, 0.4])
+                         colWidths=[0.2, 0.2, 0.2, 0.2])
         table.auto_set_font_size(False)
-        table.set_fontsize(10)
-        table.scale(1, 2)
+        table.set_fontsize(8)
+        table.scale(1, 1.3)
         
         # Header styling
         for i in range(len(summary_data[0])):
             table[(0, i)].set_facecolor('#4CAF50')
-            table[(0, i)].set_text_props(weight='bold', color='white')
+            table[(0, i)].set_text_props(weight='bold', color='white', fontsize=8)
         
         # Alternate row colors
         for i in range(1, len(summary_data)):
@@ -222,7 +231,7 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
                     table[(i, j)].set_facecolor('#f0f0f0')
         
         # Main title
-        fig.suptitle(f'PES Experiment Results - Subject {subject_id}', 
+        fig.suptitle(f'PES Experiment Results - Subject {subject_id}\nRL-Agent Performance Analysis', 
                     fontsize=16, fontweight='bold', y=0.995)
         
         # Save figure
@@ -245,10 +254,12 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
 def print_results_summary(json_filepath, png_filepath):
     """Print summary of generated report files."""
     
-    print("\n" + "="*70)
-    print("EXPERIMENT RESULTS REPORT GENERATED")
-    print("="*70)
-    print(f"✓ JSON Report: {json_filepath}")
-    print(f"✓ PNG Plots:   {png_filepath}")
-    print("="*70 + "\n")
+    print("\n" + "="*80)
+    print("✓ EXPERIMENT RESULTS GENERATED SUCCESSFULLY")
+    print("="*80)
+    print(f"📊 Performance Visualization (PNG):  {png_filepath}")
+    print(f"📄 Results Summary (JSON):           {json_filepath}")
+    print("\nUse the JSON file to compare results with other models.")
+    print("The PNG file contains comprehensive visualizations of performance metrics.")
+    print("="*80 + "\n")
     return json_filepath, png_filepath

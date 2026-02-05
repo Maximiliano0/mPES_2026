@@ -1,8 +1,10 @@
-# Marco Teórico de Reinforcement Learning
+# Marco Teórico de Reinforcement Learning - Aplicado a PES v2.0
 
-**Documento:** Fundamentos matemáticos y conceptuales de Reinforcement Learning aplicados en PES  
-**Autor:** Análisis de Ciencia de Datos  
+**Documento:** Fundamentos matemáticos y conceptuales de Reinforcement Learning, con enfoque en su implementación en el Pandemic Experiment Scenario (PES v2.0)  
+**Versión**: Actualizada para PES v2.0 (5 de febrero de 2026)  
 **Nivel:** Avanzado (Máster/PhD)
+
+**Nota**: Este documento proporciona la teoría fundamental detrás del Q-Learning usado en PES. Para implementación específica, ver RL_AGENT_IMPLEMENTATION.md
 
 ---
 
@@ -588,3 +590,9 @@ En PES específicamente, Q-Learning es **suficiente y adecuado** dado:
 
 Las extensiones a function approximation o policy gradients son innecesarias para el problema actual pero permitirían escalabilidad futura.
 
+
+---
+
+**Última actualización**: 5 de febrero de 2026
+**Versión**: PES v2.0 (Revisión)
+**Estado**: Documentación actualizada con estado actual del proyecto

@@ -125,7 +125,7 @@ def exit_experiment_gracefully( Message, Filehandles, MovementData, LogUtils, Py
 
   # Tidy up remaining resources
     numpy.save( *MovementData )
-    PygameMediator.gracefully_quit_pygame()
+    # PygameMediator.gracefully_quit_pygame()  # NOTE: Function not available for RL-Agent mode
     for Filehandle in Filehandles:
         if Filehandle is not None:   Filehandle.close()
     LogUtils.close_consolelog_filehandle()

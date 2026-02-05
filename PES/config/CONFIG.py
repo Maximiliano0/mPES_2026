@@ -52,8 +52,7 @@ PLAYER_TYPE = { # Player Configuration - Select player type
     1: 'RL_AGENT' 
     }[1]
 
-PANDEMIC_PARAMETER = 0.4            # (β): severity multiplier and a response multiplier at initialisation
-AVE_RESULTS = True                  # Suggested Value: True    
+PANDEMIC_PARAMETER = 0.4            # (β): severity multiplier and response multiplier at initialisation
 
 STARTING_BLOCK_INDEX = 0   # Default: 0  (i.e. start at the first block of the experiment)
 STARTING_SEQ_INDEX   = 0   # Default: 0  (i.e. start at the first sequence of the selected block)

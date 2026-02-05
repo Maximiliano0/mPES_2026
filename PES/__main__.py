@@ -45,6 +45,7 @@ from . src import exp_utils
 from . src import log_utils
 from . src import pygameMediator
 from . src import result_formatter
+from . src import terminal_utils
 
 #################################################
 ##  Initialization of Module-global variables  ##
@@ -64,18 +65,75 @@ def main():
 
   global Responses_filehandle
 
+  # Validate RL-Agent training files if needed
+  if PLAYER_TYPE == 'RL_AGENT':
+    q_file = os.path.join( INPUTS_PATH, 'q.npy' )
+    rewards_file = os.path.join( INPUTS_PATH, 'rewards.npy' )
+    
+    terminal_utils.header("RL-AGENT VALIDATION", width=80)
+    terminal_utils.info("Checking training files...")
+    
+    if not os.path.isfile( q_file ):
+      terminal_utils.error("Q-Table file not found!")
+      terminal_utils.list_item(f"Expected path: {q_file}", level=2)
+      print("\nTo train the RL-Agent, run:")
+      terminal_utils.list_item("python3 -m PES.ext.train_rl")
+      print()
+      return
+    
+    if not os.path.isfile( rewards_file ):
+      terminal_utils.error("Rewards history file not found!")
+      terminal_utils.list_item(f"Expected path: {rewards_file}", level=2)
+      print("\nTo train the RL-Agent, run:")
+      terminal_utils.list_item("python3 -m PES.ext.train_rl")
+      print()
+      return
+    
+    # Validate that files can be loaded
+    try:
+      Q = numpy.load( q_file )
+      rewards = numpy.load( rewards_file )
+      terminal_utils.success("Q-Table loaded successfully")
+      terminal_utils.list_item(f"Shape: {Q.shape}", level=2)
+      terminal_utils.list_item(f"Data type: {Q.dtype}", level=2)
+      
+      terminal_utils.success("Rewards history loaded successfully")
+      terminal_utils.list_item(f"Episodes: {len(rewards)}", level=2)
+      terminal_utils.list_item(f"Data type: {rewards.dtype}", level=2)
+      print()
+    except Exception as e:
+      terminal_utils.error("Failed to load training files!")
+      terminal_utils.list_item(f"Error: {str(e)}", level=2)
+      print("\nPlease retrain the model by running:")
+      terminal_utils.list_item("python3 -m PES.ext.train_rl")
+      print()
+      return
+    
+    terminal_utils.success("All training files validated successfully!")
+    print()
+
   # --------------------------------- #
   #       Files to be written         #
   # --------------------------------- #
   if SAVE_RESULTS:
 
     # MySubjectId: a unique identifier for the current experiment session
-    experiment_date = datetime.date.today().strftime( "%d/%m/%Y" )
+    experiment_date = datetime.date.today().strftime( "%Y-%m-%d" )
     MySubjectId = f"{experiment_date}_{PLAYER_TYPE}"
+
+    # Create experiment-specific folder
+    session_outputs_path = os.path.join( OUTPUTS_PATH, MySubjectId )
+    os.makedirs( session_outputs_path, exist_ok = True )
+    log_utils.create_ConsoleLog_filehandle_singleton( MySubjectId )
+    
+    terminal_utils.header(f"EXPERIMENT: {PLAYER_TYPE.upper()}", width=80)
+    terminal_utils.info(f"Session ID: {MySubjectId}")
+    terminal_utils.info(f"Output directory: {session_outputs_path}")
+    print()
     
     # Save experiment configuration parameters to file
     SubjectInfo_filename   = os.path.join( 
-        OUTPUTS_PATH, 
+        session_outputs_path, 
         f'{OUTPUT_FILE_PREFIX}_{MySubjectId}.txt' )
     
     SubjectInfo_filehandle = open( SubjectInfo_filename, 'w')
@@ -118,7 +176,7 @@ def main():
 
     # Save responses to file
     Responses_filename = os.path.join(
-         OUTPUTS_PATH,
+         session_outputs_path,
          f'{OUTPUT_FILE_PREFIX}responses_{ MySubjectId }.txt'
     )
 
@@ -235,6 +293,20 @@ def main():
     MyPerformances  = []
     TrustRatings   = numpy.array([1,TRUST_MAX])   # A blockindex-by-playerindex array (only other players). Initial value: TRUST_MAX (i.e. full trust)
 
+    # Print experiment start banner
+    log_utils.tee(
+          f"\n{'='*100}"
+        )
+    log_utils.tee(
+          f"{ANSI.BOLD}{ANSI.GREEN}  STARTING EXPERIMENT: {PLAYER_TYPE}{ANSI.RESET}"
+        )
+    log_utils.tee(
+          f"  Total: {NUM_BLOCKS} Blocks × {NUM_SEQUENCES} Sequences = {NUM_BLOCKS * NUM_SEQUENCES} Sessions"
+        )
+    log_utils.tee(
+          f"{'='*100}\n"
+        )
+
     # Block (CurrentBlockIndex) into the Experiment (MySubjectId)
     for CurrentBlockIndex in range( NUM_BLOCKS ):
 
@@ -247,7 +319,7 @@ def main():
           pass # We have (already) reached the correct starting block
 
       log_utils.tee(
-            f'Current session (i.e. block): {CurrentBlockIndex+1} of {NUM_BLOCKS}'
+            f"\n{ANSI.BOLD}{ANSI.BLUE}▶ BLOQUE {CurrentBlockIndex+1} / {NUM_BLOCKS}{ANSI.RESET}"
           )
 
       # Obtain current time in experiment
@@ -294,11 +366,8 @@ def main():
 
         resources_to_allocate = AVAILABLE_RESOURCES_PER_SEQUENCE
 
-        log_utils.tee( )
         log_utils.tee(
-              f'Current sequence: {AbsoluteSequenceIndex+1} of {total_number_of_sequences}',
-              f'({CurrentSequenceIndex+1} of {NUM_SEQUENCES} in block),',
-              f'using map No. {int(CurrentSequenceMapIndex)}'
+              f"  └─ Secuencia {AbsoluteSequenceIndex+1}/{total_number_of_sequences} (Mapa #{int(CurrentSequenceMapIndex)}) - Progreso: {CurrentSequenceIndex+1}/{NUM_SEQUENCES}"
               )
 
         ScreenMessage = ( f"Map Number #{AbsoluteSequenceIndex + 1} / {total_number_of_sequences}\n\n\n"
@@ -328,27 +397,28 @@ def main():
           
           init_severity.append( numpy.random.randint( MIN_INIT_SEVERITY,  1 + MAX_INIT_SEVERITY  ) )
           ResourceAllocationsAtCurrentlyVisibleCities.append( numpy.random.randint( MIN_INIT_RESOURCES, 1 + MAX_INIT_RESOURCES ) )
-          resources_left = resources_to_allocate - numpy.sum( ResourceAllocationsAtCurrentlyVisibleCities )   
-          # NOTE: resources_left: i.e. in this sequence (i.e. as opposed to in block)
-          # NOTE: resources_to_allocate == AVAILABLE_RESOURCES_PER_SEQUENCE == 49
 
-          SeveritiesOfCurrentlyVisibleCities = exp_utils.get_updated_severity( INIT_NO_OF_CITIES, 
-                                                                              ResourceAllocationsAtCurrentlyVisibleCities,
-                                                                              init_severity)
+        resources_left = resources_to_allocate - numpy.sum( ResourceAllocationsAtCurrentlyVisibleCities )   
+        # NOTE: resources_left: i.e. in this sequence (i.e. as opposed to in block)
+        # NOTE: resources_to_allocate == AVAILABLE_RESOURCES_PER_SEQUENCE == 49
 
-          # Update whether severity has increased or decreased per city
-          direction = []
-          for i in range( len( SeveritiesOfCurrentlyVisibleCities ) ):
-            if SeveritiesOfCurrentlyVisibleCities[ i ] < init_severity[ i ]:
-              direction.append( 2 )   # decrease in severity
-            else:
-              direction.append( 1 )   # increase in severity
+        SeveritiesOfCurrentlyVisibleCities = exp_utils.get_updated_severity( INIT_NO_OF_CITIES, 
+                                                                            ResourceAllocationsAtCurrentlyVisibleCities,
+                                                                            init_severity)
 
-          # Show End Of Trial Feedback -- will be turned off 'after' resources end.
-          ShowEndOfTrialFeedback = True
+        # Update whether severity has increased or decreased per city
+        direction = []
+        for i in range( len( SeveritiesOfCurrentlyVisibleCities ) ):
+          if SeveritiesOfCurrentlyVisibleCities[ i ] < init_severity[ i ]:
+            direction.append( 2 )   # decrease in severity
+          else:
+            direction.append( 1 )   # increase in severity
 
-          # Map initialisation complete; now proceed with Human/AI Agent trial annotations
-          for trial_no in range( int( NumTrials__blocks_x_sequences__2darray[ CurrentBlockIndex, CurrentSequenceIndex ] ) ):
+        # Show End Of Trial Feedback -- will be turned off 'after' resources end.
+        ShowEndOfTrialFeedback = True
+
+        # Map initialisation complete; now proceed with Human/AI Agent trial annotations
+        for trial_no in range( int( NumTrials__blocks_x_sequences__2darray[ CurrentBlockIndex, CurrentSequenceIndex ] ) ):
 
               AbsoluteTrialCount += 1
               AbsoluteTrialIndex = AbsoluteTrialCount - 1
@@ -381,45 +451,41 @@ def main():
 
               ResourceAllocationsAtCurrentlyVisibleCities.append( -1 )   # FIXME: what does this do?
 
-              if resources_left > 0:
-                
-                # Get response from Agent
-                if PLAYER_TYPE == 'RL-Agent':   
-                    ( pc,      # corresponds to the value of 'confidence' precalculated on provide_response.  Ignored for online players.
-                      r,       # corresponds to the value of 'resp' variable (defined as global within 'provide_response') at the time of return
-                      rt_h,    # corresponds to the value of 'rt_hold'       (defined as global within 'provide_response') at the time of return
-                      rt_rel,  # corresponds to the value of 'rt_release'    (defined as global within 'provide_response') at the time of return
-                      mov      # corresponds to 'movement' array in 'provide_response'
-                    ) = pygameMediator.provide_rl_agent_response(
-                                        ResourceAllocationsAtCurrentlyVisibleCities,
-                                        resources_left,
-                                        CurrentBlockIndex,
-                                        CurrentSequenceIndex,
-                                        trial_no
-                                      )
+              # Get response from Agent
+              if resources_left > 0 and PLAYER_TYPE == 'RL_AGENT':   
+                ( pc,      # corresponds to the value of 'confidence' precalculated on provide_response.  Ignored for online players.
+                  r,       # corresponds to the value of 'resp' variable (defined as global within 'provide_response') at the time of return
+                  rt_h,    # corresponds to the value of 'rt_hold'       (defined as global within 'provide_response') at the time of return
+                  rt_rel,  # corresponds to the value of 'rt_release'    (defined as global within 'provide_response') at the time of return
+                  mov      # corresponds to 'movement' array in 'provide_response'
+                ) = pygameMediator.provide_rl_agent_response(
+                                    ResourceAllocationsAtCurrentlyVisibleCities,
+                                    resources_left,
+                                    CurrentBlockIndex,
+                                    CurrentSequenceIndex,
+                                    trial_no
+                                  )
 
-                  # Get confidence rating from user
-                    if r == 0.0:
-                        c = -1      # c here stands for 'confidence', not 'city' as elsewhere.
-                        mov = [0]
-                    else:
-                        c = pc
+                # Get confidence rating from user
+                if r == 0.0:
+                  c = -1      # c here stands for 'confidence', not 'city' as elsewhere.
+                  mov = [0]
+                else:
+                  c = pc
 
-                    confidence[ CurrentBlockIndex ][ CurrentSequenceIndex ].append( c )
+                confidence[ CurrentBlockIndex ][ CurrentSequenceIndex ].append( c )
 
-                    response              [ CurrentBlockIndex ][ CurrentSequenceIndex ].append( r      )
-                    hold_response_times   [ CurrentBlockIndex ][ CurrentSequenceIndex ].append( rt_h   )
-                    release_response_times[ CurrentBlockIndex ][ CurrentSequenceIndex ].append( rt_rel )
-                    total_movement        [ CurrentBlockIndex ][ CurrentSequenceIndex ].append( mov    )
+                response              [ CurrentBlockIndex ][ CurrentSequenceIndex ].append( r      )
+                hold_response_times   [ CurrentBlockIndex ][ CurrentSequenceIndex ].append( rt_h   )
+                release_response_times[ CurrentBlockIndex ][ CurrentSequenceIndex ].append( rt_rel )
+                total_movement        [ CurrentBlockIndex ][ CurrentSequenceIndex ].append( mov    )
 
-                    log_utils.tee( f'Response was: {r}'                  )
-                    log_utils.tee( f'Confidence was: {c}'                )
-                    log_utils.tee( f'PressEvent_seconds was: {rt_h}'     )
-                    log_utils.tee( f'ReleaseEvent_seconds was: {rt_rel}' )
+                log_utils.tee( f'Response was: {r}'                  )
+                log_utils.tee( f'Confidence was: {c}'                )
+                log_utils.tee( f'PressEvent_seconds was: {rt_h}'     )
+                log_utils.tee( f'ReleaseEvent_seconds was: {rt_rel}' )
 
-                    # Single agent - no need to wait for other players
-
-              else:   # i.e. resources_left NOT > 0
+              else:   # i.e. resources_left <= 0 or not RL-Agent
                 confidence            [ CurrentBlockIndex ][ CurrentSequenceIndex ].append( -1 )
                 response              [ CurrentBlockIndex ][ CurrentSequenceIndex ].append(  0  )
                 hold_response_times   [ CurrentBlockIndex ][ CurrentSequenceIndex ].append(  0  )
@@ -440,7 +506,6 @@ def main():
                 
                 Responses_filehandle.flush()
 
-
               # Send a message to all other players (contains response, confidence, and final severities).
               NumTrialsInSequence = int( NumTrialsPerSequence_list[ AbsoluteSequenceIndex ] )
               StartingIndex = int( sum( NumTrialsPerSequence_list[ : AbsoluteSequenceIndex ] ) )
@@ -456,56 +521,56 @@ def main():
               # Past cities severity is
               if resources_left > 0:
                 # Calculate severity and update necessary structures
-                  ResourceAllocationsAtCurrentlyVisibleCities[ -1 ] = int( MyMessage[ -1, 0 ] )
-                  SeveritiesOfCurrentlyVisibleCities = exp_utils.get_updated_severity( new_locations, ResourceAllocationsAtCurrentlyVisibleCities, init_severity )
-                  
-                  if SeveritiesOfCurrentlyVisibleCities[ -1 ] < init_severity[ -1 ]:   direction.append( 2 )   # decrease in severity
-                  else                                                             :   direction.append( 1 )   # increase in severity
+                ResourceAllocationsAtCurrentlyVisibleCities[ -1 ] = int( MyMessage[ -1, 0 ] )
+                SeveritiesOfCurrentlyVisibleCities = exp_utils.get_updated_severity( new_locations, ResourceAllocationsAtCurrentlyVisibleCities, init_severity )
+                
+                if SeveritiesOfCurrentlyVisibleCities[ -1 ] < init_severity[ -1 ]:   direction.append( 2 )   # decrease in severity
+                else                                                             :   direction.append( 1 )   # increase in severity
+                
+                resources_left = int(resources_left - MyMessage[ -1, 0 ])
               
               else:
-                    ResourceAllocationsAtCurrentlyVisibleCities[ -1 ] = 0
-                    SeveritiesOfCurrentlyVisibleCities = exp_utils.get_updated_severity( new_locations, ResourceAllocationsAtCurrentlyVisibleCities, init_severity )
+                ResourceAllocationsAtCurrentlyVisibleCities[ -1 ] = 0
+                SeveritiesOfCurrentlyVisibleCities = exp_utils.get_updated_severity( new_locations, ResourceAllocationsAtCurrentlyVisibleCities, init_severity )
 
-                    if SeveritiesOfCurrentlyVisibleCities[ -1 ] < init_severity[ -1 ]:   direction.append( 2 )   # decrease in severity
-                    else                                                             :   direction.append( 1 )   # increase in severity
+                if SeveritiesOfCurrentlyVisibleCities[ -1 ] < init_severity[ -1 ]:   direction.append( 2 )   # decrease in severity
+                else                                                             :   direction.append( 1 )   # increase in severity
 
-              resources_left = int(resources_left - MyMessage[ -1, 0 ])
+        ## END OF `for trial_no in range( int( NumTrials__blocks_x_sequences__2darray[ CurrentBlockIndex, CurrentSequenceIndex ] ) )`
 
-          ## END OF `for trial_no in range( int( NumTrials__blocks_x_sequences__2darray[ CurrentBlockIndex, CurrentSequenceIndex ] ) )`
+        NumTrialsInSequence = int( NumTrialsPerSequence_list[ AbsoluteSequenceIndex ] )
+        StartingIndex = int( sum( NumTrialsPerSequence_list[ : AbsoluteSequenceIndex ] ) )
+        InitialSeveritiesInSequence = first_severity[ StartingIndex : AbsoluteTrialCount ].copy()
+        ( MyPerformance,
+          WorstCaseSequenceSeverity,
+          BestCaseSequenceSeverity ) = exp_utils.calculate_normalised_final_severity_performance_metric(
+                                               MyMessage[ :, 2 ],
+                                               InitialSeveritiesInSequence
+                                           )
+        MyPerformances.append( MyPerformance )
+        log_utils.tee(
+                   "My Sequence Performances: ",
+                   ", ".join([f'{i:.2f}' for i in MyPerformances])
+                 )
+        log_utils.tee()
 
-          NumTrialsInSequence = int( NumTrialsPerSequence_list[ AbsoluteSequenceIndex ] )
-          StartingIndex = int( sum( NumTrialsPerSequence_list[ : AbsoluteSequenceIndex ] ) )
-          InitialSeveritiesInSequence = first_severity[ StartingIndex : AbsoluteTrialCount ].copy()
-          ( MyPerformance,
-            WorstCaseSequenceSeverity,
-            BestCaseSequenceSeverity ) = exp_utils.calculate_normalised_final_severity_performance_metric(
-                                                   MyMessage[ :, 2 ],
-                                                   InitialSeveritiesInSequence
-                                               )
-          MyPerformances.append( MyPerformance )
-          log_utils.tee(
-                     "My Sequence Performances: ",
-                     ", ".join([f'{i:.2f}' for i in MyPerformances])
-                   )
-          log_utils.tee()
+        # Add the aggregated performance.
+        AllMessages  = [ MyMessage ] 
+        aggregated_allocations, aggregated_final_severity = call_nominated_aggregator( AllMessages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount )
+        AggregatedPerformance, *_ = exp_utils.calculate_normalised_final_severity_performance_metric(
+                                          aggregated_final_severity,
+                                          InitialSeveritiesInSequence
+                                      )
 
-          # Add the aggregated performance.
-          AllMessages  = [ MyMessage ] 
-          aggregated_allocations, aggregated_final_severity = call_nominated_aggregator( AllMessages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount )
-          AggregatedPerformance, *_ = exp_utils.calculate_normalised_final_severity_performance_metric(
-                                            aggregated_final_severity,
-                                            InitialSeveritiesInSequence
-                                        )
+        # Plot all the accumulated performance for all the players.
+        StartingAbsoluteSequence = STARTING_BLOCK_INDEX * NUM_SEQUENCES + STARTING_SEQ_INDEX
+              
+        # For RL-Agent, print results to console
+        log_utils.tee( f"Sequence {AbsoluteSequenceIndex}: Performance = {AggregatedPerformance:.4f}" )
 
-          # Plot all the accumulated performance for all the players.
-          StartingAbsoluteSequence = STARTING_BLOCK_INDEX * NUM_SEQUENCES + STARTING_SEQ_INDEX
-                
-          # For RL-Agent, print results to console
-          log_utils.tee( f"Sequence {AbsoluteSequenceIndex}: Performance = {AggregatedPerformance:.4f}" )
+        AbsoluteSequenceIndex += 1
 
-          AbsoluteSequenceIndex += 1
-
-        ## END OF `for CurrentSequenceIndex, CurrentSequenceMapIndex in enumerate( CurrentBlockMapIndices )`
+      ## END OF `for CurrentSequenceIndex, CurrentSequenceMapIndex in enumerate( CurrentBlockMapIndices )`
 
       # Update TrustRatings (skip for RL-Agent)
       log_utils.tee( "Trust Ratings:\n", TrustRatings )
@@ -513,15 +578,38 @@ def main():
     #
     ### END OF `for CurrentBlockIndex in range( NUM_BLOCKS )`
 
-  log_utils.tee( "\n--- Experiment completed successfully ---\n" )
+
 
   # Generate result summary JSON and visualization PNG
-  if PLAYER_TYPE == 'RL-Agent' and len(MyPerformances) > 0:
+  if PLAYER_TYPE == 'RL_AGENT' and len(MyPerformances) > 0:
     try:
+      # Reorganize performances by block for better statistical analysis
+      performances_by_block = []
+      perf_idx = 0
+      for block_idx in range(NUM_BLOCKS):
+        block_performances = []
+        for seq_idx in range(NUM_SEQUENCES):
+          if perf_idx < len(MyPerformances):
+            block_performances.append(MyPerformances[perf_idx])
+            perf_idx += 1
+        if block_performances:
+          performances_by_block.append(block_performances)
+      
+      # Prepare resource allocation data for comparison
+      resource_data = {
+        'total_resources_per_sequence': AVAILABLE_RESOURCES_PER_SEQUENCE,
+        'agent_type': PLAYER_TYPE,
+        'num_blocks': NUM_BLOCKS,
+        'num_sequences': NUM_SEQUENCES,
+        'total_trials': len(MyPerformances)
+      }
+      
       json_path, png_path = result_formatter.generate_results_report(
           MySubjectId,
-          OUTPUTS_PATH,
-          MyPerformances
+          session_outputs_path,
+          MyPerformances,
+          performances_by_block,
+          resource_data
       )
       log_utils.tee(f"\n✓ Results summary JSON: {json_path}")
       log_utils.tee(f"✓ Results visualization PNG: {png_path}\n")
@@ -531,9 +619,9 @@ def main():
   # Insert 'successful completion' marker in logfile.
   if SAVE_RESULTS:
     exp_utils.exit_experiment_gracefully(
-        Message="--- Experiment completed successfully ---",
+        Message="",
         Filehandles=[Responses_filehandle],
-        MovementData=(os.path.join(OUTPUTS_PATH, f'{OUTPUT_FILE_PREFIX}movement_log_{MySubjectId}.npy'), total_movement),
+        MovementData=(os.path.join(session_outputs_path, f'{OUTPUT_FILE_PREFIX}movement_log_{MySubjectId}.npy'), total_movement),
         LogUtils=log_utils,
         PygameMediator=pygameMediator
     )

@@ -8,9 +8,11 @@ El **PES v2.0** es un sistema optimizado de simulación para la toma de decision
 - ✅ **Arquitectura simplificada**: Eliminación completa del sistema UDP/TCP de lobby
 - ✅ **Modo sin gráficos**: Ejecución 6-10x más rápida (~3-5 minutos vs 30+ minutos)
 - ✅ **Resultados visibles en consola**: Performance metrics e información del experimento
-- ✅ **Soporte opcional de pygame**: Puede ejecutarse con gráficos (modo `'human'`) o sin ellos (modo `'RL-Agent'`)
-- ✅ **Código limpio**: Eliminación de archivos de backup y código no utilizado
+- ✅ **Soporte ÚNICO de RL-Agent**: En v2.0 se ejecuta únicamente con `PLAYER_TYPE = 'RL_AGENT'`
+- ✅ **Validación de archivos entrenados**: Verificación automática de q.npy y rewards.npy
+- ✅ **Código limpio**: Eliminación de dependencias de multiagente (UDP/TCP)
 - ✅ **Single-agent**: Una sola entidad ejecutora (compatible con múltiples ejecuciones en paralelo)
+- ✅ **Terminal utilities**: Salida formateada con colores ANSI para mejor legibilidad
 
 ### Conceptos Clave:
 - **Ciudades (Cities)**: Ubicaciones afectadas por una pandemia
@@ -85,20 +87,25 @@ Cuando `PLAYER_TYPE = 'RL-Agent'` en CONFIG.py:
 ### 1.1 Cargar Configuración
 **Archivo**: `config/CONFIG.py` → importado en `__init__.py`
 
-**Parámetros clave**:
+**Parámetros clave en v2.0**:
 ```python
-# OPCIÓN 1: RL-Agent (sin gráficos, 3-5 min)
-PLAYER_TYPE = 'RL-Agent'
+# v2.0: Solo RL_AGENT (no hay modo 'human' en este deployment)
+PLAYER_TYPE = 'RL_AGENT'
 
-# OPCIÓN 2: Humano (con gráficos pygame, 30+ min)
-# PLAYER_TYPE = 'human'
-
+# Configuración de experimento (fijas)
 AVAILABLE_RESOURCES_PER_SEQUENCE = 39       # Recursos totales por mapa
-NUM_BLOCKS = 8                              # 8 bloques
-NUM_SEQUENCES = 8                           # 8 mapas por bloque
+NUM_BLOCKS = 8                              # 8 bloques (fijo)
+NUM_SEQUENCES = 8                           # 8 mapas por bloque (fijo)
 INIT_NO_OF_CITIES = 2                       # 2 ciudades preestablecidas
-AGENT_WAIT = False                          # No esperar delays para RL-Agent
-SHOW_PYGAME_IF_NONHUMAN_PLAYER = False      # No mostrar gráficos para RL-Agent
+
+# Parámetros de severidad
+PANDEMIC_PARAMETER = 0.4                    # β (multiplicador de severidad)
+# → SEVERITY_MULTIPLIER = 1.4 (en __init__.py)
+# → RESPONSE_MULTIPLIER = 0.4 (en __init__.py)
+
+# Control de output
+SAVE_RESULTS = True                         # Guardar resultados (always True en v2.0)
+VERBOSE = True                              # Output informativo en consola
 ```
 
 ### 1.2 Inicialización Condicional de Pygame
@@ -162,35 +169,49 @@ for blk in range(NUM_BLOCKS):
 InitialSeverityCsv = os.path.join(INPUTS_PATH, 'initial_severity.csv')
 first_severity = numpy.loadtxt(InitialSeverityCsv)  # Array 360 valores
 ```
-Array con severidad inicial de cada ciudad (2-10 escala).
+Array con severidad inicial de cada ciudad (rango: MIN_INIT_SEVERITY a MAX_INIT_SEVERITY).
 
-#### Carga Condicional de Imágenes (OPTIMIZACIÓN v2.0)
+#### Longitudes de Secuencias
 ```python
-# En __main__.py, línea 217-230
-if PLAYER_TYPE != 'RL-Agent':
-    # Cargar imágenes PNG (solo para humano)
-    images = load_all_images(IMAGE_PATH)
-else:
-    # RL-Agent: cargar SOLO coordenadas, no imágenes
-    images = [None] * 9  # Placeholder
-
-# Coordenadas SIEMPRE se cargan (necesarias para lógica)
-all_coordinates = load_coordinates()
-```
-**Ahorro de memoria**: RL-Agent no carga ~200+ MB de imágenes PNG.
-
-### 1.6 Cargar Q-Table del RL-Agent
-**Ubicación**: `inputs/q.npy` (pre-entrenada por `ext/train_rl.py`)
-
-```python
-Q = numpy.load(os.path.join(INPUTS_PATH, 'q.npy'))      # Shape: (31, 13, 11)
-rewards = numpy.load(os.path.join(INPUTS_PATH, 'rewards.npy'))
+SeqLengthsCsv = os.path.join(INPUTS_PATH, 'sequence_lengths.csv')
+sequence_length = numpy.loadtxt(SeqLengthsCsv, delimiter=',')
+# sequence_length tiene 64 valores (8 bloques × 8 secuencias)
+# Cada valor indica: número de trials/ciudades en esa secuencia
 ```
 
-**Dimensiones de Q-Table**:
-- **Eje 0** (recursos): 0-30 (AVAILABLE_RESOURCES - 9)
-- **Eje 1** (trial): 0-12 (máximo de ciudades por secuencia)
-- **Eje 2** (severidad): 0-10 (escala de severidad)
+### 1.6 Validación de Q-Table del RL-Agent (NUEVO en v2.0)
+
+**Ubicación de archivos entrenados**: `inputs/q.npy` y `inputs/rewards.npy`
+
+```python
+# En __main__.py (líneas 66-103): Validación automática
+if PLAYER_TYPE == 'RL_AGENT':
+    q_file = os.path.join(INPUTS_PATH, 'q.npy')
+    rewards_file = os.path.join(INPUTS_PATH, 'rewards.npy')
+    
+    # Paso 1: Verificar existencia
+    if not os.path.isfile(q_file):
+        raise FileNotFoundError(f"Q-Table no encontrada en {q_file}")
+    
+    # Paso 2: Cargar y validar
+    Q = numpy.load(q_file)  # Shape: (31, 13, 11)
+    rewards = numpy.load(rewards_file)
+    
+    # Paso 3: Mostrar información en consola
+    print(f"Q-Table shape: {Q.shape}")
+    print(f"Episodes trained: {len(rewards)}")
+```
+
+**Si los archivos NO existen**, el sistema muestra error y sugiere:
+```bash
+python3 -m PES.ext.train_rl
+```
+
+**Dimensiones correctas de Q-Table**:
+- **Eje 0** (recursos disponibles): 0-30 (AVAILABLE_RESOURCES_PER_SEQUENCE - 9 = 39 - 9 = 30)
+- **Eje 1** (número de trial/ciudad): 0-12 (máximo NUM_MAX_TRIALS = 10, +2 ciudades iniciales = 12)
+- **Eje 2** (severidad): 0-10 (escala de severidad, MAX_INIT_SEVERITY = 5 pero puede llegara hasta 10)
+- **Eje 3** (acciones): 11 (recursos asignables: 0-10)
 
 **Contenido**: Para cada estado (recursos_left, city_number, severity), Q contiene 11 valores (utilidad de cada acción 0-10 recursos).
 
@@ -949,3 +970,9 @@ Si el entrenamiento no converge bien:
    ```
 
 Ver `PES/ext/train_rl.py` para detalles técnicos completos de la implementación.
+
+---
+
+**Última actualización**: 5 de febrero de 2026
+**Versión**: PES v2.0 (Revisión)
+**Estado**: Documentación actualizada con estado actual del proyecto
