@@ -7,42 +7,33 @@ It takes the parameters of the experiment directly from CONFIG.py
 The trained Q-Table and the log of the obtained rewards are stored into the INPUTS_PATH directory.  They can be used later to use the trained agent.
 '''
 
-from hashlib import new
-import warnings
-import numpy
-import cv2
-import matplotlib.pyplot as plt
-import PIL.Image as Image
-import gym
-import random
+##########################
+##  Imports externos    ##
+##########################
 import os 
-import tensorflow as tf
+import numpy
+import warnings
+import matplotlib.pyplot as plt
+
+##########################
+##  Imports internos    ##
+##########################
+from .. import INPUTS_PATH
+
+from .tools import plot_confidences 
+from ..src.pygameMediator import convert_globalseq_to_seqs
+from ..src.terminal_utils import header, section, success, info, list_item
+from .pandemic import Pandemic, rl_agent_meta_cognitive, run_experiment, QLearning  
 
 # Suppress non-critical warnings
 warnings.filterwarnings('ignore', category=UserWarning, message='.*Box bound precision.*')
 warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 
-from gym import Env, spaces
-import time
 
-
-from .. import VERBOSE
-from .. import INPUTS_PATH
-from .. import AVAILABLE_RESOURCES_PER_SEQUENCE
-
-from ..src.pygameMediator import convert_globalseq_to_seqs
-from ..src.exp_utils import calculate_normalised_final_severity_performance_metric
-from ..src.exp_utils import get_updated_severity
-
-from ..src import Agent
-from ..src.Agent import agent_meta_cognitive
-from ..src.Agent import adjust_response_decay, boltzmann_decay
-from .pandemic import Pandemic, rl_agent_meta_cognitive, run_experiment, QLearning  
-from .tools import plot_confidences 
-from .tools import humanise_this_reported_confidence
-from ..src.terminal_utils import header, section, success, error, info, list_item, data_row, separator 
-
-if __name__=='__main__':
+###################################
+##             Main             ###
+###################################
+def main():
         
     header("RL-AGENT TRAINING PIPELINE", width=80)
     
@@ -50,7 +41,8 @@ if __name__=='__main__':
     train_rl_outputs = os.path.join(INPUTS_PATH, '../outputs/train_rl')
     os.makedirs(train_rl_outputs, exist_ok=True)
     info(f"Output directory: {train_rl_outputs}")
-    
+
+    # Load initial serverity and sequence lengths data   
     section("Loading Training Data", width=80)
     trials_per_sequence = numpy.loadtxt(os.path.join( INPUTS_PATH,'sequence_lengths.csv'), delimiter=',')
     all_severities = numpy.loadtxt(os.path.join( INPUTS_PATH, 'initial_severity.csv'), delimiter=',')
@@ -60,11 +52,19 @@ if __name__=='__main__':
     list_item(f"Total trials: {int(sum(trials_per_sequence))}")
     print()
 
+    # Convert global sequences to per-sequence format
+    # Reorganizes flat severity array into nested lists grouped by sequence
+    # Input:  trials_per_sequence = [3, 2] (2 sequences with 3 and 2 trials respectively)
+    #         all_severities = [0.5, 0.6, 0.7, 0.8, 0.9] (flat array of all trials)
+    # Output: sevs = [[0.5, 0.6, 0.7], [0.8, 0.9]] (severities grouped by sequence)
     sevs = convert_globalseq_to_seqs(trials_per_sequence, all_severities)
 
+    # Calculate probability distributions for number of cities (trials per sequence)
     val_cities, count_cities = numpy.unique(trials_per_sequence, return_counts=True)
-    val_severity, count_severity = numpy.unique(all_severities, return_counts=True)
     number_cities_prob = numpy.asarray((val_cities, count_cities/len(trials_per_sequence))).T
+    
+    # Calculate probability distributions for initial severities
+    val_severity, count_severity = numpy.unique(all_severities, return_counts=True)
     severity_prob = numpy.asarray((val_severity, count_severity/len(all_severities))).T
 
     env = Pandemic()
@@ -240,3 +240,7 @@ if __name__=='__main__':
     success("RL-Agent training pipeline finished successfully!")
     info(f"Output directory: {train_rl_outputs}")
     print()
+#
+### END OF 'main()
+
+if __name__ == '__main__':  main()

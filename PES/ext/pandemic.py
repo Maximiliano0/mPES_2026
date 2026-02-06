@@ -10,54 +10,58 @@ Pandemic Class:
         'get_updated_severity' from exp_utils.
 '''
 
-from hashlib import new
+##########################
+##  Imports externos    ##
+##########################
 import numpy
-import matplotlib.pyplot as plt
-import PIL.Image as Image
-import gym
 import random
-import os 
-import tensorflow as tf
-
+import matplotlib.pyplot as plt
 from gym import Env, spaces
-import time
 
-
-from .. import VERBOSE
-from .. import INPUTS_PATH
+##########################
+##  Imports internos    ##
+##########################
 from .. import AVAILABLE_RESOURCES_PER_SEQUENCE
+from .. import MAX_INIT_SEVERITY
+from .. import MAX_ALLOCATABLE_RESOURCES
+from .. import NUM_MAX_TRIALS
 
-from ..src.pygameMediator import convert_globalseq_to_seqs
-from ..src.exp_utils import calculate_normalised_final_severity_performance_metric
-from ..src.exp_utils import get_updated_severity
-
-from ..src import Agent
-from ..src.Agent import agent_meta_cognitive
-from ..src.Agent import adjust_response_decay, boltzmann_decay
 from .tools import entropy_from_pdf 
+from ..src.exp_utils import get_updated_severity
+from ..src.exp_utils import calculate_normalised_final_severity_performance_metric
 
-
-
+##########################
+##  Pandemic Scenario   ##
+##########################
 class Pandemic(Env):
     def __init__(self):
+        # Construct the parent class
         super(Pandemic, self).__init__()
         
-        self.max_resources = AVAILABLE_RESOURCES_PER_SEQUENCE-9         # Number of available resources at the beginning (9 are preassigned)
-        self.max_seq_length = 12        # Length of the longer possible sequence
-        self.max_severity = 10          # Ten severities, from 0 to 10
-        self.max_allocation = 10        # Ten is the max alloc, Eleven choices, from 0 to 10
-
+        # Number of available resources at the beginning (9 are preassigned)
+        self.max_resources  =   AVAILABLE_RESOURCES_PER_SEQUENCE - 9 
         self.available_resources_states = self.max_resources + 1
-        self.trial_no_states = self.max_seq_length+1
-        self.severity_states = self.max_severity+1
-        
+       
+        # Ten trials per sequence, from 3 to 10
+        self.max_seq_length =   NUM_MAX_TRIALS 
+        self.trial_no_states = self.max_seq_length + 1
+
+        # Ten severities, from 0 to 10
+        self.max_severity   =   MAX_INIT_SEVERITY 
+        self.severity_states = self.max_severity + 1
+
+        # Ten is the max alloc, Eleven choices, from 0 to 10
+        self.max_allocation =   MAX_ALLOCATABLE_RESOURCES
+
         # Define a 3-D observation space
-        self.observation_shape = (self.available_resources_states, self.trial_no_states, self.severity_states)
+        self.observation_shape = (self.available_resources_states,
+                                  self.trial_no_states, 
+                                  self.severity_states)
+        
         self.observation_space = spaces.Box(low = numpy.zeros(self.observation_shape), 
                                             high = numpy.ones(self.observation_shape),
                                             dtype = numpy.float16)
     
-        
         # Define an action space 
         self.action_space = spaces.Discrete(self.max_allocation+1,)
                         
@@ -66,27 +70,25 @@ class Pandemic(Env):
         
         # Define elements present inside the environment
         self.elements = []
-
         self.verbose = True
-
         self.number_cities_prob = numpy.asarray([], dtype=numpy.float64)
         self.severity_prob = numpy.asarray([], dtype=numpy.float64)
 
+    # Generates a random sequence with severities and allocations
+    # If no probability distributions are set: uses uniform random values
+    # If probability distributions are set: samples from those distributions
+    # Sets: self.seq_length, self.initial_severities, self.allocations
     def random_sequence(self):
         if (self.number_cities_prob.shape[0] == 0):
             self.seq_length = random.randrange(int(3), int(self.max_seq_length))
-            #print(f'Length:{self.seq_length}')
             self.allocations = [self.action_space.sample() for s in range(self.seq_length)]
             self.initial_severities = [random.randrange(int(0), int(self.max_severity)) for s in range(self.seq_length)]
         else:
             self.seq_length = int(numpy.random.choice(self.number_cities_prob[:,0], p=(self.number_cities_prob[:,1])))
             self.initial_severities = numpy.random.choice(self.severity_prob[:,0], size=(self.seq_length,), p=self.severity_prob[:,1])
 
-
-
     def set_fixed_sequence(self, length, init_severities, allocs=None):
         self.seq_length = int(length)
-        #print(f'Length:{self.seq_length}')
         self.set_initial_severities(init_severities)
 
         if allocs is None:
@@ -94,7 +96,6 @@ class Pandemic(Env):
         else:
             self.set_fixed_allocations(allocs)
             
-
     def set_fixed_allocations(self, allocs):
         self.allocations = allocs 
 
@@ -107,8 +108,11 @@ class Pandemic(Env):
     def sample(self):
         return self.allocations[self.iteration]
 
+    # --------------------------------------------------------------------------------- #
+    # Resets the environment to an initial state and returns an initial observation.    #
+    # --------------------------------------------------------------------------------- #
     def reset(self):
-        # Reset the fuel consumed
+        # Reload the available resources
         self.available_resources = self.max_resources
 
         # Reset the reward
@@ -116,13 +120,6 @@ class Pandemic(Env):
 
         # City number
         self.iteration = 0
-
-        # Length of the sequence
-        #self.seq_length = random.randrange(int(3), int(self.max_seq_length))
-
-        #self.initial_severities = []
-
-        #self.allocations = []
 
         self.severities = []
         self.resources = []
@@ -149,15 +146,15 @@ class Pandemic(Env):
     def close(self):
         pass
 
-
     def get_action_meanings(self):
         return {0: "0", 1:"1", 2:"2", 3:"3", 4:"4",5:"5", 6:"6", 7:"7",8:"8",9:"9", 10:"10"}
-
 
     def damage(self):
         return get_updated_severity(len(self.severities), self.resources, self.severities)
 
-
+    # --------------------------------------------------------------------------------------------- #
+    # Step function takes an action and returns the new state, reward, done flag, and info dict     #
+    # --------------------------------------------------------------------------------------------- #
     def step(self, action):
         # Flag that marks the termination of an episode
         done = False
