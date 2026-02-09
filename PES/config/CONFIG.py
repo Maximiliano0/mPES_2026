@@ -18,47 +18,63 @@ Note:
     Las configuraciones de cada Experimento se definen en este archivo.
 """
 
-#------------------ Configuration Constants ---------------#
-AVAILABLE_RESOURCES_PER_SEQUENCE = 39   # Total resources available to be allocated per sequence      
+# ==================== RESOURCE ALLOCATION SETTINGS ====================
+AVAILABLE_RESOURCES_PER_SEQUENCE = 39   # Total resource budget allocatable across all trials in a sequence
 
-INIT_NO_OF_CITIES = 2   # Initial cities per sequence
+INIT_NO_OF_CITIES = 2   # Number of cities visible at the start of each sequence
 
-INITIAL_SEVERITY_FILE = 'initial_severity.csv'   # Initial severity data file
-SEQ_LENGTHS_FILE = 'sequence_lengths.csv'       # Sequence lengths data file
-RANDOM_INITIAL_SEVERITY = False # If True, initial severity will be randomly generated instead of using the file
-SAVE_INITIAL_SEVERITY_TO_FILE = False # If True, the randomly generated initial severity will be saved to a CSV file for record-keeping
+# ==================== DATA FILES & INITIALIZATION ====================
+INITIAL_SEVERITY_FILE = 'initial_severity.csv'   # CSV file containing initial severity values for cities
+SEQ_LENGTHS_FILE = 'sequence_lengths.csv'       # CSV file specifying trial count for each sequence
+RANDOM_INITIAL_SEVERITY = False                 # Generate random severities instead of loading from file
+SAVE_INITIAL_SEVERITY_TO_FILE = False           # Save generated severities to CSV for reproducibility
 
-AGGREGATION_METHOD = {  1: 'confidence_weighted_median',
-                        2: 'confidence_weighted_mean',
-                        3: 'confidence_weighted_mode'
-                     }[ 2 ]    # <-- select option here
+# ==================== DECISION AGGREGATION ====================
+# Method for combining resource allocation decisions from multiple participants
+AGGREGATION_METHOD = {  1: 'confidence_weighted_median',    # Robust to outliers
+                        2: 'confidence_weighted_mean',      # Standard weighted average
+                        3: 'confidence_weighted_mode'       # Most common value (experimental)
+                     }[ 2 ]    # <-- SELECT: Change index (1/2/3) to choose method
 
-MAX_ALLOCATABLE_RESOURCES = 10  # Suggested Value: 10
-MAX_INIT_RESOURCES = 6          # Suggested Value: 6
-MAX_INIT_SEVERITY  = 5          # Suggested Value: 5
-MIN_ALLOCATABLE_RESOURCES = 0   # Suggested Value: 0
-MIN_INIT_RESOURCES = 3          # Suggested Value: 3
-MIN_INIT_SEVERITY  = 2          # Suggested Value: 2       
+# ==================== VALUE RANGES & LIMITS ====================
+MAX_ALLOCATABLE_RESOURCES = 10  # Maximum resources allocatable per trial (Suggested: 10)
+MAX_SEVERITY = 9                # Maximum possible severity value for cities (Suggested: 9)
+MIN_ALLOCATABLE_RESOURCES = 0   # Minimum resources allocatable per trial (Suggested: 0)
+MAX_INIT_SEVERITY  = 5          # Maximum initial city severity (Suggested: 5)
+MIN_INIT_SEVERITY  = 2          # Minimum initial city severity (Suggested: 2)
+MAX_INIT_RESOURCES = 6          # Maximum initial resource allocation (Suggested: 6)
+MIN_INIT_RESOURCES = 3          # Minimum initial resource allocation (Suggested: 3)       
 
-NUM_ATTEMPTS_TO_ASSIGN_SEQ = 8  # Suggested Value: 8       ## Number of attempts to assign sequences to a block while satisfying constraints
-NUM_BLOCKS = 8                  # Suggested Value: 8       ## Number of Blocks in the Experiment (between 6 and 8 according to spec document)
-NUM_MAX_TRIALS = 10             # Suggested Value: 10      ## Maximum number of trials that can be allocated to a sequence
-NUM_MIN_TRIALS = 3              # Suggested Value: 3       ## Minimum number of trials that can be allocated to a sequence
-NUM_SEQUENCES = 8               # Suggested Value: 8       ## Number of Sequences (i.e. 'maps') per Block (between 8 and 12 according to spec)
+# ==================== EXPERIMENT STRUCTURE ====================
+NUM_BLOCKS = 8                  # Number of experimental blocks (Suggested: 8, Range: 6-8)
+NUM_SEQUENCES = 8               # Number of sequences (maps) per block (Suggested: 8, Range: 8-12)
+NUM_MIN_TRIALS = 3              # Minimum trials per sequence (Suggested: 3)
+NUM_MAX_TRIALS = 10             # Maximum trials per sequence (Suggested: 10)
+TOTAL_NUM_TRIALS_IN_BLOCK  = 45 # Exact sum of trials across all sequences in a block
+                                 # Ensures consistent block duration and break scheduling
+NUM_ATTEMPTS_TO_ASSIGN_SEQ = 8  # Retry attempts when assigning sequences to satisfy constraints
 
-OUTPUT_FILE_PREFIX = 'PES_'    # Prefix for output files
+# ==================== OUTPUT & LOGGING ====================
+OUTPUT_FILE_PREFIX = 'PES_'    # Prefix for all output filenames
 
-PLAYER_TYPE = { # Player Configuration - Select player type
-    1: 'RL_AGENT' 
+# ==================== PLAYER & AGENT SETTINGS ====================
+PLAYER_TYPE = { # Decision maker type - SELECT ONE
+    1: 'RL_AGENT'  # Q-Learning Reinforcement Learning agent
     }[1]
 
-PANDEMIC_PARAMETER = 0.4            # (β): severity multiplier and response multiplier at initialisation
+STARTING_BLOCK_INDEX = 0   # Resume from block index (0 = start from beginning)
+STARTING_SEQ_INDEX   = 0   # Resume from sequence index (0 = start from beginning)
 
-STARTING_BLOCK_INDEX = 0   # Default: 0  (i.e. start at the first block of the experiment)
-STARTING_SEQ_INDEX   = 0   # Default: 0  (i.e. start at the first sequence of the selected block)
+# ==================== PANDEMIC DYNAMICS ====================
+PANDEMIC_PARAMETER = 0.4   # Alpha (α) parameter controlling disease dynamics
+                           # α = RESPONSE_MULTIPLIER (resource effectiveness)
+                           # β = SEVERITY_MULTIPLIER = 1 + α (disease propagation)
+                           # Formula: new_severity = β*initial - α*resources
 
-TOTAL_NUM_TRIALS_IN_BLOCK  = 45       # Suggested Value: 45      ## The total trials contained in a Block should be 45; in other words, the sum of trials over all sequences in a block should sum up to 45. Q: Why? A: According to Riccardo, this is probably to ensure that all blocks have more or less the same duration (i.e. so that breaks occur at relatively consistent intervals)
-TRUST_MAX = 100                       # Suggested Value: 100     ## The maximum integer value on the trust slider scales. (previously 4, now 100)
-USE_FIXED_BLOCK_SEQUENCES = True      # Suggested Value: True    ## If True, the length of each sequence is obtained from 'sequence_lengths.csv' file.
-VERBOSE = True                        # Suggested Value: True    ## Set to True to enable informative messages on the terminal (e.g. initialization logs etc)
-SAVE_RESULTS = True                   # Suggested Value: True    ## If True, results will be saved to output files after each sequence
+# ==================== UI & INTERACTION ====================
+TRUST_MAX = 100            # Maximum scale value for confidence slider (upgraded from 4 to 100)
+USE_FIXED_BLOCK_SEQUENCES = True  # Load sequence trial lengths from CSV file (vs. random)
+
+# ==================== RUNTIME & PERSISTENCE ====================
+VERBOSE = True             # Enable detailed console logging and initialization messages
+SAVE_RESULTS = True        # Save experiment results to JSON/TXT files after each sequence

@@ -1,12 +1,26 @@
 """
-PES - Pandemic Experiment Scenario
+Result Formatter for PES (Pandemic Experiment Scenario)
 
-result_formatter.py
+Provides comprehensive formatting and visualization of experiment results.
+Generates JSON summary files and multi-panel PNG plots for performance analysis.
 
-Module for formatting and visualizing experiment results.
-Generates JSON summary and PNG plots for experiment analysis.
+Key Features
+------------
+• Statistical analysis: mean, median, std, quartiles, improvement trends
+• Per-block performance tracking and comparison
+• Multi-panel visualization: trends, distribution, box plots, cumulative metrics
+• JSON export: structured results with metadata and configuration
+• Error handling: robust handling of variable data structures
+
+Main Functions
+---------------
+• generate_results_report: Create JSON and PNG outputs from experiment data
+• print_results_summary: Display summary of generated report files
 """
 
+##########################
+##  Imports externos    ##
+##########################
 import json
 import os
 import numpy
@@ -43,7 +57,35 @@ def generate_results_report(subject_id, outputs_path, performances, all_performa
 
 
 def _calculate_statistics(performances, all_performances):
-    """Calculate statistical summaries of performances."""
+    """
+    Calculate comprehensive statistical summaries from performance data.
+    
+    Computes overall and per-block statistics including mean, median, standard
+    deviation, quantiles, and learning improvement metrics.
+    
+    Parameters
+    ----------
+    performances : array-like
+        List of performance scores for each sequence (individual values)
+    all_performances : array-like
+        2D array where each row contains performance scores for sequences in a block
+    
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - overall_mean, overall_median, overall_std, overall_min, overall_max
+        - percentile_25, percentile_75 (quartiles)
+        - total_sequences, first_block_mean, last_block_mean
+        - improvement: Difference between last and first block means
+        - per_block_statistics: List of dicts with block-specific metrics
+    
+    Notes
+    -----
+    • Assumes minimum 16 sequences for first/last block comparison
+    • Assumes 8 sequences per block for block mean calculations
+    • Returns None for metrics with insufficient data
+    """
     
     performances = numpy.array(performances)
     all_performances = numpy.array(all_performances)
@@ -82,7 +124,37 @@ def _calculate_statistics(performances, all_performances):
 
 
 def _save_json_report(subject_id, outputs_path, stats, resources_data):
-    """Save statistics to JSON file with comprehensive model comparison data."""
+    """
+    Export performance statistics to a structured JSON report file.
+    
+    Creates a comprehensive JSON file containing experiment metadata, configuration,
+    performance statistics (overall and per-block), and resource allocation data.
+    
+    Parameters
+    ----------
+    subject_id : str
+        Unique identifier for the subject/session
+    outputs_path : str
+        Directory path where JSON file will be saved
+    stats : dict
+        Statistics dictionary from _calculate_statistics()
+    resources_data : dict or None
+        Configuration and resource information including agent_type, num_blocks,
+        total_resources_per_sequence, num_sequences, total_trials
+    
+    Returns
+    -------
+    str
+        Absolute path to the generated JSON file
+    
+    File Structure
+    ---------------
+    • metadata: Subject ID, timestamp, report type and model
+    • configuration: Experiment parameters
+    • performance_statistics: Overall and per-block statistics
+    • resources_allocation: Resource allocation data
+    • file_references: Output filename mappings
+    """
     
     report = {
         'metadata': {
@@ -115,7 +187,37 @@ def _save_json_report(subject_id, outputs_path, stats, resources_data):
 
 
 def _save_png_plots(subject_id, outputs_path, performances, all_performances, stats):
-    """Generate and save PNG plots for performance visualization."""
+    """
+    Generate and save multi-panel performance visualization to PNG file.
+    
+    Creates a comprehensive 6-panel visualization including trend lines,
+    distribution histograms, box plots, cumulative mean curves, and summary tables.
+    
+    Parameters
+    ----------
+    subject_id : str
+        Subject/session identifier used in filename
+    outputs_path : str
+        Directory path where PNG file will be saved
+    performances : array-like
+        Individual performance scores for each sequence
+    all_performances : array-like
+        2D array of block performances
+    stats : dict
+        Statistics dictionary from _calculate_statistics()
+    
+    Returns
+    -------
+    str
+        Absolute path to the generated PNG file
+    
+    Notes
+    -----
+    - Figure dimensions: 16x10 inches at 150 dpi
+    - Uses GridSpec for flexible subplot layout
+    - Performance axis limited to [0, 1.05] range
+    - Handles variable block structure gracefully
+    """
     
     try:
         performances = numpy.array(performances, dtype=float)
@@ -252,7 +354,25 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
 
 
 def print_results_summary(json_filepath, png_filepath):
-    """Print summary of generated report files."""
+    """
+    Display formatted summary of generated experiment result files.
+    
+    Prints a formatted message indicating successful report generation with
+    file paths and usage instructions for the generated output files.
+    
+    Parameters
+    ----------
+    json_filepath : str
+        Absolute path to the generated JSON results file
+    png_filepath : str
+        Absolute path to the generated PNG visualization file
+    
+    Notes
+    -----
+    • Output formatted with decorative ASCII separators
+    • Provides guidance for using JSON file for model comparisons
+    • Emphasizes that PNG contains comprehensive visualizations
+    """
     
     print("\n" + "="*80)
     print("✓ EXPERIMENT RESULTS GENERATED SUCCESSFULLY")

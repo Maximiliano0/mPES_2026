@@ -92,6 +92,7 @@ TRUST_MAX                                   = CONFIG.TRUST_MAX
 USE_FIXED_BLOCK_SEQUENCES                   = CONFIG.USE_FIXED_BLOCK_SEQUENCES
 VERBOSE                                     = CONFIG.VERBOSE
 AGGREGATION_METHOD                          = CONFIG.AGGREGATION_METHOD
+MAX_SEVERITY                                = CONFIG.MAX_SEVERITY
 
 ##############################################
 ### Process imported configuration options ###
@@ -156,6 +157,7 @@ __all__ = [
     'MAX_ALLOCATABLE_RESOURCES',
     'MAX_INIT_RESOURCES',
     'MAX_INIT_SEVERITY',
+    'MAX_SEVERITY',
     'MIN_ALLOCATABLE_RESOURCES',
     'MIN_INIT_RESOURCES',
     'MIN_INIT_SEVERITY',

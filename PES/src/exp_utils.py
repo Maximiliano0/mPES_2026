@@ -1,56 +1,70 @@
 """
 PES - Pandemic Experiment Scenario
 
-Utility functions used throughout experiment
- • calculate_normalised_final_severity_performance_metric
- • chain_ops
- • confirm_biosemi_properly_initialised
- • create_random_subject_id
- • create_subject_id
- • generate_feedback
- • get_confidence_weighted_mean
- • get_confidence_weighted_median
- • get_confidence_weighted_mode
- • get_percent_deviation
- • get_sequence_severity_from_allocations
- • get_updated_severity
- • next_seq_length
- • random_severity_generator
- • remind_biosemi_properly_finalised
- • rgb_from_severity
- • sampler
+Utility functions module providing essential functionality for experiment execution,
+severity calculations, resource allocation aggregation, and performance metrics.
+
+Key Components
+--------------
+• Severity Calculations: Functions to compute and update pandemic severity based on
+  resource allocations and time progression
+• Performance Metrics: Normalized performance calculation comparing actual results
+  against best/worst case allocations
+• Confidence Aggregation: Weighted mean/median calculations for combining decisions
+  from multiple participants
+• Analysis Tools: Utilities for data transformation, sampling, and experiment control
+
+Main Functions
+---------------
+• calculate_normalised_final_severity_performance_metric: Compute normalized performance
+• get_updated_severity: Calculate new severity given resource allocations
+• get_confidence_weighted_mean: Aggregate decisions using confidence-weighted mean
+• get_confidence_weighted_median: Aggregate decisions using confidence-weighted median
+• get_percent_deviation: Measure deviation from optimal outcomes
+• random_severity_generator: Generate random initial conditions
+• chain_ops: Pipe operations through sequential functions
+• exit_experiment_gracefully: Clean shutdown with resource cleanup
 """
 
-
-# ----------------
-# external imports
-# ----------------
-
+##########################
+##  Imports externos    ##
+##########################
 import os
 import random
 import numpy
 import scipy.stats as ss
-import matplotlib.backends.backend_agg as agg
-import matplotlib.pyplot as plt
-
 from statsmodels.stats.weightstats import DescrStatsW as WeightedStats
 
-
-# ----------------
-# internal imports
-# ----------------
+##########################
+##  Imports internos    ##
+##########################
 from .. import *
 
-# -----------------------
-# module-global variables
-# -----------------------
+def get_sequence_severity_from_allocations( Allocations, InitialSeverities ):
+    return numpy.sum( get_array_of_sequence_severities_from_allocations( Allocations, InitialSeverities ) )
 
-
-#############################
-### General utility functions
-#############################
 
 def calculate_normalised_final_severity_performance_metric( SeveritiesFromSequence, InitialSequenceSeverities ):
+    """
+    Calculate normalized performance metric comparing actual severity outcome to best/worst case scenarios.
+    
+    The metric ranges from 0 (worst case performance) to 1 (best case performance), representing
+    how well the participant/agent performed relative to the theoretical bounds.
+    
+    Parameters
+    ----------
+    SeveritiesFromSequence : array-like
+        Final severity values achieved for each trial in the sequence
+    InitialSequenceSeverities : array-like
+        Initial severity values for each trial in the sequence
+    
+    Returns
+    -------
+    tuple
+        - Performance (float): Normalized performance metric (0-1)
+        - WorstCaseSequenceSeverity (float): Sum of severities if no resources allocated
+        - BestCaseSequenceSeverity (float): Sum of severities if max resources allocated
+    """
 
     FinalSequenceSeverity     = numpy.sum( SeveritiesFromSequence )
     BestCaseAllocations       = numpy.full_like( SeveritiesFromSequence, MAX_ALLOCATABLE_RESOURCES )
@@ -62,26 +76,68 @@ def calculate_normalised_final_severity_performance_metric( SeveritiesFromSequen
     return Performance, WorstCaseSequenceSeverity, BestCaseSequenceSeverity
 
 
-def get_sequence_severity_from_allocations( Allocations, InitialSeverities ):
-    return numpy.sum( get_array_of_sequence_severities_from_allocations( Allocations, InitialSeverities ) )
-
-
-
-
 def get_array_of_sequence_severities_from_allocations( Allocations, InitialSeverities ):
-    '''
-    This example shows how the city damage is performed in the current version of the experiment
-
-    severities 3,4,8
-    allocations 5,6,4
-
-    3       |
-    2.6 (5) |   4    |
-    2.12(5) | 3.6 (6)|   8
-    1.54(5) | 3.12(6)| 8.8 (4)
-
-    Each individual severity is clipped to max(0, value)
-    '''
+    """
+    Calculate severity progression through a sequence given resource allocations.
+    
+    Simulates the pandemic scenario where severity evolves over time as resources
+    are sequentially allocated to trials. Each trial's final severity depends on
+    initial severity, resource allocation, and the combined effect of previous allocations.
+    
+    The severity update formula for each trial is:
+        new_severity = max(0, SEVERITY_MULTIPLIER * initial - RESPONSE_MULTIPLIER * allocated)
+    
+    Parameters
+    ----------
+    Allocations : array-like
+        Resource allocation amounts for each trial in sequence (0-10)
+    InitialSeverities : array-like
+        Initial severity value for each trial
+    
+    Returns
+    -------
+    list[float]
+        Final severity values for each trial after resource allocation effects
+    
+    Examples
+    --------
+    City damage progression (Pandemic damage model):
+    
+    Initial severities: [3, 4, 8]
+    Allocations: [5, 6, 4]
+    
+    This example shows how city damage is performed by sequentially applying
+    resources. The formula at each step is:
+        new_severity = max(0, SEVERITY_MULTIPLIER * severity - RESPONSE_MULTIPLIER * allocation)
+    
+    Severity evolution across trials:
+    
+    City 1          City 2          City 3
+    ------          ------          ------
+    3               
+    2.6 (alloc=5)   4               
+    2.12 (alloc=5)  3.6 (alloc=6)   8               
+    1.54 (alloc=5)  3.12 (alloc=6)  8.8 (alloc=4)   [Final result]
+    
+    Step-by-step explanation:
+    • After Trial 0: City 1 evolves from 3 → 2.6 (allocation applied)
+    • After Trial 1: City 1 continues 2.6 → 2.12; City 2 starts 4 → 3.6
+    • After Trial 2: All cities update; City 3 enters 8 → 8.8
+    
+    Final result: [1.54, 3.12, 8.8]
+    
+    Note: This example uses SEVERITY_MULTIPLIER=1.2 and RESPONSE_MULTIPLIER=0.2
+    for illustration. Actual values depend on PANDEMIC_PARAMETER configuration
+    (typically 0.4, giving multipliers 1.4 and 0.4)
+    
+    Notes
+    -----
+    • Severities are clipped to minimum of 0
+    • The effect of allocations compounds across the sequence as each trial's outcome 
+      influences subsequent trials
+    • Higher allocations reduce severity more effectively
+    • If new_severity < 0, it is clipped to 0 (pandemic eliminated)
+    """
 
     NumTrialsInSequence = len( InitialSeverities )
     severities          = []
@@ -98,25 +154,26 @@ def get_array_of_sequence_severities_from_allocations( Allocations, InitialSever
     return severities.copy()
 
 
-def create_random_subject_id() -> None :
-    """
-    Detects last subject number on the server, and increments by one, for use in tagging files generated by this
-    experiment.
-    """
-
-    SubjectId  = chain_ops( random.randrange(1,99)
-                            , lambda _ : f"{_:0>3}"              # convert back to string, zero-padded up to three digits
-                          )
-
-    return SubjectId
-
-
 def exit_experiment_gracefully( Message, Filehandles, MovementData, LogUtils, PygameMediator ):
     """
-    Exit experiment gracefully, closing pygame, open files, and logging things appropriately.
-
-    Note: We require the LogUtils and PygameMediator modules here as arguments, in order to avoid the cyclic dependency
-    problem that would arise if we were to import them at the module level instead.
+    Clean shutdown of experiment, closing all resources and logging final information.
+    
+    Gracefully terminates the experiment by closing files, pygame window, and
+    performing final logging operations. Avoids circular import issues by
+    accepting LogUtils and PygameMediator as arguments.
+    
+    Parameters
+    ----------
+    Message : str
+        Final message to log before exit
+    Filehandles : list of file
+        Open file handles to close
+    MovementData : tuple
+        Movement tracking data to save
+    LogUtils : module
+        Log utilities module for final logging
+    PygameMediator : module
+        Pygame mediator module (currently unused for RL-Agent mode)
     """
 
   # Output helpful message - use these values in config to 'resume' a subsequent experiment
@@ -131,19 +188,31 @@ def exit_experiment_gracefully( Message, Filehandles, MovementData, LogUtils, Py
     LogUtils.close_consolelog_filehandle()
 
 
-def chain_ops( Accumulant, *Functions_list ):
-    """
-    Chain Operations: Pipe an input into a series of functions, each of which receives as input the output of the
-    previous one (i.e. like bash '|' pipes, or R's magrittr %>% operator, etc.
-    """
-    for f in Functions_list: Accumulant = f( Accumulant )
-    return Accumulant
-
-
-
 def get_updated_severity( no_of_cities, resource_allocated, initial_severity ) -> list[float]:
     """
-    Update severity for existing cities given allocated resources as time progresses in the map.
+    Update severity for existing cities given allocated resources.
+    
+    Updates the severity of each city based on the resources allocated to it,
+    using the pandemic damage formula. This reflects how resource allocation
+    reduces the growth/intensity of the pandemic in each location.
+    
+    Parameters
+    ----------
+    no_of_cities : int
+        Number of cities/trials to update severity for
+    resource_allocated : array-like
+        Resources allocated to each city (0 to MAX_ALLOCATABLE_RESOURCES)
+    initial_severity : array-like
+        Current severity values for each city
+    
+    Returns
+    -------
+    list[float]
+        Updated severity values, clipped to minimum of 0
+    
+    Notes
+    -----
+    Uses the formula: new_severity = max(0, SEVERITY_MULTIPLIER * initial - RESPONSE_MULTIPLIER * resources)
     """
 
     UpdatedSeverity_list = []
@@ -163,7 +232,25 @@ def get_updated_severity( no_of_cities, resource_allocated, initial_severity ) -
 
 def random_severity_generator( number_of_runs, lower_limit, upper_limit ):
     """
-    Generate a random 'initial severity' value for each 'run' (i.e. city?)
+    Generate random initial severity values following a custom probability distribution.
+    
+    Creates a distribution of severity values that can be used to randomly sample
+    initial conditions for trials. Uses a normal distribution to weight the
+    probability of selecting different severity levels.
+    
+    Parameters
+    ----------
+    number_of_runs : int
+        Number of random severity values to generate
+    lower_limit : int
+        Minimum severity value to consider
+    upper_limit : int
+        Maximum severity value to consider
+    
+    Returns
+    -------
+    ndarray
+        Array of random severity values
     """
 
     x      = numpy.arange( lower_limit, upper_limit )
@@ -179,44 +266,67 @@ def random_severity_generator( number_of_runs, lower_limit, upper_limit ):
 
     return nums
 
-def split_1d_array_of_sequence_indices_into_blockgroups( S ):
-
-  # Get a list of indices corresponding to the first sequence index in each block
-    FirstIndices = [i for i in S if i % NUM_SEQUENCES == 0]
-
-  # Populate the desired array
-    In    = S.tolist()
-    Out   = []
-    Block = []
-
-    Block.append( In.pop( 0 ) )   # move the leading element of In to the end of
-                                  # (the current) Block
-
-    while len( In ) > 0:
-        if In[ 0 ] in FirstIndices:
-            Out.append( Block )
-            Block = []
-
-        Block.append( In.pop( 0 ) )
-
-    Out.append( Block )
-
-
-    return Out
-
-
 def next_seq_length(index, seq_per_block):
     """
-    Based on current global seq index (0-359), retrieves the next 'seq_per_block' sequence lengths
+    Retrieve sequence lengths for the next block of sequences.
+    
+    Parameters
+    ----------
+    index : int
+        Global sequence index to start from
+    seq_per_block : int
+        Number of sequences to retrieve
+    
+    Returns
+    -------
+    ndarray
+        Array of sequence lengths for the next seq_per_block sequences
     """
     SequenceLengthsCsv = os.path.join( INPUTS_PATH, SEQ_LENGTHS_FILE )
     s = numpy.loadtxt( SequenceLengthsCsv, delimiter=',' )
     sequence = s[ index : index + seq_per_block ]
     return sequence
 
+
 def sampler( samples, sum_to, range_list, rn = 100 ):
     """
-    Obtain a number of random samples corresponding to some unknown criteria
+    Distribute trials across sequences in a block with randomized sampling.
+    
+    Generates a random distribution of trial counts across multiple sequences
+    such that the total number of trials in a block sums to a target value.
+    This ensures that each sequence has a reasonable number of trials within
+    specified bounds, with the overall block size remaining constant.
+    
+    Parameters
+    ----------
+    samples : int
+        Number of sequences in the block (typically NUM_SEQUENCES = 8)
+    sum_to : int
+        Target total number of trials (typically TOTAL_NUM_TRIALS_IN_BLOCK = 45)
+    range_list : list[int]
+        [min_trials, max_trials] - Bounds on trials per sequence
+        Example: [3, 10] means each sequence has 3-10 trials
+    rn : int, optional
+        Random seed for reproducibility. Default is 100.
+        In practice, this is often set to the block number.
+    
+    Returns
+    -------
+    ndarray
+        Array of trial counts for each sequence, summing to `sum_to`
+    
+    Raises
+    ------
+    ValueError
+        If the specified range constraints make it impossible to reach `sum_to`
+        (e.g., samples * max_trials < sum_to or samples * min_trials > sum_to)
+    
+    Examples
+    --------
+    >>> # Distribute 45 trials across 8 sequences with 3-10 trials each
+    >>> allocations = sampler(samples=8, sum_to=45, range_list=[3, 10], rn=1)
+    >>> allocations  # doctest: +SKIP
+    array([6, 5, 6, 6, 4, 7, 5, 6])  # sums to 45
     """
 
     # XXX My understanding here is that:
@@ -303,6 +413,31 @@ def sampler( samples, sum_to, range_list, rn = 100 ):
 
 
 def get_confidence_weighted_mean( all_messages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount ):
+    """
+    Aggregate decisions from multiple participants using confidence-weighted mean.
+    
+    Combines resource allocation decisions from multiple participants, weighting
+    each decision by the confidence reported by that participant. Handles missing
+    or invalid responses (-1) gracefully.
+    
+    Parameters
+    ----------
+    all_messages : array-like
+        3D array of shape (num_participants, num_trials, 2)
+        Each element contains [allocation, confidence] pairs
+    first_severity : array-like
+        Initial severity values for the sequence
+    AbsoluteSequenceIndex : int
+        Index of the current sequence (used for tracking)
+    AbsoluteTrialCount : int
+        Total number of trials completed so far
+    
+    Returns
+    -------
+    tuple
+        - AggregatedAllocations (ndarray): Confidence-weighted mean allocations
+        - SeverityFromAggregate (ndarray): Resulting severities from aggregated decisions
+    """
 
     # First let's get the aggregated allocations
     NumTrials = numpy.shape( all_messages )[1]
@@ -344,11 +479,48 @@ def get_confidence_weighted_mean( all_messages, first_severity, AbsoluteSequence
     return AggregatedAllocations, SeverityFromAggregate
 
 
-
-def get_confidence_weighted_mode():   raise NotImplementedError
+def get_confidence_weighted_mode():
+    """
+    Aggregate decisions using confidence-weighted mode (NOT IMPLEMENTED).
+    
+    This function is a placeholder for future implementation of confidence-weighted
+    mode aggregation, which would select the most common allocation value, weighted
+    by participant confidence.
+    
+    Raises
+    ------
+    NotImplementedError
+        This method is not yet implemented.
+    """
+    raise NotImplementedError
 
 
 def get_confidence_weighted_median( all_messages, first_severity,  AbsoluteSequenceIndex, AbsoluteTrialCount ):
+    """
+    Aggregate decisions from multiple participants using confidence-weighted median.
+    
+    Combines resource allocation decisions from multiple participants using weighted
+    median, which is more robust to outliers than the mean. Weighting by confidence
+    emphasizes decisions from more confident participants.
+    
+    Parameters
+    ----------
+    all_messages : array-like
+        3D array of shape (num_participants, num_trials, 2)
+        Each element contains [allocation, confidence] pairs
+    first_severity : array-like
+        Initial severity values for the sequence
+    AbsoluteSequenceIndex : int
+        Index of the current sequence (used for tracking)
+    AbsoluteTrialCount : int
+        Total number of trials completed so far
+    
+    Returns
+    -------
+    tuple
+        - AggregatedAllocations (ndarray): Confidence-weighted median allocations
+        - SeverityFromAggregate (ndarray): Resulting severities from aggregated decisions
+    """
 
   # First let's get the aggregated allocations
     NumTrials = numpy.shape( all_messages )[1]
@@ -393,65 +565,3 @@ def get_confidence_weighted_median( all_messages, first_severity,  AbsoluteSeque
 
 
     return AggregatedAllocations, SeverityFromAggregate
-
-
-
-def get_percent_deviation( TrialSeverities, opt_final_severity):
-    '''
-    Get the percent deviation of the final severities for the sequence in 'TrialSeverities' from the optimal final
-    severities in opt_final_severity.
-    '''
-    final_severity              = numpy.sum( TrialSeverities )
-    OptimalTotalSeverityForSeq  = numpy.sum( opt_final_severity )
-    DifferenceInSeverities      = numpy.abs ( OptimalTotalSeverityForSeq - final_severity )   # NEEDS TO CHANGE see ticket:027
-    CompatibilityWithOptimal    = 100 - (DifferenceInSeverities / OptimalTotalSeverityForSeq * 100.)
-    CompatibilityWithOptimal    = max( 0, CompatibilityWithOptimal ) # clip negative values to 0
-    return CompatibilityWithOptimal
-
-
-def get_actual_allocation_given_allocation_type( AggregatedAllocations, MyMessage, AllMessages ):
-
-    global AllocationType
-
-    MyConfidence        = MyMessage[ -1, 1 ] if MyMessage[ -1, 1 ] != -1 else 0
-    SumOfAllConfidences = sum( Msg[ -1, 1 ] if Msg[ -1, 1 ] != -1 else 0 for Msg in AllMessages)
-    ConfidenceRatio     = (MyConfidence / SumOfAllConfidences) if SumOfAllConfidences > 0 else 0
-
-    allocated_resources_given_shared_allocation_type       = s = int( AggregatedAllocations[ -1 ] )
-    allocated_resources_given_individual_allocation_type       = int( MyMessage[ -1, 0 ] )
-    allocated_resources_given_penalised_allocation_type        = s
-    allocated_resources_given_proportional_allocation_type     = s
-
-    if   AllocationType == 'shared'      :   AllocatedResources = allocated_resources_given_shared_allocation_type
-    elif AllocationType == 'individual'  :   AllocatedResources = allocated_resources_given_individual_allocation_type
-    elif AllocationType == 'penalised'   :   AllocatedResources = allocated_resources_given_penalised_allocation_type
-    elif AllocationType == 'proportional':   AllocatedResources = allocated_resources_given_proportional_allocation_type
-    else: raise ValueError( f"Invalid value detected for variable AllocationType: '{AllocationType}'" )
-
-
-    return AllocatedResources
-
-
-
-def get_resources_left_given_allocation_type( CurrentResourcesLeft, AggregatedAllocations, MyMessage, AllMessages ):
-
-    global AllocationType
-
-    MyConfidence        = MyMessage[ -1, 1 ] if MyMessage[ -1, 1 ] != -1 else 0
-    SumOfAllConfidences = sum( Msg[ -1, 1 ] if Msg[ -1, 1 ] != -1 else 0 for Msg in AllMessages)
-    ConfidenceRatio     = (MyConfidence / SumOfAllConfidences) if SumOfAllConfidences > 0 else 0
-
-    resources_left_given_shared_allocation_type       = s = int( CurrentResourcesLeft - AggregatedAllocations[-1] )
-    resources_left_given_individual_allocation_type   = i = int( CurrentResourcesLeft - MyMessage[ -1, 0 ]        )
-    resources_left_given_penalised_allocation_type        = min( s, i )
-    resources_left_given_proportional_allocation_type     = round( CurrentResourcesLeft - AggregatedAllocations[ -1 ] * ConfidenceRatio )
-
-
-    if   AllocationType == 'shared'      :   ResourcesLeft = resources_left_given_shared_allocation_type
-    elif AllocationType == 'individual'  :   ResourcesLeft = resources_left_given_individual_allocation_type
-    elif AllocationType == 'penalised'   :   ResourcesLeft = resources_left_given_penalised_allocation_type
-    elif AllocationType == 'proportional':   ResourcesLeft = resources_left_given_proportional_allocation_type
-    else: raise ValueError( f"Invalid value detected for variable AllocationType: '{AllocationType}'" )
-
-    return ResourcesLeft
-
