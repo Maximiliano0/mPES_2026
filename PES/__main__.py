@@ -37,6 +37,9 @@ import os
 import numpy
 import datetime
 
+# Force TensorFlow to use CPU by default before any TF import happens.
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
+
 ######################
 ## Internal Imports ##
 ######################

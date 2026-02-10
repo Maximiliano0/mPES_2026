@@ -108,7 +108,9 @@ SEVERITY_MULTIPLIER = 1 + PANDEMIC_PARAMETER # β (Beta)
 # warning messages for missing nvidia libraries etc. The following environmental
 # variable disables these. ( '0': all logs are shown; '1': filter out INFOs and
 # below; '2': filter out WARNs; '3': filter out ERRORs, etc )
-os.environ[ 'TF_CPP_MIN_LOG_LEVEL' ] ="2"
+os.environ[ 'TF_CPP_MIN_LOG_LEVEL' ] ="3"
+# Force TensorFlow to use CPU by default.
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 
 # Set some nice numpy printing defaults and error handling
 numpy.set_printoptions( threshold = numpy.inf, precision = 3, suppress = True,

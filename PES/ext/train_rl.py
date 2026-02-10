@@ -16,6 +16,9 @@ import warnings
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+# Force TensorFlow to use CPU by default before any TF import happens.
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
+
 ##########################
 ##  Imports internos    ##
 ##########################
@@ -142,7 +145,7 @@ def main():
     discount_factor = 0.9
     epsilon_initial = 0.8
     epsilon_min = 0
-    num_episodes = 1000000
+    num_episodes = 20000
     
     rewards, Q, confsrl = QLearning(env, learning_rate, discount_factor, epsilon_initial, epsilon_min, num_episodes)
     print()

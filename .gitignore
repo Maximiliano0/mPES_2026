@@ -1,5 +1,5 @@
 # Virtual Environment
-mpes_env/
+linux_mpes_env/
 win_mpes_env/
 .venv/
 venv/
