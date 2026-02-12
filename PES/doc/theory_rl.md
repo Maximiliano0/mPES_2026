@@ -327,7 +327,8 @@ Con suficientes actualizaciones, la tabla Q **converge** a $Q^*$.
 La convergencia es **lenta** en espacios grandes:
 - Con $n$ estados y $m$ acciones: $O(nm)$ complejidad
 - En PES: 31 × 11 × 10 × 11 = 37,620 entradas en Q
-- 1M episodios es razonable para garantizar convergencia
+- Un número suficiente de episodios es necesario para garantizar convergencia
+  (configurable vía CLI: `python3 -m PES.ext.train_rl [episodios]`, default: 20,000)
 
 ### 7.3 Maldición de la Dimensionalidad
 
@@ -390,16 +391,16 @@ La exploración es más importante **al inicio**:
    
 3. **Hiperbólico**: $\varepsilon_t = \frac{\varepsilon_0}{1 + \lambda t}$
 
-**Análisis en PES**:
+**Análisis en PES** (ejemplo con 200,000 episodios):
 ```
-ε_0 = 0.8, ε_min = 0.0, T = 1,000,000
-reduction = (0.8 - 0) / 1,000,000 = 0.0000008 por episodio
+ε_0 = 0.8, ε_min = 0.0, T = configurable (default 20,000)
+reduction = (ε_0 - ε_min) / T por episodio
 
 Inicio (t=0):     ε = 0.8   (80% exploración)
-t=250,000:        ε = 0.6   (60% exploración)
-t=500,000:        ε = 0.4   (40% exploración)
-t=750,000:        ε = 0.2   (20% exploración)
-Final (t=1M):     ε = 0.0   (0% exploración)
+t=T*0.25:         ε = 0.6   (60% exploración)
+t=T*0.50:         ε = 0.4   (40% exploración)
+t=T*0.75:         ε = 0.2   (20% exploración)
+Final (t=T):      ε = 0.0   (0% exploración)
 ```
 
 ---
@@ -446,7 +447,7 @@ $$\max \mathbb{E}[R_t + \gamma R_{t+1} + \gamma^2 R_{t+2} + \ldots]$$
 
 ```python
 # Objetivo: Minimizar severidades pandémicas
-# Código en pandemic.py línea 330:
+# Código en pandemic.py, método step():
 
 severities = get_updated_severity(...)  # Calcular nuevas severidades
 reward = (-1) * numpy.sum(severities)   # Penalizar severidad
@@ -534,7 +535,7 @@ $$\text{Confianza} = \frac{H_{decision} - H_{max}}{H_{min} - H_{max}}$$
 
 La **confianza baja** debería correlacionar con **tiempos lentos**.
 
-En PES (pandemic.py líneas 410-420):
+En PES (`rl_agent_meta_cognitive()` en pandemic.py / pygameMediator.py):
 ```python
 # Mapeo: confianza → tiempo de reacción
 # confidence alta (>0.8) → respuesta rápida (<100ms)
@@ -685,7 +686,8 @@ Combinar policy gradient + value function:
 │    - Determinista con respecto a recompensa          │
 │                                                      │
 │ 4. Entrenamiento: Q-Learning                         │
-│    - 1,000,000 episodios                             │
+│    - Episodios configurables (default: 20,000)        │
+│    - CLI: python3 -m PES.ext.train_rl [N]             │
 │    - α = 0.2, γ = 0.9                                │
 │    - ε-greedy con decay lineal                       │
 │                                                      │
@@ -731,7 +733,7 @@ Combinar policy gradient + value function:
 **Q-Learning es algoritmo fundamental** que aprende qué acción es mejor en cada estado.
 
 En PES:
-1. Entrenamos Q-table en 1M episodios
+1. Entrenamos Q-table con episodios configurables vía CLI (default: 20,000)
 2. Aprendemos la política óptima (argmax Q)
 3. La ejecutamos en el experimento real
 4. Medimos cuán bien funciona

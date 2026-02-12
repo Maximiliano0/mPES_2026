@@ -144,7 +144,7 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes, ...):
     learning = α (learning_rate = 0.2)
     discount = γ (discount_factor = 0.9)
     epsilon = ε (exploration rate)
-    episodes = 1,000,000
+    episodes = configurable vía línea de comandos (default: 20,000)
     """
     
     Q = numpy.random.uniform(low=-1, high=1, size=env_shape)
@@ -417,9 +417,9 @@ Archivo: ext/pandemic.py, líneas 610-630
 
 epsilon = 0.8  # Inicial: 80% exploración
 min_eps = 0    # Final: 0% exploración (100% greedy)
-reduction = (epsilon - min_eps) / 1000000  # Decaimiento lineal
+reduction = (epsilon - min_eps) / episodes  # Decaimiento lineal
 
-for episode in range(1000000):
+for episode in range(episodes):  # Configurable vía CLI, default 20,000
     state = env.reset()
     
     while not done:
@@ -437,23 +437,27 @@ for episode in range(1000000):
         state, reward, done, _ = env.step(action)
         # ... actualizar Q ...
         
-    # Reducir epsilon linealmen (menos exploración con el tiempo)
+    # Reducir epsilon linealmente (menos exploración con el tiempo)
     epsilon -= reduction
     
-    # En el episodio 500k, epsilon ≈ 0.4 (40% exploración)
-    # En el episodio 1M, epsilon ≈ 0.0 (0% exploración)
+    # Ejemplo con 200,000 episodios:
+    # En el episodio 100k, epsilon ≈ 0.4 (40% exploración)
+    # En el episodio 200k, epsilon ≈ 0.0 (0% exploración)
 ```
 
-**Cronograma de exploración**:
+**Cronograma de exploración** (ejemplo con 200,000 episodios):
 ```
 Episodio    Epsilon    Exploración    Explotación
 0           0.80       80%            20%
-100k        0.72       72%            28%
-250k        0.60       60%            40%
-500k        0.40       40%            60%
-750k        0.20       20%            80%
-1000k       0.00       0%             100%
+20k         0.72       72%            28%
+50k         0.60       60%            40%
+100k        0.40       40%            60%
+150k        0.20       20%            80%
+200k        0.00       0%             100%
 ```
+
+> **Nota**: La cantidad de episodios es configurable vía línea de comandos:
+> `python3 -m PES.ext.train_rl 200000` (default: 20,000)
 
 ### 5.2 Política en Fase de Ejecución
 
@@ -513,12 +517,20 @@ Donde $p_i$ es la probabilidad de acción $i$.
 
 **Implementación en PES**:
 
+La función `rl_agent_meta_cognitive()` existe en dos ubicaciones:
+- `pygameMediator.py`: usada durante la ejecución del experimento (`python3 -m PES`)
+- `pandemic.py`: usada durante el entrenamiento (`python3 -m PES.ext.train_rl`)
+
+> **Nota**: Las funciones `entropy()` y `calculate_agent_response_and_confidence()`
+> que existían previamente en `pygameMediator.py` fueron eliminadas por ser código
+> muerto (nunca eran invocadas en el proyecto).
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ CONFIANZA BASADA EN ENTROPÍA                                │
 └─────────────────────────────────────────────────────────────┘
 
-Archivo: ext/pandemic.py, líneas 370-420
+Archivo: pandemic.py (entrenamiento) / pygameMediator.py (ejecución)
 
 def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     """
@@ -563,7 +575,7 @@ Respuesta esperada: lento, dudoso
 │ TIEMPOS DE REACCIÓN BASADOS EN CONFIANZA                   │
 └─────────────────────────────────────────────────────────────┘
 
-Archivo: ext/pandemic.py, líneas 410-420
+Archivo: pandemic.py (entrenamiento) / pygameMediator.py (ejecución)
 
 # Mapeo lineal: mayor confianza → menor tiempo
 map_to_response_time = lambda x: x * (-2) + 1
@@ -607,11 +619,11 @@ rt_hold = numpy.random.normal(mu=mu_hold, sigma=3)
 FASE 1: ENTRENAMIENTO
 ═════════════════════════════════════════════════
 
-python3 -m PES.ext.train_rl
+python3 -m PES.ext.train_rl [episodios]  # default: 20,000
 │
 ├─ 1. Inicializar Pandemic() environment
-├─ 2. Inicializar Q = zeros(31, 11, 10, 11)
-├─ 3. LOOP 1,000,000 episodios:
+├─ 2. Inicializar Q = random_uniform(31, 11, 10, 11)
+├─ 3. LOOP episodios (configurable vía CLI, default 20,000):
 │   ├─ state = reset()  [recursos, trial, severidad]
 │   ├─ MIENTRAS no done:
 │   │  ├─ Epsilon-Greedy: acción = rand OR argmax Q
@@ -709,10 +721,14 @@ plt.show()
 
 El proyecto PES implementa **Q-Learning de forma completa y rigurosa**:
 
-1. **Entrenamiento**: 1M episodios, epsilon-greedy, actualización Bellman
+1. **Entrenamiento**: Episodios configurables vía CLI (`python3 -m PES.ext.train_rl [N]`, default: 20,000), epsilon-greedy, actualización Bellman
 2. **Convergencia**: Garantizada por arquitectura (exploración + learning rate)
 3. **Ejecución**: Política greedy pura sobre Q-table entrenada
-4. **Análisis**: Confianza meta-cognitiva, tiempos realistas
+4. **Análisis**: Confianza meta-cognitiva vía `rl_agent_meta_cognitive()`, tiempos realistas
 5. **Validación**: Comparación vs. agente aleatorio
+
+> **Nota**: Las funciones `entropy()` y `calculate_agent_response_and_confidence()` fueron
+> eliminadas de `pygameMediator.py` por ser código muerto. Toda la lógica de confianza
+> se implementa ahora exclusivamente en `rl_agent_meta_cognitive()`.
 
 Todo está mappeado matemáticamente a la teoría de RL, haciendo del proyecto tanto un framework experimental como una referencia clara de cómo implementar Q-Learning en domain específico.

@@ -38,7 +38,7 @@ AGGREGATION_METHOD = {  1: 'confidence_weighted_median',    # Robust to outliers
 
 # ==================== VALUE RANGES & LIMITS ====================
 MAX_ALLOCATABLE_RESOURCES = 10  # Maximum resources allocatable per trial (Suggested: 10)
-MAX_SEVERITY = 10               # Maximum possible severity value for cities (Suggested: 9)
+MAX_SEVERITY = 9                # Maximum possible severity value for cities (Suggested: 9)
 MIN_ALLOCATABLE_RESOURCES = 0   # Minimum resources allocatable per trial (Suggested: 0)
 MAX_INIT_SEVERITY  = 5          # Maximum initial city severity (Suggested: 5)
 MIN_INIT_SEVERITY  = 2          # Minimum initial city severity (Suggested: 2)

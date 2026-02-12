@@ -2,7 +2,7 @@
 
 ## 1. Introducción
 
-**mPES (Pandemic Experiment Scenario)** es un framework de investigación que simula escenarios de respuesta a pandebias, donde un agente de **Reinforcement Learning (Q-Learning)** aprende a optimizar la asignación limitada de recursos para minimizar la severidad de enfermedades en múltiples ciudades.
+**mPES (Pandemic Experiment Scenario)** es un framework de investigación que simula escenarios de respuesta a pandemias, donde un agente de **Reinforcement Learning (Q-Learning)** aprende a optimizar la asignación limitada de recursos para minimizar la severidad de enfermedades en múltiples ciudades.
 
 ### Objetivo Principal
 Entrenar y ejecutar un agente inteligente que tome decisiones estratégicas sobre distribución de recursos médicos/sanitarios bajo restricciones de disponibilidad.
@@ -265,40 +265,13 @@ Performance = (21.0 - 13.4) / (21.0 - 5.4) = 7.6 / 15.6 = 0.487
 
 ## 6. Módulo de Confianza Meta-cognitiva
 
-Implementado en `pygameMediator.py` (líneas 75-150):
+Implementado en `pygameMediator.py` y `pandemic.py`:
 
-### 6.1 `calculate_agent_response_and_confidence()`
+### 6.1 `rl_agent_meta_cognitive()`
 
-```python
-def calculate_agent_response_and_confidence(model, city_severity, trial_no, resource_remaining):
-    """
-    Simula incertidumbre neural añadiendo ruido gaussiano
-    """
-    repl = 1000  # Número de repeticiones de muestreo
-    
-    # Bases de entropía
-    M_entropy = max_entropy([0 a 10])  # Uniforme: 3.32 bits
-    m_entropy = entropy([5, 5, 5, ...])  # Determinística: 0 bits
-    
-    # Muestrear 1000 variaciones ruidosas
-    for i in range(repl):
-        features_noisy = [city_severity, trial_no, resource_remaining] + noise_gaussiano(sigma=1)
-        response_sample = model.predict(features_noisy)
-        allocated_resources.append(response_sample)
-    
-    # Calcular entropía de respuestas
-    decision_entropy = entropy(allocated_resources)
-    
-    # Normalizar confianza: 0 = máxima incertidumbre, 1 = mínima
-    confidence = (decision_entropy - m_entropy) / (M_entropy - m_entropy)
-    
-    # Respuesta media
-    response = numpy.mean(allocated_resources)
-    
-    return confidence, response
-```
-
-### 6.2 `rl_agent_meta_cognitive()`
+Esta función existe en dos ubicaciones:
+- `pygameMediator.py`: usada durante la ejecución del experimento (`python3 -m PES`)
+- `pandemic.py`: usada durante el entrenamiento (`python3 -m PES.ext.train_rl`)
 
 ```python
 def rl_agent_meta_cognitive(options, resources_left, response_timeout):
@@ -331,6 +304,10 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     return response, confidence, rt_hold, rt_release
 ```
 
+> **Nota**: Las funciones `entropy()` y `calculate_agent_response_and_confidence()` que
+> existían previamente en `pygameMediator.py` fueron eliminadas por ser código muerto
+> (no eran invocadas en ningún lugar del proyecto).
+
 **Propósito**: Simular un agente que no solo toma decisiones óptimas, sino que refleja incertidumbre (baja confianza) con tiempos de reacción más largos.
 
 ---
@@ -351,6 +328,11 @@ AGGREGATION_METHOD = {
 ```
 
 ### 7.2 `get_confidence_weighted_mean()`
+
+> **Nota sobre agente único**: Cuando el experimento se ejecuta con un solo agente RL
+> (configuración actual), estas funciones de agregación no tienen efecto práctico porque
+> `AllMessages` contiene un único participante. Se conservan por compatibilidad futura
+> con escenarios multi-jugador.
 
 ```python
 def get_confidence_weighted_mean(decisions, confidences):
