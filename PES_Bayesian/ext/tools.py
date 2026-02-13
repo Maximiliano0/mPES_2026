@@ -10,7 +10,6 @@ sequence conversion, confidence plotting, and confidence calibration.
 ##  Imports externos    ##
 ##########################
 import numpy
-import os
 import matplotlib.pyplot as plt
 
 from statsmodels.distributions.empirical_distribution import ECDF

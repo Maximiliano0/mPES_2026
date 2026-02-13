@@ -115,7 +115,7 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 # Set some nice numpy printing defaults and error handling
 numpy.set_printoptions( threshold = numpy.inf, precision = 3, suppress = True,
                         linewidth = 80, nanstr = "--", infstr = "∞"  )
-numpy.seterr( all = 'raise' )
+numpy.seterr( all = 'raise', under = 'ignore' )   # underflow silently truncates to 0.0
 
 #########################################
 ### Print final init variables to log ###

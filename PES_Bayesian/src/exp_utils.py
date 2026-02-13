@@ -30,7 +30,6 @@ Main Functions
 ##  Imports externos    ##
 ##########################
 import os
-import random
 import numpy
 import scipy.stats as ss
 from statsmodels.stats.weightstats import DescrStatsW as WeightedStats
