@@ -272,11 +272,11 @@ def main():
     # --- Run optimisation ---
     section("Running Bayesian Optimisation", width=80)
     info("Search space:")
-    list_item("learning_rate    ∈ [0.01, 0.5]   (log scale)")
+    list_item("learning_rate    ∈ [0.2, 0.4]    (log scale)")
     list_item("discount_factor  ∈ [0.80, 0.99]")
-    list_item("epsilon_initial  ∈ [0.30, 1.00]")
-    list_item("epsilon_min      ∈ [0.00, 0.10]")
-    list_item("num_episodes     ∈ [5000, 40000]  (step=5000)")
+    list_item("epsilon_initial  ∈ [0.4, 1.0]")
+    list_item("epsilon_min      ∈ [0.05, 0.1]")
+    list_item("num_episodes     ∈ [500000, 2000000]  (step=5000)")
     print()
 
     # Suppress Optuna's verbose default logging
