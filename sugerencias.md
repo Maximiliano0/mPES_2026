@@ -311,3 +311,145 @@ uno de estos criterios respecto al Q-Learning original optimizado:
 1. **Rendimiento medio ≥ 0.86** (mejora de ≥2% sobre ~0.84 actual)
 2. **Convergencia en ≤50% de episodios** para alcanzar el mismo rendimiento
 3. **Menor varianza** entre las 64 secuencias (std_perf más bajo)
+
+---
+
+## Evaluación de Transformers como alternativa a Reinforcement Learning
+
+### Contexto
+
+Se evaluó la viabilidad de reemplazar el Q-Learning tabular por una
+arquitectura basada en Transformers (Decision Transformer, Attention Model).
+El análisis se realizó en dos escenarios: la escala actual del problema y
+una posible futura ampliación con más ciudades y mapas.
+
+### Escenario actual (3,410–3,751 estados, 3–10 steps)
+
+**Veredicto: No recomendado.**
+
+| Factor | Q-Learning tabular | Transformer |
+|---|---|---|
+| Parámetros | ~41K (Q-table) | ~500K–5M |
+| Memoria | ~160 KB | ~20–200 MB |
+| GPU requerida | No | Sí (CUDA) |
+| Tiempo de entrenamiento | ~2 min (40K ep.) | ~1–4 horas |
+| Dependencias | NumPy + Gym | PyTorch, HuggingFace |
+| Interpretabilidad | Alta (tabla consultable) | Baja (caja negra) |
+
+#### Razones de descarte a escala actual
+
+1. **Secuencias demasiado cortas.** Los Transformers requieren secuencias
+   largas (100–1000+ tokens) para que la atención multi-cabezal aprenda
+   dependencias útiles. Con episodios de 3–10 steps, la matriz de atención
+   es a lo sumo $10 \times 10$ — trivialmente pequeña. No hay dependencias
+   de largo alcance que justifiquen self-attention.
+
+2. **Espacio de estados completamente enumerable.** La Q-table cubre
+   exhaustivamente los 3,751 estados posibles con 11 acciones. Un
+   Transformer necesitaría millones de parámetros para aproximar una
+   función que la tabla resuelve de forma exacta.
+
+3. **Datos de entrenamiento insuficientes.** Un Decision Transformer
+   requiere datasets offline de trayectorias (decenas de miles). PES tiene
+   64 secuencias de evaluación. Incluso generando datos sintéticos, las
+   trayectorias de 3–10 steps producen un dataset diminuto.
+
+4. **Overhead computacional desproporcionado.** GPU obligatoria, mayor
+   inestabilidad de entrenamiento, y complejidad de implementación extrema
+   sin beneficio demostrable.
+
+### Escenario escalado (50–500+ ciudades, múltiples mapas)
+
+**Veredicto: Recomendado si se amplía significativamente el problema.**
+
+Si se incrementa la dimensión del problema (más ciudades por secuencia,
+más mapas con diferentes distribuciones geográficas), el Transformer
+se vuelve la arquitectura más apropiada gracias a tres ventajas clave:
+
+#### 1. Generalización de tamaño
+
+Un Transformer entrenado con instancias de $N$ ciudades puede resolver
+instancias de $M > N$ ciudades **sin reentrenar**. Esto es imposible con
+Q-Learning tabular (la tabla tiene dimensiones fijas) y muy difícil con
+RL basado en redes feedforward.
+
+#### 2. Generalización entre mapas
+
+Un solo modelo resuelve mapas con distribuciones diferentes (uniforme,
+clusters, anillo, grilla) sin re-optimizar hiperparámetros. El enfoque
+actual requiere reentrenamiento completo para cada nuevo mapa.
+
+#### 3. Curriculum Learning
+
+Se puede entrenar incrementalmente:
+- Fase 1: 20–30 ciudades (rápido, establece representaciones)
+- Fase 2: 50–80 ciudades (fine-tuning)
+- Fase 3: Evaluación zero-shot en 100–500 ciudades
+
+#### Arquitectura recomendada para el escenario escalado
+
+La arquitectura más probada es el **Attention Model** (Kool et al., 2019):
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  PES Transformer Solver                                         │
+│                                                                 │
+│  ┌─ Encoder (Auto-atención) ──────────────────────────────┐    │
+│  │  Entrada: [x, y, severidad, costo] por ciudad           │    │
+│  │  Multi-Head Self-Attention × 3–6 capas                  │    │
+│  │  Codifica relaciones globales entre todas las ciudades   │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+│  ┌─ Decoder (Autoregresivo) ──────────────────────────────┐    │
+│  │  Selecciona la siguiente ciudad a visitar               │    │
+│  │  Pointer Network: atención sobre encodings              │    │
+│  │  Máscara de ciudades ya visitadas                       │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+│  Entrenamiento: REINFORCE + baseline exponencial                │
+│  Inferencia: greedy (argmax) o beam search                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Para problemas con 500+ ciudades, se puede reducir la complejidad de
+$O(n^2)$ a $O(nk)$ usando **atención por vecinos geográficos** (solo
+atender a los $k$ vecinos más cercanos en lugar de todas las ciudades).
+
+### Tabla comparativa por escala
+
+| Escala | Evolutivo | RL (Q-Learning) | Transformer |
+|---|---|---|---|
+| < 20 ciudades | ✅ Mejor | ⚠ Overkill | ⚠ Overkill |
+| 20–50 | ⚠ Lento | ✅ Funciona | ✅ Funciona |
+| 50–100 | ❌ Muy lento | ⚠ Difícil | ✅ Ideal |
+| 100–500 | ❌ Intratable | ❌ No converge | ✅ Eficiente |
+| 500+ | ❌ | ❌ | ✅ + Atención local |
+| Multi-mapa | ❌ Reentrenar | ❌ Reentrenar | ✅ Generaliza |
+
+### Requisitos para implementar Transformers
+
+| Requisito | Detalle |
+|---|---|
+| Framework | PyTorch ≥ 2.0 |
+| Hardware | GPU con CUDA (mínimo 4 GB VRAM) |
+| Datos de entrenamiento | Generados sintéticamente por el entorno |
+| Tiempo de implementación | ~1–2 semanas |
+| Tiempo de entrenamiento | ~2–8 horas (GPU) |
+| Parámetros del modelo | ~500K–2M |
+
+### Conclusión
+
+- **A la escala actual del problema (3–10 steps, 3,751 estados):** el
+  Transformer **no aporta valor**. Las mejoras incrementales al Q-Learning
+  tabular (Double Q-Learning, reward shaping, decaimiento exponencial)
+  son la ruta correcta.
+
+- **Si se escala a 50+ ciudades y múltiples mapas:** el Transformer
+  se convierte en la **mejor opción** gracias a su capacidad de
+  generalización entre tamaños e instancias. En ese escenario, se
+  recomienda implementar un Attention Model con REINFORCE y curriculum
+  learning.
+
+- **Umbral de decisión:** si los episodios superan ~30 steps y el
+  espacio de estados deja de ser enumerable (> 100K estados), el
+  Transformer justifica su complejidad adicional.
