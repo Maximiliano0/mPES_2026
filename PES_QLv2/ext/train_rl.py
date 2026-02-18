@@ -143,17 +143,40 @@ def main():
     discount_factor = 0.8989957380285539
     epsilon_initial = 0.49148318724777224
     epsilon_min     = 0.07095544578432121
-    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 40000
+    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 1000000
+
+    # Epsilon decay hyperparameters (exponential with warm-up)
+    # λ is computed dynamically based on num_episodes (N):
+    #   Formula: λ = (ε_min / ε₀)^(1 / ((target_ratio - warmup_ratio) · N))
+    #   where  T = target_ratio · N  →  episode where ε reaches ε_min
+    #          W = warmup_ratio · N  →  warm-up episodes with pure exploration
+    # ε reaches ε_min at ~66% of N, leaving ~34% of episodes for pure exploitation.
+    warmup_ratio = 0.05       # W: fraction of N dedicated to pure exploration
+    target_ratio = 0.66       # T: fraction of N at which ε reaches ε_min
+    decay_rate   = (epsilon_min / epsilon_initial) ** (1.0 / ((target_ratio - warmup_ratio) * num_episodes))
+
+    # Double Q-Learning: reduces maximization bias for more stable convergence
+    double_q = True
+
+    # Reward Shaping: penalización por severidad residual acumulada
+    # β > 0 incentiva al agente a priorizar ciudades con alta severidad.
+    # r' = r - β · Σ max(0, s_i).  β=0 desactiva el shaping.
+    penalty_coeff = 0.1
     
-    info(f"Starting Q-Table training ({num_episodes:,} episodes)...")
-    info("(This may take several minutes)")
+    warmup_episodes = int(warmup_ratio * num_episodes)
+    target_episodes = int(target_ratio * num_episodes)
+
+    info("Iniciando entrenamiento... (esto puede tardar varios minutos)")
     print()
     
-    rewards, Q, confsrl = QLearning(env, learning_rate, discount_factor, epsilon_initial, epsilon_min, num_episodes)
+    rewards, Q, confsrl = QLearning(env, learning_rate, discount_factor, epsilon_initial, epsilon_min, num_episodes,
+                                     decay_rate=decay_rate, warmup_ratio=warmup_ratio,
+                                     target_ratio=target_ratio, double_q=double_q,
+                                     penalty_coeff=penalty_coeff)
     print()
-    success(f"Training completed")
+    success(f"Entrenamiento completado ({num_episodes:,} episodios)")
     list_item(f"Q-Table shape: {Q.shape}")
-    list_item(f"Rewards history length: {len(rewards)}")
+    list_item(f"Cantidad de registros de recompensas: {len(rewards)}")
     
     info("Saving trained models...")
     
@@ -175,12 +198,19 @@ def main():
         
         f.write("Q-LEARNING HYPERPARAMETERS\n")
         f.write("-" * 80 + "\n")
+        f.write(f"Algorithm:                   {'Double Q-Learning' if double_q else 'Standard Q-Learning'}\n")
         f.write(f"Learning Rate (α):           {learning_rate}\n")
         f.write(f"Discount Factor (γ):         {discount_factor}\n")
         f.write(f"Initial Epsilon (ε):         {epsilon_initial}\n")
         f.write(f"Minimum Epsilon (ε_min):     {epsilon_min}\n")
         f.write(f"Number of Episodes:          {num_episodes:,}\n")
-        f.write(f"Epsilon Decay:               Linear ({epsilon_initial} → {epsilon_min})\n\n")
+        f.write(f"Decay Rate (λ):              {decay_rate:.10f} (computed from N={num_episodes:,})\n")
+        f.write(f"Warm-up Ratio:               {warmup_ratio} ({int(warmup_ratio * num_episodes):,} episodes)\n")
+        f.write(f"Target Ratio:                {target_ratio} ({int(target_ratio * num_episodes):,} episodes)\n")
+        f.write(f"Exploitation Phase:          {num_episodes - int(target_ratio * num_episodes):,} episodes\n")
+        f.write(f"Epsilon Decay:               Exponential with warm-up ({epsilon_initial} → {epsilon_min})\n")
+        f.write(f"Decay Formula:               λ = (ε_min / ε₀)^(1 / ((target - warmup) · N))\n")
+        f.write(f"Reward Shaping (β):          {penalty_coeff}{'  (desactivado)' if penalty_coeff == 0.0 else ''}\n\n")
         
         f.write("TRAINING RESULTS\n")
         f.write("-" * 80 + "\n")

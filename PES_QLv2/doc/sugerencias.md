@@ -77,6 +77,68 @@ Comparación visual:
 - **Esfuerzo:** Mínimo — cambiar una línea en el bucle de entrenamiento
 - **Hiperparámetros nuevos:** 2 ($\lambda$, $W$) — se integran en la Bayesiana
 - **Riesgo:** Nulo — si $\lambda$ y $W$ no ayudan, la Bayesiana los descartará
+- **Estado:** ✅ Implementado en `pandemic.py` (`QLearning()`) y `train_rl.py`
+
+#### Criterios de calibración de $\lambda$ y $W$
+
+##### Calibración de $\lambda$ (decay_rate)
+
+El valor de $\lambda$ se deriva analíticamente a partir de la pregunta:
+**¿en qué episodio queremos que ε alcance ε_min?**
+
+Dado que ε debe llegar a ε_min en el episodio $T$ (post warm-up), despejamos:
+
+$$\varepsilon_{\min} = \varepsilon_0 \cdot \lambda^{T - W}$$
+
+$$\lambda = \left(\frac{\varepsilon_{\min}}{\varepsilon_0}\right)^{\frac{1}{T - W}}$$
+
+**Regla práctica:** Se busca que ε_min se alcance entre el 50% y 75% del
+entrenamiento, dejando al menos 25% de episodios en explotación pura.
+
+##### Calibración de $W$ (warmup_ratio)
+
+El warm-up garantiza cobertura mínima del espacio de estados antes de explotar.
+El criterio es:
+
+$$W \geq \frac{|S|}{E[\text{estados por episodio}]}$$
+
+Con $|S| = 31 \times 11 \times 10 = 3{,}410$ estados y ~6.5 estados/episodio:
+
+$$W_{\min} \approx \frac{3{,}410}{6.5} \approx 525 \text{ episodios}$$
+
+**Regla práctica:** $W \in [1\%, 10\%]$ de $N$. El valor 5% proporciona ~3-4×
+cobertura del espacio de estados.
+
+##### Cálculo para $N = 1{,}000{,}000$ episodios
+
+Con los hiperparámetros del modelo:
+- $\varepsilon_0 = 0.4915$, $\varepsilon_{\min} = 0.0710$
+- $N = 1{,}000{,}000$, $W = 5\% = 50{,}000$ episodios
+
+Objetivo: ε_min al 66% de $N$ ($T = 660{,}000$), dejando 34% para explotación:
+
+$$\lambda = \left(\frac{0.0710}{0.4915}\right)^{\frac{1}{660{,}000 - 50{,}000}} = \left(0.1444\right)^{\frac{1}{610{,}000}} \approx 0.9999968$$
+
+| Episodio | Fracción de N | ε exponencial | ε lineal (ref.) |
+|---|---|---|---|
+| 0–50,000 | 0–5% | 0.4915 (warm-up) | 0.4705 |
+| 100,000 | 10% | 0.4191 | 0.4495 |
+| 250,000 | 25% | 0.2608 | 0.3865 |
+| 500,000 | 50% | 0.1264 | 0.2813 |
+| 660,000 | 66% | 0.0710 (ε_min) | 0.2136 |
+| 1,000,000 | 100% | 0.0710 | 0.0710 |
+
+**Resultado:** Con $\lambda = 0.9999968$, el agente tiene ~340,000 episodios
+(34% de N) de explotación pura al final, vs 0 episodios con decaimiento lineal.
+
+##### Fórmula general para recalcular $\lambda$ con otro $N$
+
+Si se cambia el número de episodios, recalcular con:
+
+$$\lambda = \left(\frac{\varepsilon_{\min}}{\varepsilon_0}\right)^{\frac{1}{f \cdot N - W}}$$
+
+donde $f \in [0.50, 0.75]$ es la fracción de $N$ en la que se desea alcanzar
+$\varepsilon_{\min}$ (recomendado: $f = 0.66$).
 
 ---
 
@@ -123,6 +185,39 @@ $$Q_{\text{eval}}(s,a) = \frac{Q_A(s,a) + Q_B(s,a)}{2}$$
 - **Hiperparámetros nuevos:** 0 — usa los mismos $\alpha$ y $\gamma$
 - **Riesgo:** Bajo — en el peor caso rinde igual que Q-Learning simple
 - **Compatible con Bayesiana:** sin cambios en `optimize_rl.py`
+- **Estado:** ✅ Implementado en `pandemic.py` (`QLearning()`) y `train_rl.py`
+
+#### Consideraciones teóricas de la implementación
+
+##### Inicialización independiente de las tablas
+
+Ambas tablas $Q_A$ y $Q_B$ se inicializan con valores aleatorios uniformes
+en $[-1, 1]$, de forma **independiente**. Esto es esencial para que el
+mecanismo de desacoplamiento funcione: si ambas tablas empezaran con los
+mismos valores, las actualizaciones iniciales serían idénticas y se perdería
+la diversidad que elimina el sesgo optimista.
+
+##### Selección de acciones con la tabla promedio
+
+Durante el entrenamiento, la acción ε-greedy se selecciona con
+$\arg\max_a (Q_A(s,a) + Q_B(s,a))$ (equivalente al promedio, sin dividir
+por 2 ya que argmax es invariante a escalado positivo). Esto genera una
+política de comportamiento más estable que usar una sola tabla, porque los
+errores individuales se suavizan.
+
+##### Estado terminal
+
+En el estado terminal (`done=True`), se asigna directamente
+$Q_X(s,a) = r$ (sin bootstrap), ya que no hay estado futuro. Esto es
+correcto porque $V(s_{\text{terminal}}) = 0$ por definición.
+
+##### Compatibilidad con Reward Shaping
+
+El reward shaping (mejora 3) modifica el valor de `reward` **antes** de
+las actualizaciones de Q_A/Q_B. Ambas tablas reciben la misma recompensa
+modificada en cada step, lo cual preserva la simetría del algoritmo.
+La penalización $\beta$ no distorsiona el desacoplamiento porque afecta
+igual a ambas tablas.
 
 ---
 
@@ -145,17 +240,24 @@ inmediata por no atenderlas es la misma que por no atender ciudades "fáciles".
 
 #### Solución
 
-Agregar un término de penalización que capture el costo futuro estimado de la
-severidad residual:
+Aplicar **Potential-Based Reward Shaping** (PBRS, Ng et al., 1999) con una
+función potencial basada en la severidad total:
 
-$$r'_t = r_t - \beta \sum_{i=0}^{t} S_i^{(\text{residual})}$$
+$$\Phi(s) = -\sum_{i=0}^{t} S_i$$
+
+El shaping reward se define como la diferencia de potenciales:
+
+$$F(s, s') = \beta \left(\gamma\, \Phi(s') - \Phi(s)\right) = \beta \left(\sum S_i^{\text{(antes)}} - \gamma \sum S_i^{\text{(después)}}\right)$$
 
 donde:
-- $\beta \in [0.01, 0.5]$ es un coeficiente de penalización (hiperparámetro)
-- $S_i^{(\text{residual})} = \max(0,\; \text{SEVERITY\_MULTIPLIER} \cdot S_i - \text{RESPONSE\_MULTIPLIER} \cdot a_i)$
+- $\beta \in [0.01, 0.5]$ es un coeficiente de escalado (hiperparámetro)
+- $\gamma$ es el factor de descuento del MDP
+- $\Phi(s_{\text{terminal}}) = 0$
 
-Esto enseña al agente que **ignorar ciudades con alta severidad tiene un costo
-acumulativo creciente**, incentivando asignaciones preventivas tempranas.
+Esto da un **bonus** cuando la acción reduce la severidad total, y una
+**penalización** cuando la deja crecer. Por el teorema de invarianza de
+Ng et al., esta forma **garantiza que la política óptima no cambia**
+independientemente del valor de $\beta$.
 
 #### Impacto esperado
 
@@ -167,12 +269,90 @@ acumulativo creciente**, incentivando asignaciones preventivas tempranas.
 
 #### Implementación
 
-- **Esfuerzo:** Medio — modificar la función `step()` del entorno para calcular
-  la penalización acumulada
+- **Esfuerzo:** Bajo — agregar PBRS en `QLearning()` (no en `step()`)
 - **Hiperparámetros nuevos:** 1 ($\beta$) — se integra en la Bayesiana
-- **Riesgo:** Medio — un $\beta$ demasiado alto distorsiona la señal de recompensa
-  original; la Bayesiana debe calibrarlo
+- **Riesgo:** Bajo — PBRS garantiza invarianza de política óptima por
+  construcción teórica (Ng et al., 1999)
 - **Requiere:** Re-entrenar y re-optimizar todos los hiperparámetros
+- **Estado:** ✅ Implementado en `pandemic.py` (`QLearning()`) y `train_rl.py`
+
+#### Consideraciones teóricas de la implementación
+
+##### Decisión de diseño: shaping en `QLearning()` vs en `step()`
+
+Se evaluaron dos opciones para inyectar la penalización:
+
+| Criterio | Opción A: modificar `step()` | Opción B: modificar `QLearning()` |
+|---|---|---|
+| Archivos afectados | `pandemic.py` (entorno) | `pandemic.py` (solo función de entrenamiento) |
+| `pygameMediator.py` | Afectado (usa `step()` en runtime) | No afectado |
+| `run_experiment()` | Afectado (evalúa con `step()`) | No afectado |
+| Evaluación del agente | Recompensas distorsionadas | Recompensas originales |
+| Retrocompatible | No — cambia la semántica del entorno | Sí — `penalty_coeff=0.0` = sin cambio |
+
+**Se eligió la Opción B** porque:
+1. El shaping es una técnica de **entrenamiento**, no una propiedad del entorno.
+   La recompensa verdadera del entorno ($r_t = -\sum S_i$) debe permanecer
+   intacta para que la evaluación mida rendimiento real.
+2. `pygameMediator.py` y `run_experiment()` usan `step()` sin modificaciones,
+   preservando la compatibilidad completa con el pipeline de ejecución y
+   evaluación.
+3. El parámetro `penalty_coeff=0.0` por defecto hace que la función sea
+   100% retrocompatible — llamadas existentes sin este argumento producen
+   resultados idénticos.
+
+##### Doble conteo controlado
+
+A diferencia de un shaping aditivo ingenuo ($r' = r - \beta \sum S_i$),
+que colapsa a un simple escalado $r' = -(1+\beta) \sum S_i$ y puede
+cambiar la política óptima, el PBRS usa una **diferencia de potenciales**:
+
+$$F(s, s') = \beta\left(\sum S_i^{\text{antes}} - \gamma \sum S_i^{\text{después}}\right)$$
+
+Esta forma no simplemente amplífica la recompensa. El término $\sum S_i^{\text{antes}}$
+(estado previo) introduce información **diferencial**: el agente recibe feedback
+sobre *cómo cambió* la severidad total, no solo sobre *cuánta* hay.
+
+**Garantía teórica (Ng et al., 1999):** Para cualquier MDP $M$ con recompensa
+$r$ y cualquier función potencial $\Phi: S \to \mathbb{R}$, la política óptima
+bajo $r + F$ (con $F = \gamma \Phi(s') - \Phi(s)$) es idéntica a la política
+óptima bajo $r$. Esto significa que $\beta$ **no puede empeorar** la política
+óptima — solo puede acelerar o mantener igual la convergencia.
+
+##### Interacción con el efecto compuesto
+
+Con `SEVERITY_MULTIPLIER = 1.4`, una ciudad ignorada crece exponencialmente.
+El PBRS captura esto a través de la diferencia de potenciales:
+
+| Step | $\sum S_i$ antes | $\sum S_i$ después | $F$ ($\beta=0.1$, $\gamma=0.9$) |
+|---|---|---|---|
+| 0 | 8.0 | 11.2 + nuevo | $0.1 \cdot (8.0 - 0.9 \cdot 18.2) = -0.84$ |
+| 1 | 18.2 | 25.5 + nuevo | $0.1 \cdot (18.2 - 0.9 \cdot 32.5) = -1.11$ |
+| 2 | 32.5 | 45.5 + nuevo | $0.1 \cdot (32.5 - 0.9 \cdot 52.5) = -1.50$ |
+
+La penalización crece con cada step porque la **diferencia de potencial**
+se amplifica por el crecimiento exponencial. Esto crea un gradiente de
+señal que incentiva la intervención temprana sin distorsionar la política
+óptima.
+
+##### Rango recomendado para $\beta$
+
+- $\beta = 0$: Sin shaping (comportamiento original)
+- $\beta \in [0.01, 0.1]$: Rango conservador — acelera convergencia levemente
+- $\beta \in [0.1, 0.3]$: Rango moderado — aceleración significativa
+- $\beta > 0.5$: Rango alto — la señal de shaping domina numéricamente;
+  puede causar inestabilidad numérica en las actualizaciones de Q aunque
+  la política óptima se preserva teóricamente
+
+**Valor inicial elegido:** $\beta = 0.1$ (conservador). La optimización
+Bayesiana debe explorar el rango $[0.01, 0.5]$ en escala logarítmica.
+
+##### Referencia teórica
+
+Ng, A. Y., Harada, D., & Russell, S. (1999). "Policy invariance under
+reward transformations: Theory and application to reward shaping."
+*Proceedings of the 16th International Conference on Machine Learning
+(ICML 1999)*, pp. 278–287.
 
 ---
 
@@ -196,8 +376,9 @@ nueva función `QLearning_v2()`:
 │  │  else:     ε = max(ε_min, ε₀ · λ^(t-W))         │   │
 │  └──────────────────────────────────────────────────┘   │
 │                                                         │
-│  ┌─ Reward Shaping ────────────────────────────────┐   │
-│  │  r' = r - β · Σ severidades_residuales          │   │
+│  ┌─ Reward Shaping (PBRS) ─────────────────────┐   │
+│  │  Φ(s) = −Σ sᵢ                              │   │
+│  │  F = β · (γ·Φ(s') − Φ(s))               │   │
 │  └──────────────────────────────────────────────────┘   │
 │                                                         │
 │  Hiperparámetros: α, γ, ε₀, ε_min, N, λ, W, β         │
@@ -209,9 +390,9 @@ nueva función `QLearning_v2()`:
 
 | Combinación | Efecto |
 |---|---|
-| Double Q + Reward Shaping | El reward shaping cambia la magnitud de las recompensas. Sin Double Q, las nuevas recompensas pueden amplificar la sobreestimación de Q-valores. Double Q estabiliza el aprendizaje con la nueva señal. |
+| Double Q + Reward Shaping | El PBRS modifica la magnitud de las recompensas por cada transición. Double Q estabiliza el aprendizaje con la nueva señal, evitando sobreestimación amplificada. Ambas tablas reciben la misma recompensa shaped, preservando la simetría del algoritmo. |
 | Double Q + Decaimiento exponencial | Double Q necesita más exploración inicial para llenar ambas tablas con estimaciones independientes. El warm-up garantiza esa exploración, y el exponencial la reduce rápido después. |
-| Reward Shaping + Decaimiento exponencial | La penalización por severidad residual es más informativa al inicio (cuando el agente ignora ciudades). El warm-up le permite descubrir ese patrón antes de comprometerse con una política. |
+| Reward Shaping + Decaimiento exponencial | El PBRS da bonus/penalización según cómo cambia la severidad total. El warm-up permite que el agente explore transiciones diversas antes de comprometerse con una política, lo que genera señales de shaping más informativas. |
 
 ### Hiperparámetros del modelo combinado
 
@@ -271,21 +452,21 @@ de ~100 a ~150-200, pero sigue siendo factible (~1-2 horas de cómputo).
 ## Plan de implementación recomendado
 
 ```
-Fase 1 (actual)
+Fase 1
 └── ✅ Optimización Bayesiana sobre Q-Learning original (5 params)
      └── Resultado: mejores α, γ, ε₀, ε_min, N
 
-Fase 2 (siguiente)
-├── Implementar QLearning_v2() con las 3 mejoras combinadas
-│   ├── 2a. Decaimiento exponencial + warm-up (~15 min)
-│   ├── 2b. Double Q-Learning (~30 min)
-│   └── 2c. Reward Shaping (~1 hora)
+Fase 2
+├── ✅ Implementar las 3 mejoras en QLearning()
+│   ├── ✅ 2a. Decaimiento exponencial + warm-up
+│   ├── ✅ 2b. Double Q-Learning
+│   └── ✅ 2c. Reward Shaping
 │
-└── Re-optimización Bayesiana sobre QLearning_v2 (8 params, ~200 trials)
+└── Re-optimización Bayesiana sobre QLearning mejorado (8 params, ~200 trials)
      └── Resultado: mejores α, γ, ε₀, ε_min, N, λ, W, β
 
-Fase 3 (comparación)
-└── Comparar rendimiento QLearning vs QLearning_v2
+Fase 3 (siguiente)
+└── Comparar rendimiento QLearning original vs mejorado
     ├── Mismo benchmark (64 secuencias)
     ├── Gráficos de convergencia
     └── Análisis de importancia de hiperparámetros nuevos
@@ -295,11 +476,11 @@ Fase 3 (comparación)
 
 | Tarea | Tiempo |
 |---|---|
-| Implementar `QLearning_v2()` | 2 horas |
-| Adaptar `optimize_rl.py` para v2 | 30 min |
+| ✅ Implementar las 3 mejoras en `QLearning()` | Completado |
+| Adaptar `optimize_rl.py` para los 3 nuevos params | 30 min |
 | Correr Bayesiana 200 trials | 1-2 horas (background) |
 | Comparar resultados | 30 min |
-| **Total** | **~5 horas** |
+| **Total restante** | **~2-3 horas** |
 
 ---
 
