@@ -6,18 +6,33 @@ Bayesian Optimization of Q-Learning hyperparameters using Optuna.
 Optimizes: learning_rate, discount_factor, epsilon_initial, epsilon_min, num_episodes
 Objective: maximize mean normalised performance over the 64 evaluation sequences.
 
+The evaluation uses infeasible-action masking (actions > available resources are
+suppressed before argmax) so that the metric matches the behaviour of the RL agent
+in __main__.py.  The best Q-table found during the search is preserved in memory
+and saved directly, avoiding a lossy re-training step.
+
 Usage:
-    python3 -m PES_Bayesian.ext.optimize_rl [n_trials]
+    python3 -m PES_Bayesian.ext.optimize_rl [n_trials] [--resume YYYY-MM-DD]
 
     n_trials : int, optional
         Number of Bayesian optimization trials (default: 50).
+    --resume YYYY-MM-DD : str, optional
+        Resume a previous optimization run stored under that date.
+
+Search space:
+    learning_rate    ∈ [0.2, 0.4]       (log scale)
+    discount_factor  ∈ [0.80, 0.99]
+    epsilon_initial  ∈ [0.4, 1.0]
+    epsilon_min      ∈ [0.05, 0.1]
+    num_episodes     ∈ [700000, 1000000] (step=100000)
 
 Outputs (saved to INPUTS_PATH/<date>_BAYESIAN_OPT/):
-    - q_best_<date>.npy              : Q-table trained with the best hyperparameters
+    - q_best_<date>.npy              : Q-table from the best optimization trial
     - rewards_best_<date>.npy        : Reward history of the best training run
     - optimization_results_<date>.txt: Full report of the optimization
     - optimization_history_<date>.png: Convergence plot
     - hyperparameter_importances_<date>.png: Parameter importance plot
+    - optuna_study_<date>.db         : SQLite database for resumable studies
 '''
 
 ##########################
@@ -58,6 +73,9 @@ _sevs = None
 _number_cities_prob = None
 _severity_prob = None
 
+# Store best Q-table/rewards during optimization to avoid lossy retraining
+_best_artifacts = {'Q': None, 'rewards': None, 'value': float('-inf')}
+
 
 def _load_evaluation_data():
     """Load sequence lengths, severities and their probability distributions."""
@@ -91,7 +109,7 @@ def objective(trial: optuna.Trial) -> float:
     discount_factor  = trial.suggest_float('discount_factor',  0.80,  0.99)
     epsilon_initial  = trial.suggest_float('epsilon_initial',  0.4,   1.0)
     epsilon_min      = trial.suggest_float('epsilon_min',      0.05,   0.1)
-    num_episodes     = trial.suggest_int('num_episodes',       500000, 2000000, step=5000)
+    num_episodes     = trial.suggest_int('num_episodes',       700000, 1000000, step=100000)
 
     # --- Train ---
     env = Pandemic()
@@ -112,7 +130,11 @@ def objective(trial: optuna.Trial) -> float:
         s0 = min(int(state[0]), Q.shape[0] - 1)
         s1 = min(int(state[1]), Q.shape[1] - 1)
         s2 = min(int(state[2]), Q.shape[2] - 1)
-        return numpy.argmax(Q[s0, s1, s2])
+        # Mask infeasible actions (consistent with rl_agent_meta_cognitive in __main__)
+        options = Q[s0, s1, s2].copy()
+        o = numpy.arange(len(options), dtype=numpy.float32)
+        options[o > state[0]] = 0.00001
+        return numpy.argmax(options)
 
     _, perfs, _ = run_experiment(env_eval, qf, False, _trials_per_sequence, _sevs)
     mean_perf = float(numpy.mean(perfs))
@@ -122,6 +144,13 @@ def objective(trial: optuna.Trial) -> float:
     trial.set_user_attr('std_perf', float(numpy.std(perfs)))
     trial.set_user_attr('min_perf', float(numpy.min(perfs)))
     trial.set_user_attr('max_perf', float(numpy.max(perfs)))
+
+    # Preserve the best Q-table to avoid lossy retraining at the end
+    global _best_artifacts
+    if mean_perf > _best_artifacts['value']:
+        _best_artifacts['Q'] = Q.copy()
+        _best_artifacts['rewards'] = list(rewards)
+        _best_artifacts['value'] = mean_perf
 
     return mean_perf
 
@@ -213,7 +242,7 @@ def _save_report(study, opt_dir, opt_date, best_Q, best_rewards):
         values = list(importances.values())
 
         fig, ax = plt.subplots(figsize=(10, 5))
-        bars = ax.barh(names[::-1], values[::-1], color='#2ca02c', edgecolor='darkgreen', linewidth=0.5)
+        ax.barh(names[::-1], values[::-1], color='#2ca02c', edgecolor='darkgreen', linewidth=0.5)
         ax.set_xlabel('Importance', fontsize=12, fontweight='bold')
         ax.set_title('Hyperparameter Importance', fontsize=14, fontweight='bold', pad=20)
         ax.grid(True, alpha=0.3, axis='x')
@@ -276,7 +305,7 @@ def main():
     list_item("discount_factor  ∈ [0.80, 0.99]")
     list_item("epsilon_initial  ∈ [0.4, 1.0]")
     list_item("epsilon_min      ∈ [0.05, 0.1]")
-    list_item("num_episodes     ∈ [500000, 2000000]  (step=5000)")
+    list_item("num_episodes     ∈ [700000, 1000000]  (step=100000)")
     print()
 
     # Suppress Optuna's verbose default logging
@@ -343,26 +372,31 @@ def main():
     info(f"Mean normalised performance: {best.value:.6f}")
     print()
 
-    # --- Retrain with best params and save ---
-    section("Retraining with Best Hyperparameters", width=80)
-    info("Training final Q-table...")
+    # --- Use best Q-table from optimization, or retrain only if resuming ---
+    section("Best Q-Table", width=80)
 
-    bp = best.params
-    env_final = Pandemic()
-    env_final.number_cities_prob = _number_cities_prob
-    env_final.severity_prob = _severity_prob
-    env_final.verbose = False
+    if _best_artifacts['Q'] is not None and _best_artifacts['value'] >= best.value:
+        best_Q = _best_artifacts['Q']
+        best_rewards = numpy.array(_best_artifacts['rewards'])
+        success("Using Q-table from best optimization trial (no retraining needed)")
+    else:
+        info("Retraining with best hyperparameters (resumed study, original Q-table not in memory)...")
+        bp = best.params
+        env_final = Pandemic()
+        env_final.number_cities_prob = _number_cities_prob
+        env_final.severity_prob = _severity_prob
+        env_final.verbose = False
 
-    best_rewards, best_Q, _ = QLearning(
-        env_final,
-        bp['learning_rate'],
-        bp['discount_factor'],
-        bp['epsilon_initial'],
-        bp['epsilon_min'],
-        bp['num_episodes']
-    )
+        best_rewards, best_Q, _ = QLearning(
+            env_final,
+            bp['learning_rate'],
+            bp['discount_factor'],
+            bp['epsilon_initial'],
+            bp['epsilon_min'],
+            bp['num_episodes']
+        )
+        success("Retrained Q-table (note: may differ slightly from original due to stochasticity)")
 
-    success("Final Q-table trained")
     list_item(f"Q-table shape: {best_Q.shape}")
     print()
 

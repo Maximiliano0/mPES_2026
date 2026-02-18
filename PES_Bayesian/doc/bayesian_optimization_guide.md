@@ -114,5 +114,8 @@ tail -5 PES_Bayesian/inputs/bayesian_opt.log
 
 ### Tiempo estimado
 
-- ~30 segundos por trial (varía según `num_episodes` muestreado)
-- 100 trials ≈ 50 minutos
+- Varios minutos por trial (depende del `num_episodes` muestreado entre 700k y 1M)
+- 100 trials puede tomar varias horas
+- 200 trials puede tomar un día completo
+
+Usar el script `utils/run_bayesian_opt.sh` para lanzar con inhibición de suspensión automática.

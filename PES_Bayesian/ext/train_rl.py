@@ -139,10 +139,10 @@ def main():
     section("Q-Learning Training", width=80)
 
     # Q-Learning hyperparameters
-    learning_rate = 0.3006658240741172
+    learning_rate   = 0.3006658240741172
     discount_factor = 0.8989957380285539
     epsilon_initial = 0.49148318724777224
-    epsilon_min = 0.07095544578432121
+    epsilon_min     = 0.07095544578432121
     num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 40000
     
     info(f"Starting Q-Table training ({num_episodes:,} episodes)...")

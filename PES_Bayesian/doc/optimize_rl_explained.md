@@ -17,16 +17,16 @@ Q-Learning depende de cinco hiperparámetros cuyo valor óptimo se desconoce a p
 
 | Símbolo | Parámetro | Rango explorado | Escala |
 |---------|-----------|-----------------|--------|
-| $\alpha$ | `learning_rate` | $[0.01,\; 0.5]$ | logarítmica |
+| $\alpha$ | `learning_rate` | $[0.2,\; 0.4]$ | logarítmica |
 | $\gamma$ | `discount_factor` | $[0.80,\; 0.99]$ | lineal |
-| $\varepsilon_0$ | `epsilon_initial` | $[0.30,\; 1.00]$ | lineal |
-| $\varepsilon_{\min}$ | `epsilon_min` | $[0.00,\; 0.10]$ | lineal |
-| $N$ | `num_episodes` | $[5\,000,\; 40\,000]$ | paso = 5 000 |
+| $\varepsilon_0$ | `epsilon_initial` | $[0.4,\; 1.0]$ | lineal |
+| $\varepsilon_{\min}$ | `epsilon_min` | $[0.05,\; 0.1]$ | lineal |
+| $N$ | `num_episodes` | $[700\,000,\; 1\,000\,000]$ | paso = 100 000 |
 
 Probar todas las combinaciones (grid search) requiere un número exponencial de
 evaluaciones.  Cada evaluación implica **entrenar una Q-table completa** y después
-evaluar sobre 64 secuencias fijas, lo que tarda ~10–60 s por combinación dependiendo
-del `num_episodes` muestreado.
+evaluar sobre 64 secuencias fijas, lo que puede tardar varios minutos por combinación
+dependiendo del `num_episodes` muestreado.
 
 ### 1.2 Optimización Bayesiana
 
@@ -80,10 +80,11 @@ El archivo `optimize_rl.py` tiene cuatro secciones principales:
 
 ```
 optimize_rl.py
+├── _best_artifacts             # Almacena la mejor Q-table en memoria
 ├── _load_evaluation_data()     # Datos de evaluación (carga una vez)
 ├── objective(trial)            # Función objetivo que Optuna llama
 ├── _save_report(study, ...)    # Reportes y gráficos
-└── main()                      # Orquestación: CLI, estudio, re-entrenamiento
+└── main()                      # Orquestación: CLI, estudio, guardado Q-table
 ```
 
 ### 2.1 Carga de datos de evaluación
@@ -132,11 +133,11 @@ que el agente vea secuencias representativas del mismo dominio.
 ```python
 def objective(trial: optuna.Trial) -> float:
     # (1) Muestrear hiperparámetros
-    learning_rate   = trial.suggest_float('learning_rate',   0.01, 0.5, log=True)
-    discount_factor = trial.suggest_float('discount_factor', 0.80, 0.99)
-    epsilon_initial = trial.suggest_float('epsilon_initial', 0.3,  1.0)
-    epsilon_min     = trial.suggest_float('epsilon_min',     0.0,  0.1)
-    num_episodes    = trial.suggest_int('num_episodes',    5000, 40000, step=5000)
+    learning_rate    = trial.suggest_float('learning_rate',    0.2,  0.4,  log=True)
+    discount_factor  = trial.suggest_float('discount_factor',  0.80,  0.99)
+    epsilon_initial  = trial.suggest_float('epsilon_initial',  0.4,   1.0)
+    epsilon_min      = trial.suggest_float('epsilon_min',      0.05,   0.1)
+    num_episodes     = trial.suggest_int('num_episodes',       700000, 1000000, step=100000)
 
     # (2) Entrenar Q-table
     env = Pandemic()
@@ -156,7 +157,11 @@ def objective(trial: optuna.Trial) -> float:
         s0 = min(int(state[0]), Q.shape[0] - 1)
         s1 = min(int(state[1]), Q.shape[1] - 1)
         s2 = min(int(state[2]), Q.shape[2] - 1)
-        return numpy.argmax(Q[s0, s1, s2])
+        # Mask infeasible actions (consistent with rl_agent_meta_cognitive)
+        options = Q[s0, s1, s2].copy()
+        o = numpy.arange(len(options), dtype=numpy.float32)
+        options[o > state[0]] = 0.00001
+        return numpy.argmax(options)
 
     _, perfs, _ = run_experiment(
         env_eval, qf, False, _trials_per_sequence, _sevs)
@@ -167,6 +172,13 @@ def objective(trial: optuna.Trial) -> float:
     trial.set_user_attr('std_perf',  float(numpy.std(perfs)))
     trial.set_user_attr('min_perf',  float(numpy.min(perfs)))
     trial.set_user_attr('max_perf',  float(numpy.max(perfs)))
+
+    # (5) Preservar la mejor Q-table en memoria
+    global _best_artifacts
+    if mean_perf > _best_artifacts['value']:
+        _best_artifacts['Q'] = Q.copy()
+        _best_artifacts['rewards'] = list(rewards)
+        _best_artifacts['value'] = mean_perf
 
     return mean_perf
 ```
@@ -181,34 +193,60 @@ def objective(trial: optuna.Trial) -> float:
 
 #### Detalle de `trial.suggest_*`
 
-- `suggest_float('learning_rate', 0.01, 0.5, log=True)`:
-  Muestrea $\alpha$ en escala logarítmica porque valores bajos
-  ($0.01$–$0.05$) y altos ($0.1$–$0.5$) tienen impactos cualitativamente
-  diferentes.  La escala log da igual densidad de muestreo a cada orden de
-  magnitud.
+- `suggest_float('learning_rate', 0.2, 0.4, log=True)`:
+  Muestrea $\alpha$ en escala logarítmica dentro de un rango estrecho
+  ($0.2$–$0.4$) determinado por corridas exploratorias previas.
 
-- `suggest_int('num_episodes', 5000, 40000, step=5000)`:
-  Discretiza en múltiplos de 5 000 para reducir la dimensionalidad sin
-  perder resolución práctica.
+- `suggest_int('num_episodes', 700000, 1000000, step=100000)`:
+  Discretiza en múltiplos de 100 000 para reducir la dimensionalidad.
+  El rango alto ($700\text{k}$–$1\text{M}$) asegura convergencia
+  suficiente de la Q-table.
 
-#### Función `qf` (política greedy)
+#### Función `qf` (política greedy con masking)
 
-Dentro de `objective`, se define una política puramente greedy (sin exploración):
+Dentro de `objective`, se define una política greedy con enmascaramiento de acciones
+infactibles, consistente con `rl_agent_meta_cognitive` en `__main__.py`:
 
 ```python
 def qf(env, state, seqid):
     s0 = min(int(state[0]), Q.shape[0] - 1)
     s1 = min(int(state[1]), Q.shape[1] - 1)
     s2 = min(int(state[2]), Q.shape[2] - 1)
-    return numpy.argmax(Q[s0, s1, s2])
+    options = Q[s0, s1, s2].copy()
+    o = numpy.arange(len(options), dtype=numpy.float32)
+    options[o > state[0]] = 0.00001
+    return numpy.argmax(options)
 ```
 
 Esta función se pasa a `run_experiment()` como la *action function*.  Evalúa la
-Q-table **sin epsilon**: siempre elige la acción con mayor Q-valor.  Así se mide
-únicamente la calidad de la política aprendida, sin ruido de exploración.
+Q-table **sin epsilon**: siempre elige la acción con mayor Q-valor entre las
+acciones factibles (las que no exceden los recursos disponibles `state[0]`).
+
+**Masking de acciones infactibles:** Las acciones cuyo índice supera los recursos
+disponibles se reducen a `0.00001`, garantizando que `argmax` seleccione solo
+acciones factibles.  Esto replica el comportamiento de `rl_agent_meta_cognitive`
+en `pygameMediator.py`, asegurando que la métrica obtenida durante la optimización
+sea **consistente** con el rendimiento observado al ejecutar `python3 -m PES_Bayesian`.
 
 Los `min(...)` aseguran que los índices de estado no excedan las dimensiones de la
 Q-table `(31, 11, 10, 11)` = (recursos, trial, severidad, acciones).
+
+#### Preservación de la mejor Q-table
+
+Al final de cada trial, si el `mean_perf` supera el mejor valor previo, se guarda
+una copia de la Q-table en `_best_artifacts`.  Esto evita el problema de re-entrenar
+desde cero al final: Q-Learning es estocástico (inicialización aleatoria,
+exploración $\varepsilon$-greedy, secuencias de entrenamiento aleatorias), por lo que
+un re-entrenamiento con los mismos hiperparámetros puede producir una Q-table diferente
+y potencialmente peor.
+
+```python
+    global _best_artifacts
+    if mean_perf > _best_artifacts['value']:
+        _best_artifacts['Q'] = Q.copy()
+        _best_artifacts['rewards'] = list(rewards)
+        _best_artifacts['value'] = mean_perf
+```
 
 ### 2.3 Persistencia con SQLite
 
@@ -257,20 +295,22 @@ a $0.0$ que es matemáticamente inofensivo (simplemente indica probabilidades í
 El `try/finally` desactiva la excepción de underflow solo durante la optimización
 y la restaura al terminar.
 
-### 2.5 Re-entrenamiento y reportes
+### 2.5 Guardado de Q-table y reportes
 
 Una vez completada la optimización, `main()` realiza dos pasos finales:
 
-1. **Re-entrenar** la Q-table con los mejores hiperparámetros encontrados:
+1. **Usar la Q-table preservada** — Si `_best_artifacts` contiene la Q-table del
+   mejor trial (corrida completa sin interrupción), se usa directamente sin
+   re-entrenar.  Solo si se reanudó un estudio previo y la Q-table no está en
+   memoria se aplica re-entrenamiento como fallback:
 
 ```python
-bp = best.params
-best_rewards, best_Q, _ = QLearning(
-    env_final,
-    bp['learning_rate'], bp['discount_factor'],
-    bp['epsilon_initial'], bp['epsilon_min'],
-    bp['num_episodes']
-)
+if _best_artifacts['Q'] is not None and _best_artifacts['value'] >= best.value:
+    best_Q = _best_artifacts['Q']
+    best_rewards = numpy.array(_best_artifacts['rewards'])
+else:
+    # Fallback: retrain (solo si se resumió y la Q-table original no está en memoria)
+    best_rewards, best_Q, _ = QLearning(env_final, ...)
 ```
 
 2. **Generar reportes** mediante `_save_report()`:
@@ -312,7 +352,7 @@ main()
   │           └──────────────────────────────────────────┘
   │
   ├─ imprimir mejores hiperparámetros
-  ├─ re-entrenar Q-table final con mejores θ
+  ├─ usar Q-table preservada (o retrain si --resume)
   └─ _save_report() → .txt, .png, .npy
 ```
 
@@ -374,11 +414,11 @@ python3 -m PES_Bayesian.ext.optimize_rl 100 --resume 2026-02-12
 
 ── Running Bayesian Optimisation ──
 ℹ Search space:
-  ● learning_rate    ∈ [0.01, 0.5]   (log scale)
+  ● learning_rate    ∈ [0.2, 0.4]    (log scale)
   ● discount_factor  ∈ [0.80, 0.99]
-  ● epsilon_initial  ∈ [0.30, 1.00]
-  ● epsilon_min      ∈ [0.00, 0.10]
-  ● num_episodes     ∈ [5000, 40000]  (step=5000)
+  ● epsilon_initial  ∈ [0.4, 1.0]
+  ● epsilon_min      ∈ [0.05, 0.1]
+  ● num_episodes     ∈ [700000, 1000000]  (step=100000)
 
   Trial   1/100  |  value=0.7563  |  best=0.7563  |  elapsed=19s
   Trial   2/100  |  value=0.6941  |  best=0.7563  |  elapsed=76s
@@ -403,7 +443,7 @@ Todos se guardan en `PES_Bayesian/inputs/<FECHA>_BAYESIAN_OPT/`:
 | Archivo | Descripción |
 |---------|-------------|
 | `optuna_study_<fecha>.db` | Base de datos SQLite con todo el historial de Optuna (permite reanudar). |
-| `q_best_<fecha>.npy` | Q-table `(31,11,10,11)` entrenada con los mejores hiperparámetros. Lista para usar en el experimento. |
+| `q_best_<fecha>.npy` | Q-table `(31,11,10,11)` del mejor trial de la optimización. Lista para copiar a `inputs/q.npy` y usar en el experimento. |
 | `rewards_best_<fecha>.npy` | Historia de recompensas promedio del mejor entrenamiento (cada 10 000 episodios). |
 | `optimization_results_<fecha>.txt` | Reporte textual completo: mejores parámetros, estadísticas, tabla de todos los trials. |
 | `optimization_history_<fecha>.png` | Gráfico de convergencia (rendimiento por trial + curva de mejor acumulado). |

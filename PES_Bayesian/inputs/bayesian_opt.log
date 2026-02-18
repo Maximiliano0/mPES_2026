@@ -27,7 +27,7 @@ AGGREGATION_METHOD                            confidence_weighted_mean
   BAYESIAN OPTIMISATION — Q-LEARNING HYPERPARAMETERS
 ================================================================================
 
-ℹ Output directory: /home/mecatronica/Documentos/maximiliano/mPES/PES_Bayesian/inputs/2026-02-13_BAYESIAN_OPT
+ℹ Output directory: /home/mecatronica/Documentos/maximiliano/mPES/PES_Bayesian/inputs/2026-02-18_BAYESIAN_OPT
 ℹ Target number of trials: 200
 
 
@@ -44,1205 +44,117 @@ AGGREGATION_METHOD                            confidence_weighted_mean
 --------------------------------------------------------------------------------
 
 ℹ Search space:
-→ learning_rate    ∈ [0.01, 0.5]   (log scale)
+→ learning_rate    ∈ [0.2, 0.4]    (log scale)
 → discount_factor  ∈ [0.80, 0.99]
-→ epsilon_initial  ∈ [0.30, 1.00]
-→ epsilon_min      ∈ [0.00, 0.10]
-→ num_episodes     ∈ [5000, 40000]  (step=5000)
+→ epsilon_initial  ∈ [0.4, 1.0]
+→ epsilon_min      ∈ [0.05, 0.1]
+→ num_episodes     ∈ [700000, 1000000]  (step=100000)
 
 ℹ Starting fresh: 200 trials to run
-Episode 10000 Average Reward: -133.58646157798395
-Episode 20000 Average Reward: -133.34128697635836
-Episode 30000 Average Reward: -132.58086627814396
-Episode 40000 Average Reward: -130.05905850422266
-Episode 50000 Average Reward: -131.11863421631483
-Episode 60000 Average Reward: -129.54281467078656
-Episode 70000 Average Reward: -127.33154761485308
-Episode 80000 Average Reward: -129.3475844292505
-Episode 90000 Average Reward: -126.80048551762937
-Episode 100000 Average Reward: -128.53439473718268
-Episode 110000 Average Reward: -124.73914156985339
-Episode 120000 Average Reward: -122.45521263830013
-Episode 130000 Average Reward: -126.46113479803901
-Episode 140000 Average Reward: -124.53010805997562
-Episode 150000 Average Reward: -123.31571005037564
-Episode 160000 Average Reward: -122.55510858387451
-Episode 170000 Average Reward: -121.46668244823036
-Episode 180000 Average Reward: -119.45422689509371
-Episode 190000 Average Reward: -119.79883180392443
-Episode 200000 Average Reward: -119.75018981467132
-Episode 210000 Average Reward: -118.81192811854845
-Episode 220000 Average Reward: -116.49551837551613
-Episode 230000 Average Reward: -117.75986683167741
-Episode 240000 Average Reward: -115.20114670160892
-Episode 250000 Average Reward: -115.68400860077053
-Episode 260000 Average Reward: -114.81826909637628
-Episode 270000 Average Reward: -111.74005394010108
-Episode 280000 Average Reward: -114.23472658884604
-Episode 290000 Average Reward: -114.4710500257382
-Episode 300000 Average Reward: -114.87463763263482
-Episode 310000 Average Reward: -112.05436627927035
-Episode 320000 Average Reward: -112.38664148834302
-Episode 330000 Average Reward: -108.0974055195238
-Episode 340000 Average Reward: -108.1097447503974
-Episode 350000 Average Reward: -109.89508303390716
-Episode 360000 Average Reward: -107.83582616706043
-Episode 370000 Average Reward: -106.78464384234492
-Episode 380000 Average Reward: -106.56916271405052
-Episode 390000 Average Reward: -108.17720098549756
-Episode 400000 Average Reward: -104.69095306475516
-Episode 410000 Average Reward: -103.92083831854076
-Episode 420000 Average Reward: -102.98278783485948
-Episode 430000 Average Reward: -104.08807872388093
-Episode 440000 Average Reward: -102.55281234169853
-Episode 450000 Average Reward: -102.99544021440508
-Episode 460000 Average Reward: -102.39485268315133
-Episode 470000 Average Reward: -100.38536867701755
-Episode 480000 Average Reward: -101.69122980644862
-Episode 490000 Average Reward: -100.34103389273085
-Episode 500000 Average Reward: -102.34437910703102
-Episode 510000 Average Reward: -100.08975392435195
-Episode 520000 Average Reward: -96.525016553175
-Episode 530000 Average Reward: -99.13355384977405
-Episode 540000 Average Reward: -99.03493507967997
-Episode 550000 Average Reward: -95.60167750649853
-Episode 560000 Average Reward: -97.44207076489212
-Episode 570000 Average Reward: -96.29569464990716
-Episode 580000 Average Reward: -94.666708387799
-Episode 590000 Average Reward: -91.46476481030142
-Episode 600000 Average Reward: -94.35677937448959
-Episode 610000 Average Reward: -92.19841258808316
-Episode 620000 Average Reward: -90.981184561367
-Episode 630000 Average Reward: -90.8563585224294
-Episode 640000 Average Reward: -91.53074405479421
-Episode 650000 Average Reward: -89.60414232489981
-Episode 660000 Average Reward: -90.49241769335805
-Episode 670000 Average Reward: -90.49114935163901
-Episode 680000 Average Reward: -87.84309527101438
-Episode 690000 Average Reward: -88.83142800665598
-Episode 700000 Average Reward: -89.51527885133821
-Episode 710000 Average Reward: -88.21520807508989
-Episode 720000 Average Reward: -86.56483911610366
-Episode 730000 Average Reward: -85.69772015773694
+Episode 10000 Average Reward: -135.09615706327037
+Episode 20000 Average Reward: -137.48186717422587
+Episode 30000 Average Reward: -130.09269453086716
+Episode 40000 Average Reward: -129.02359784076285
+Episode 50000 Average Reward: -127.81773013170171
+Episode 60000 Average Reward: -128.6709217124966
+Episode 70000 Average Reward: -128.57501937131514
+Episode 80000 Average Reward: -131.52613758834684
+Episode 90000 Average Reward: -127.57972297321467
+Episode 100000 Average Reward: -127.11594778698748
+Episode 110000 Average Reward: -124.32601698116605
+Episode 120000 Average Reward: -126.45113891535867
+Episode 130000 Average Reward: -123.79144493545466
+Episode 140000 Average Reward: -125.15958918933498
+Episode 150000 Average Reward: -122.6208302285926
+Episode 160000 Average Reward: -121.45655868436475
+Episode 170000 Average Reward: -120.71743094405115
+Episode 180000 Average Reward: -120.28560748593148
+Episode 190000 Average Reward: -120.68820857772029
+Episode 200000 Average Reward: -117.89125370550268
+Episode 210000 Average Reward: -116.18397438460924
+Episode 220000 Average Reward: -116.42145520659453
+Episode 230000 Average Reward: -116.41030700015612
+Episode 240000 Average Reward: -118.71172151899131
+Episode 250000 Average Reward: -113.2536677554073
+Episode 260000 Average Reward: -114.82092206587899
+Episode 270000 Average Reward: -113.68121175932924
+Episode 280000 Average Reward: -113.62395655497724
+Episode 290000 Average Reward: -110.16883480379386
+Episode 300000 Average Reward: -112.23205319965692
+Episode 310000 Average Reward: -108.72844755877885
+Episode 320000 Average Reward: -110.769469185751
+Episode 330000 Average Reward: -108.767859119831
+Episode 340000 Average Reward: -107.88663910251516
+Episode 350000 Average Reward: -109.30029190576126
+Episode 360000 Average Reward: -105.49880908708862
+Episode 370000 Average Reward: -106.23135905213435
+Episode 380000 Average Reward: -104.674673888983
+Episode 390000 Average Reward: -105.38561573227516
+Episode 400000 Average Reward: -103.51386634967037
+Episode 410000 Average Reward: -102.1734728682803
+Episode 420000 Average Reward: -104.77917279390716
+Episode 430000 Average Reward: -102.50843591595005
+Episode 440000 Average Reward: -100.75606513165307
+Episode 450000 Average Reward: -99.85588563749886
+Episode 460000 Average Reward: -101.08308148989947
+Episode 470000 Average Reward: -99.95753047346173
+Episode 480000 Average Reward: -100.41126242336763
+Episode 490000 Average Reward: -99.80992257342461
+Episode 500000 Average Reward: -98.63136416741372
+Episode 510000 Average Reward: -96.91543694032892
+Episode 520000 Average Reward: -96.30396300594172
+Episode 530000 Average Reward: -97.16051093819388
+Episode 540000 Average Reward: -95.35685544903677
+Episode 550000 Average Reward: -94.27274900962301
+Episode 560000 Average Reward: -95.8074621832499
+Episode 570000 Average Reward: -94.73467721982972
+Episode 580000 Average Reward: -92.76653936356348
+Episode 590000 Average Reward: -92.55802300334076
+Episode 600000 Average Reward: -91.70137576944637
+Episode 610000 Average Reward: -91.78831346152444
+Episode 620000 Average Reward: -90.46464150742013
+Episode 630000 Average Reward: -88.04459140428797
+Episode 640000 Average Reward: -88.41759345159166
+Episode 650000 Average Reward: -87.90922487805949
+Episode 660000 Average Reward: -89.30219451966461
+Episode 670000 Average Reward: -86.60069626714109
+Episode 680000 Average Reward: -87.21806451245052
+Episode 690000 Average Reward: -86.61961250873341
+Episode 700000 Average Reward: -85.57767548423165
 State: [30, 0, 5]
 State: [20, 1, 6]
 State: [10, 2, 4]
-State: [0, 3, 5]
-State: [0, 4, 8]
--- :   0.00:  0.00:  0.00:  9.80: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 2]
-State: [12, 2, 3]
-State: [2, 3, 2]
-State: [0, 4, 5]
-State: [0, 5, 2]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  2.00: 13.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 6]
-State: [21, 1, 3]
-State: [13, 2, 6]
-State: [4, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  0.00:  9.49:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 4]
-State: [12, 2, 3]
-State: [2, 3, 6]
-State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  9.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 5]
-State: [13, 2, 7]
-State: [7, 3, 4]
--- :   0.00:  0.00:  7.96:  2.80 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 4]
-State: [12, 2, 8]
-State: [6, 3, 8]
-State: [0, 4, 6]
-State: [0, 5, 8]
--- :   0.00:  0.00: 13.68: 11.49: 11.76: 11.20 ->  Done!
-State: [30, 0, 7]
-State: [20, 1, 4]
-State: [13, 2, 2]
-State: [3, 3, 6]
--- :   0.00:  0.00:  0.00:  7.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 4]
-State: [13, 2, 3]
-State: [5, 3, 4]
-State: [0, 4, 5]
-State: [0, 5, 3]
-State: [0, 6, 4]
-State: [0, 7, 5]
--- :   0.00:  0.00:  0.00:  0.00: 19.21:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [0, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
--- :   0.00:  0.00:  0.00: 26.89: 30.73: 21.95:  3.92:  4.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 2]
 State: [3, 3, 5]
-State: [0, 4, 6]
-State: [0, 5, 3]
-State: [0, 6, 6]
-State: [0, 7, 6]
--- :   0.00:  0.00:  0.00: 13.76: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 3]
--- :   0.00:  3.08:  1.00 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [10, 2, 6]
-State: [5, 3, 5]
-State: [0, 4, 3]
--- :   0.00:  0.00:  7.74:  5.00:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [12, 2, 4]
--- :   0.00:  6.04:  2.00 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 4]
-State: [12, 2, 8]
-State: [6, 3, 8]
-State: [0, 4, 6]
--- :   0.00:  0.00: 11.49:  9.92:  8.40 ->  Done!
+State: [0, 4, 8]
+-- :   0.00:  0.00:  0.00:  6.92: 11.20 ->  Done!
 State: [30, 0, 8]
-State: [20, 1, 7]
-State: [12, 2, 4]
+State: [21, 1, 2]
+State: [13, 2, 3]
 State: [3, 3, 2]
-State: [0, 4, 6]
-State: [0, 5, 5]
-State: [0, 6, 4]
-State: [0, 7, 3]
--- :   0.00:  0.00:  0.00:  0.00: 23.05: 13.72:  7.84:  4.20 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 5]
-State: [13, 2, 3]
-State: [5, 3, 4]
-State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  3.04:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [0, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
--- :   0.00:  0.00:  0.00: 13.72: 15.68: 11.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 3]
-State: [10, 2, 2]
-State: [0, 3, 5]
-State: [0, 4, 2]
-State: [0, 5, 5]
-State: [0, 6, 6]
-State: [0, 7, 3]
-State: [0, 8, 6]
-State: [0, 9, 6]
--- :   0.00:  0.00:  0.00: 52.71: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 3]
-State: [5, 3, 4]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  3.04:  4.20 ->  Done!
-State: [30, 0, 6]
-State: [21, 1, 5]
-State: [13, 2, 3]
--- :   0.77:  2.12:  1.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [12, 2, 4]
--- :   0.00:  6.04:  2.00 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 4]
-State: [12, 2, 8]
--- :   0.00:  0.00:  8.80 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 6]
-State: [10, 2, 8]
-State: [2, 3, 7]
-State: [0, 4, 4]
-State: [0, 5, 2]
-State: [0, 6, 6]
-State: [0, 7, 5]
--- :   0.00:  0.00:  8.00: 28.89: 15.37:  5.49: 11.76:  7.00 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [0, 3, 5]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 19.21:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [0, 3, 5]
--- :   0.00:  0.00:  0.00:  7.00 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [10, 2, 2]
-State: [0, 3, 3]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  0.00:  8.23:  3.92:  7.00 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 6]
-State: [4, 3, 3]
-State: [0, 4, 6]
-State: [0, 5, 6]
--- :   0.00:  0.00:  0.00:  1.26: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 3]
-State: [5, 3, 4]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  3.04:  4.20 ->  Done!
-State: [30, 0, 6]
-State: [21, 1, 5]
-State: [13, 2, 3]
-State: [5, 3, 5]
-State: [0, 4, 7]
-State: [0, 5, 4]
--- :   0.00:  0.00:  0.00:  5.00: 13.72:  5.60 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 4]
-State: [12, 2, 8]
-State: [6, 3, 8]
-State: [0, 4, 6]
-State: [0, 5, 8]
-State: [0, 6, 7]
-State: [0, 7, 4]
--- :   0.00:  0.00: 21.06: 16.76: 23.05: 21.95: 13.72:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [10, 2, 5]
-State: [2, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  9.68:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 4]
-State: [12, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [0, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
--- :   0.00:  0.00:  0.00: 19.21: 21.95: 15.68:  2.80 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 2]
-State: [12, 2, 5]
-State: [2, 3, 2]
--- :   0.00:  0.00:  0.20:  2.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 3]
-State: [0, 3, 6]
-State: [0, 4, 6]
-State: [0, 5, 2]
--- :   0.00:  0.00:  0.00: 16.46: 11.76:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [0, 3, 3]
-State: [0, 4, 6]
--- :   0.00:  0.00:  0.00:  5.88:  8.40 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 5]
--- :   0.00:  0.00:  3.80 ->  Done!
-State: [30, 0, 7]
-State: [20, 1, 4]
-State: [13, 2, 3]
-State: [5, 3, 4]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 6]
-State: [0, 7, 8]
-State: [0, 8, 7]
-State: [0, 9, 4]
--- :   0.00:  0.00:  0.00:  0.00: 60.24: 43.03: 23.05: 21.95: 13.72:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [10, 2, 5]
-State: [2, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  0.00:  7.49:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [0, 3, 5]
--- :   0.00:  0.00:  0.00:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [0, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00: 37.65: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 2]
-State: [12, 2, 5]
-State: [2, 3, 6]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 6]
--- :   0.00:  0.00:  0.00: 17.37:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 3]
-State: [5, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  1.16:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 5]
-State: [13, 2, 7]
-State: [7, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  9.84:  0.00:  5.88:  5.60 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [10, 2, 6]
--- :   4.51:  6.08:  6.40 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 7]
-State: [12, 2, 4]
--- :   4.51:  6.04:  2.00 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [10, 2, 5]
-State: [2, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  9.68:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 4]
-State: [12, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [0, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00: 37.65: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 2]
-State: [12, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
-State: [30, 0, 6]
-State: [21, 1, 3]
-State: [13, 2, 6]
-State: [4, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  0.00:  9.49:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 4]
-State: [12, 2, 3]
-State: [2, 3, 6]
-State: [0, 4, 5]
-State: [0, 5, 3]
--- :   0.00:  0.00:  0.00: 12.98:  9.80:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [12, 2, 4]
-State: [3, 3, 3]
-State: [0, 4, 4]
-State: [0, 5, 8]
--- :   0.00:  2.62:  0.00:  3.00:  7.84: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 6]
-State: [10, 2, 8]
-State: [2, 3, 7]
-State: [0, 4, 4]
--- :   0.00:  0.00:  8.00: 11.80:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [10, 2, 5]
-State: [2, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  0.00:  7.49:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [0, 3, 5]
--- :   0.00:  0.00:  0.00:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [0, 3, 5]
--- :   0.00:  0.00:  0.00:  7.00 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [10, 2, 2]
-State: [0, 3, 3]
-State: [0, 4, 2]
-State: [0, 5, 5]
-State: [0, 6, 2]
-State: [0, 7, 5]
--- :   0.00:  0.00:  0.00: 16.13:  7.68: 13.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 6]
-State: [21, 1, 3]
-State: [13, 2, 6]
-State: [4, 3, 6]
--- :   0.00:  0.00:  3.12:  6.80 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 3]
-State: [5, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  1.16:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [22, 1, 5]
-State: [13, 2, 7]
--- :   0.00:  1.16:  7.40 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [0, 3, 8]
-State: [0, 4, 8]
--- :   0.00:  0.00:  0.00: 15.68: 11.20 ->  Done!
-State: [30, 0, 6]
-State: [21, 1, 8]
-State: [12, 2, 7]
-State: [2, 3, 4]
--- :   0.00:  6.26:  4.12:  4.80 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [10, 2, 5]
-State: [2, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
-State: [0, 7, 3]
-State: [0, 8, 4]
-State: [0, 9, 5]
--- :   0.00:  0.00:  0.00: 23.08: 22.59: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
-[21.0, 26.639999999999993, 20.407999999999998, 16.839999999999996, 10.759999999999996, 48.13119999999999, 7.199999999999998, 42.27999999999999, 87.69599999999997, 65.19807999999998, 4.079999999999998, 16.943999999999996, 8.039999999999997, 29.807999999999993, 48.80959999999999, 10.04, 40.599999999999994, 146.09862399999997, 7.239999999999998, 3.887999999999995, 8.039999999999997, 8.799999999999999, 76.50559999999996, 42.27999999999999, 7.0, 19.151999999999997, 21.415999999999997, 7.239999999999998, 24.32, 102.13715199999996, 32.7552, 3.0, 59.639999999999986, 2.1999999999999993, 31.023999999999994, 14.279999999999998, 3.8, 167.58380799999992, 18.967999999999996, 7.0, 125.57439999999995, 45.75839999999998, 28.150399999999994, 21.32159999999999, 16.991999999999994, 12.551999999999996, 32.7552, 3.0, 125.57439999999995, 3.0, 20.407999999999998, 26.975999999999992, 24.66175999999999, 25.39999999999999, 18.967999999999996, 7.0, 7.0, 48.45791999999999, 9.919999999999996, 28.150399999999994, 8.559999999999999, 26.879999999999995, 15.175999999999995, 109.46426879999999]
-  Trial   1/200  |  value=0.8178  |  best=0.8178  |  elapsed=1228s
-Episode 10000 Average Reward: -141.09299906631676
-Episode 20000 Average Reward: -139.89471245864956
-Episode 30000 Average Reward: -137.19015570716667
-Episode 40000 Average Reward: -137.92161594389495
-Episode 50000 Average Reward: -138.5514657762713
-Episode 60000 Average Reward: -134.63704470228987
-Episode 70000 Average Reward: -136.90305956121594
-Episode 80000 Average Reward: -135.59481452981242
-Episode 90000 Average Reward: -136.40234185134074
-Episode 100000 Average Reward: -135.836172260567
-Episode 110000 Average Reward: -135.3198821192294
-Episode 120000 Average Reward: -133.8756539431526
-Episode 130000 Average Reward: -134.40340373909498
-Episode 140000 Average Reward: -132.9512476521574
-Episode 150000 Average Reward: -134.44635391569915
-Episode 160000 Average Reward: -132.26934715548666
-Episode 170000 Average Reward: -134.48955081968637
-Episode 180000 Average Reward: -131.451547146199
-Episode 190000 Average Reward: -131.82248141148156
-Episode 200000 Average Reward: -132.45216729281532
-Episode 210000 Average Reward: -130.10660898267133
-Episode 220000 Average Reward: -131.79661934962684
-Episode 230000 Average Reward: -129.8598219635302
-Episode 240000 Average Reward: -129.25615546115068
-Episode 250000 Average Reward: -127.78654063122426
-Episode 260000 Average Reward: -130.89951265768443
-Episode 270000 Average Reward: -131.99657529271292
-Episode 280000 Average Reward: -127.75949979348988
-Episode 290000 Average Reward: -129.4544642818662
-Episode 300000 Average Reward: -127.91896620062715
-Episode 310000 Average Reward: -126.4449580563046
-Episode 320000 Average Reward: -127.90161852184572
-Episode 330000 Average Reward: -125.69256559544316
-Episode 340000 Average Reward: -126.58478480331772
-Episode 350000 Average Reward: -124.21599906741244
-Episode 360000 Average Reward: -123.49079244782587
-Episode 370000 Average Reward: -126.57722729841659
-Episode 380000 Average Reward: -124.49203036595195
-Episode 390000 Average Reward: -124.59343269533692
-Episode 400000 Average Reward: -122.37787971629051
-Episode 410000 Average Reward: -124.11996534599676
-Episode 420000 Average Reward: -124.54721003599867
-Episode 430000 Average Reward: -123.03823618066427
-Episode 440000 Average Reward: -123.59767013208061
-Episode 450000 Average Reward: -124.49650747728893
-Episode 460000 Average Reward: -120.80489272041467
-Episode 470000 Average Reward: -123.07323693902845
-Episode 480000 Average Reward: -122.07032000046077
-Episode 490000 Average Reward: -121.23882762250234
-Episode 500000 Average Reward: -121.7448567604633
-Episode 510000 Average Reward: -122.00592891948027
-Episode 520000 Average Reward: -120.48987492324346
-Episode 530000 Average Reward: -119.32246176570362
-Episode 540000 Average Reward: -120.37218985758717
-Episode 550000 Average Reward: -119.26235267572731
-Episode 560000 Average Reward: -117.5734093053542
-Episode 570000 Average Reward: -120.70878760011772
-Episode 580000 Average Reward: -118.39923084670971
-Episode 590000 Average Reward: -117.46980805710842
-Episode 600000 Average Reward: -115.4617945170022
-Episode 610000 Average Reward: -116.80364385806334
-Episode 620000 Average Reward: -117.73323656640507
-Episode 630000 Average Reward: -117.23033785331708
-Episode 640000 Average Reward: -114.57613692356604
-Episode 650000 Average Reward: -117.9658270233702
-Episode 660000 Average Reward: -114.99351871068156
-Episode 670000 Average Reward: -113.41713458966524
-Episode 680000 Average Reward: -114.77240617446397
-Episode 690000 Average Reward: -114.42308968461307
-Episode 700000 Average Reward: -112.09266997113852
-Episode 710000 Average Reward: -113.73715295396862
-Episode 720000 Average Reward: -114.3766008885043
-Episode 730000 Average Reward: -110.4847865985126
-Episode 740000 Average Reward: -112.30827711813627
-Episode 750000 Average Reward: -109.14545030870012
-Episode 760000 Average Reward: -109.09144835995643
-Episode 770000 Average Reward: -109.4707136909107
-Episode 780000 Average Reward: -108.74576451362812
-Episode 790000 Average Reward: -107.9374621798502
-Episode 800000 Average Reward: -110.51114824849404
-Episode 810000 Average Reward: -108.96923063777275
-Episode 820000 Average Reward: -111.29038166506491
-Episode 830000 Average Reward: -110.4264548926259
-Episode 840000 Average Reward: -108.95984600293373
-Episode 850000 Average Reward: -106.93464389314556
-Episode 860000 Average Reward: -109.1302595556966
-Episode 870000 Average Reward: -105.57946096442365
-Episode 880000 Average Reward: -105.22544547468284
-Episode 890000 Average Reward: -105.99881867035644
-Episode 900000 Average Reward: -106.6653748975513
-Episode 910000 Average Reward: -104.40542337211387
-Episode 920000 Average Reward: -106.33845256559611
-Episode 930000 Average Reward: -105.09396205084668
-Episode 940000 Average Reward: -105.10669368138747
-Episode 950000 Average Reward: -104.41369287529467
-Episode 960000 Average Reward: -105.00974089515005
-Episode 970000 Average Reward: -101.12996238170108
-Episode 980000 Average Reward: -104.81616045941757
-Episode 990000 Average Reward: -103.22543741205502
-Episode 1000000 Average Reward: -102.18886754300925
-Episode 1010000 Average Reward: -103.17505664049148
-Episode 1020000 Average Reward: -103.09298217895932
-Episode 1030000 Average Reward: -105.52152373631996
-Episode 1040000 Average Reward: -102.45539291095037
-Episode 1050000 Average Reward: -104.0023685857689
-Episode 1060000 Average Reward: -99.65899285280766
-Episode 1070000 Average Reward: -100.80282058443771
-Episode 1080000 Average Reward: -98.15054502409212
-Episode 1090000 Average Reward: -101.20232566281213
-Episode 1100000 Average Reward: -100.13606299199485
-Episode 1110000 Average Reward: -101.51451525759995
-Episode 1120000 Average Reward: -98.25420756290555
-Episode 1130000 Average Reward: -98.98937628552189
-Episode 1140000 Average Reward: -96.99046174841854
-Episode 1150000 Average Reward: -99.05990918401021
-Episode 1160000 Average Reward: -96.96922759939068
-Episode 1170000 Average Reward: -97.82433206963196
-Episode 1180000 Average Reward: -97.77110023662588
-Episode 1190000 Average Reward: -97.0086302518886
-Episode 1200000 Average Reward: -97.2624558854246
-Episode 1210000 Average Reward: -96.786308255703
-Episode 1220000 Average Reward: -97.79625599626237
-Episode 1230000 Average Reward: -95.4662073157734
-Episode 1240000 Average Reward: -95.2534262115635
-Episode 1250000 Average Reward: -95.23849918253052
-Episode 1260000 Average Reward: -95.70289997808636
-Episode 1270000 Average Reward: -93.65743167966204
-Episode 1280000 Average Reward: -94.39617336074237
-Episode 1290000 Average Reward: -94.78421096869886
-Episode 1300000 Average Reward: -94.0119644982067
-Episode 1310000 Average Reward: -92.00755400491005
-Episode 1320000 Average Reward: -92.51342163654652
-Episode 1330000 Average Reward: -93.61295738104829
-Episode 1340000 Average Reward: -93.52730009113597
-Episode 1350000 Average Reward: -93.87320824406014
-Episode 1360000 Average Reward: -89.99484472895485
-Episode 1370000 Average Reward: -91.49881852776444
-Episode 1380000 Average Reward: -90.60142981000189
-Episode 1390000 Average Reward: -91.64717837609982
-Episode 1400000 Average Reward: -89.98187934094332
-Episode 1410000 Average Reward: -90.80301308676093
-Episode 1420000 Average Reward: -90.29899908979709
-Episode 1430000 Average Reward: -88.91047395010555
-Episode 1440000 Average Reward: -88.23805522775038
-Episode 1450000 Average Reward: -89.63522315784188
-Episode 1460000 Average Reward: -87.27678511256573
-Episode 1470000 Average Reward: -90.05064749124604
-Episode 1480000 Average Reward: -88.5668889759027
-Episode 1490000 Average Reward: -87.98619958668284
-Episode 1500000 Average Reward: -85.60548415031293
-Episode 1510000 Average Reward: -86.49847755211773
-Episode 1520000 Average Reward: -85.71823993425917
-Episode 1530000 Average Reward: -87.43510820933629
-Episode 1540000 Average Reward: -88.01659355866109
-Episode 1550000 Average Reward: -84.95805413408766
-Episode 1560000 Average Reward: -87.35363129647102
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [6, 3, 5]
-State: [0, 4, 8]
--- :   0.00:  0.32:  0.51:  4.04: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 2]
-State: [14, 2, 3]
-State: [8, 3, 2]
 State: [0, 4, 5]
 State: [0, 5, 2]
 State: [0, 6, 5]
 -- :   0.00:  0.00:  0.00:  0.00: 13.72:  3.92:  7.00 ->  Done!
 State: [30, 0, 6]
 State: [20, 1, 3]
-State: [10, 2, 6]
-State: [5, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  8.84:  7.74:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 4]
-State: [11, 2, 3]
-State: [1, 3, 6]
-State: [0, 4, 5]
--- :   0.00:  0.00:  0.00: 10.80:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 5]
-State: [12, 2, 7]
-State: [7, 3, 4]
--- :   0.00:  0.00:  8.92:  2.80 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 4]
-State: [11, 2, 8]
-State: [5, 3, 8]
-State: [0, 4, 6]
-State: [0, 5, 8]
--- :   0.00:  0.00: 13.68: 13.23: 11.76: 11.20 ->  Done!
-State: [30, 0, 7]
-State: [20, 1, 4]
-State: [10, 2, 2]
-State: [1, 3, 6]
--- :   0.00:  0.00:  0.00:  8.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 4]
-State: [10, 2, 3]
-State: [7, 3, 4]
-State: [0, 4, 5]
-State: [0, 5, 3]
-State: [0, 6, 4]
-State: [0, 7, 5]
--- :   0.00:  0.00:  3.00:  0.00: 19.21:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [6, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
--- :   0.00:  0.00:  0.00:  0.62: 30.73: 21.95:  3.92:  4.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [12, 2, 2]
-State: [3, 3, 5]
-State: [0, 4, 6]
-State: [0, 5, 3]
-State: [0, 6, 6]
-State: [0, 7, 6]
--- :   0.00:  0.00:  0.00: 13.76: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [12, 2, 3]
--- :   0.00:  2.12:  1.80 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [10, 2, 6]
-State: [5, 3, 5]
-State: [0, 4, 3]
--- :   0.00:  0.00:  7.74:  5.00:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [11, 2, 4]
--- :   0.00:  5.08:  1.60 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 4]
-State: [11, 2, 8]
-State: [5, 3, 8]
-State: [0, 4, 6]
--- :   0.00:  0.00: 11.49: 10.88:  8.40 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 7]
-State: [11, 2, 4]
-State: [1, 3, 2]
-State: [0, 4, 6]
-State: [0, 5, 5]
-State: [0, 6, 4]
-State: [0, 7, 3]
--- :   0.00:  0.00:  0.00:  6.38: 23.05: 13.72:  7.84:  4.20 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 5]
-State: [12, 2, 3]
-State: [6, 3, 4]
-State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  2.08:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [6, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
--- :   0.00:  0.00:  0.00:  3.26: 15.68: 11.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 3]
-State: [10, 2, 2]
-State: [1, 3, 5]
-State: [0, 4, 2]
-State: [0, 5, 5]
-State: [0, 6, 6]
-State: [0, 7, 3]
-State: [0, 8, 6]
-State: [0, 9, 6]
--- :   0.00:  0.00:  0.00: 43.17: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [12, 2, 3]
-State: [6, 3, 4]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  2.08:  4.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 5]
-State: [12, 2, 3]
--- :   0.00:  2.12:  1.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [11, 2, 4]
--- :   0.00:  5.08:  1.60 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 4]
-State: [11, 2, 8]
--- :   0.00:  0.00:  8.80 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 6]
-State: [12, 2, 8]
-State: [3, 3, 7]
-State: [0, 4, 4]
-State: [0, 5, 2]
-State: [0, 6, 6]
-State: [0, 7, 5]
--- :   0.00:  0.00:  1.47: 24.51: 15.37:  5.49: 11.76:  7.00 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 16.37:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [6, 3, 5]
--- :   0.00:  2.51:  2.08:  4.60 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [11, 2, 2]
-State: [3, 3, 3]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  3.62:  0.00:  3.00:  3.92:  7.00 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
 State: [12, 2, 6]
-State: [4, 3, 3]
-State: [0, 4, 6]
-State: [0, 5, 6]
--- :   0.00:  0.00:  0.32:  1.26: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [12, 2, 3]
-State: [6, 3, 4]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  2.08:  4.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 5]
-State: [12, 2, 3]
-State: [6, 3, 5]
-State: [0, 4, 7]
-State: [0, 5, 4]
--- :   0.00:  0.00:  0.00:  3.26: 13.72:  5.60 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 4]
-State: [11, 2, 8]
-State: [5, 3, 8]
-State: [0, 4, 6]
-State: [0, 5, 8]
-State: [0, 6, 7]
-State: [0, 7, 4]
--- :   0.00:  0.00: 21.06: 21.13: 23.05: 21.95: 13.72:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [12, 2, 5]
-State: [8, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  9.38:  0.00:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 4]
-State: [11, 2, 5]
--- :   0.00:  0.00:  4.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [6, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
--- :   0.00:  0.00:  0.00:  2.16: 21.95: 15.68:  2.80 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 2]
-State: [11, 2, 5]
-State: [5, 3, 2]
--- :   0.00:  0.00:  4.04:  0.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 3]
-State: [6, 3, 6]
-State: [0, 4, 6]
-State: [0, 5, 2]
--- :   0.00:  0.00:  0.00:  6.00: 11.76:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [1, 3, 3]
-State: [0, 4, 6]
--- :   0.00:  0.00:  0.00:  4.92:  8.40 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 5]
--- :   0.00:  0.00:  4.20 ->  Done!
-State: [30, 0, 7]
-State: [20, 1, 4]
-State: [10, 2, 3]
-State: [7, 3, 4]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 6]
-State: [0, 7, 8]
-State: [0, 8, 7]
-State: [0, 9, 4]
--- :   0.00:  0.00:  3.00:  0.00: 60.24: 43.03: 23.05: 21.95: 13.72:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [12, 2, 5]
-State: [8, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  7.84:  0.00:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [1, 3, 5]
--- :   0.00:  0.00:  0.00:  6.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [6, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00:  0.00: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 2]
-State: [14, 2, 5]
-State: [8, 3, 6]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 6]
--- :   0.00:  0.00:  0.62:  0.32:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [12, 2, 3]
-State: [6, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  0.00:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 5]
-State: [12, 2, 7]
-State: [7, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00: 12.68:  0.00:  5.88:  5.60 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [11, 2, 6]
--- :   4.51:  7.04:  4.40 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 7]
-State: [11, 2, 4]
--- :   4.51:  5.08:  1.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [12, 2, 5]
-State: [8, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  9.38:  0.00:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 4]
-State: [11, 2, 5]
--- :   0.00:  0.00:  4.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [6, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00:  0.00: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 2]
-State: [14, 2, 5]
--- :   0.00:  0.00:  4.60 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [10, 2, 6]
-State: [5, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  8.84:  7.74:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 4]
-State: [11, 2, 3]
-State: [1, 3, 6]
-State: [0, 4, 5]
-State: [0, 5, 3]
--- :   0.00:  0.00:  0.00: 14.72:  9.80:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [11, 2, 4]
-State: [1, 3, 3]
-State: [0, 4, 4]
-State: [0, 5, 8]
--- :   0.00:  0.00:  0.00:  6.49:  7.84: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 6]
-State: [12, 2, 8]
-State: [3, 3, 7]
-State: [0, 4, 4]
--- :   0.00:  0.32:  6.26: 10.84:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [12, 2, 5]
-State: [8, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  7.84:  0.00:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [1, 3, 5]
--- :   0.00:  0.00:  0.00:  6.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [6, 3, 5]
--- :   0.00:  2.51:  2.08:  4.60 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [11, 2, 2]
-State: [3, 3, 3]
-State: [0, 4, 2]
-State: [0, 5, 5]
-State: [0, 6, 2]
-State: [0, 7, 5]
--- :   0.00:  0.00:  0.00:  3.00:  7.68: 13.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [10, 2, 6]
-State: [5, 3, 6]
--- :   0.00:  0.00:  6.96:  6.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [12, 2, 3]
-State: [6, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  0.00:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [21, 1, 5]
-State: [12, 2, 7]
--- :   0.00:  1.16:  7.80 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [1, 3, 8]
-State: [0, 4, 8]
--- :   0.00:  0.00:  0.00: 14.72: 11.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 8]
-State: [11, 2, 7]
-State: [6, 3, 4]
--- :   0.00:  6.26:  8.92:  3.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [12, 2, 5]
-State: [8, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
-State: [0, 7, 3]
-State: [0, 8, 4]
-State: [0, 9, 5]
--- :   0.00:  0.00: 18.76:  0.00: 22.59: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
-[16.06879999999999, 24.639999999999997, 27.50559999999999, 17.799999999999997, 11.719999999999997, 49.87519999999999, 7.999999999999998, 45.27999999999998, 61.426559999999974, 65.19807999999998, 3.919999999999998, 16.943999999999996, 6.679999999999998, 30.767999999999994, 55.18783999999999, 9.079999999999998, 30.135999999999996, 136.55727359999997, 6.279999999999998, 3.919999999999998, 6.679999999999998, 8.799999999999999, 65.59782399999996, 39.43839999999999, 9.191999999999993, 17.541759999999993, 21.73279999999999, 6.279999999999998, 22.575999999999993, 106.51539199999995, 32.450239999999994, 4.6, 42.59039999999999, 4.839999999999999, 20.55999999999999, 13.319999999999997, 4.199999999999999, 170.5838079999999, 19.321599999999997, 6.6, 87.92671999999997, 29.330559999999984, 26.991999999999997, 24.163199999999996, 15.951999999999995, 11.191999999999995, 32.450239999999994, 4.6, 87.92671999999997, 4.6, 27.50559999999999, 28.719999999999995, 25.527999999999995, 23.01279999999999, 19.321599999999997, 6.6, 9.191999999999993, 35.323199999999986, 13.359999999999996, 26.991999999999997, 8.959999999999999, 25.919999999999995, 18.375999999999998, 105.13945855999997]
-  Trial   2/200  |  value=0.8238  |  best=0.8238  |  elapsed=3931s
-Episode 10000 Average Reward: -140.1436254564454
-Episode 20000 Average Reward: -139.29991591836665
-Episode 30000 Average Reward: -135.74962194310137
-Episode 40000 Average Reward: -135.73833012638715
-Episode 50000 Average Reward: -134.5298202150809
-Episode 60000 Average Reward: -131.1159490784153
-Episode 70000 Average Reward: -133.75758544394236
-Episode 80000 Average Reward: -133.22689619237883
-Episode 90000 Average Reward: -131.77443496954874
-Episode 100000 Average Reward: -127.71990926319612
-Episode 110000 Average Reward: -129.51619124890618
-Episode 120000 Average Reward: -128.64856565229564
-Episode 130000 Average Reward: -127.40115067282426
-Episode 140000 Average Reward: -125.2897308865638
-Episode 150000 Average Reward: -125.85020918628348
-Episode 160000 Average Reward: -126.66678175763451
-Episode 170000 Average Reward: -124.3881299220889
-Episode 180000 Average Reward: -124.00831564666876
-Episode 190000 Average Reward: -123.04412757736445
-Episode 200000 Average Reward: -119.96211506869244
-Episode 210000 Average Reward: -123.32050295968763
-Episode 220000 Average Reward: -120.51263794155514
-Episode 230000 Average Reward: -121.04883923720186
-Episode 240000 Average Reward: -119.42457064446972
-Episode 250000 Average Reward: -118.24281103072252
-Episode 260000 Average Reward: -119.26604598350843
-Episode 270000 Average Reward: -115.77820737397755
-Episode 280000 Average Reward: -116.26070377884668
-Episode 290000 Average Reward: -113.9748865285529
-Episode 300000 Average Reward: -115.65453814990845
-Episode 310000 Average Reward: -114.33764431038459
-Episode 320000 Average Reward: -115.23105308945402
-Episode 330000 Average Reward: -113.8065425154355
-Episode 340000 Average Reward: -111.26411781738491
-Episode 350000 Average Reward: -113.28771523730428
-Episode 360000 Average Reward: -111.26568725624827
-Episode 370000 Average Reward: -110.88095617848317
-Episode 380000 Average Reward: -109.54009560279036
-Episode 390000 Average Reward: -109.18016424150012
-Episode 400000 Average Reward: -108.05719143148539
-Episode 410000 Average Reward: -108.60155428802555
-Episode 420000 Average Reward: -106.45359054320636
-Episode 430000 Average Reward: -107.24999764520956
-Episode 440000 Average Reward: -105.50198433207292
-Episode 450000 Average Reward: -105.15406821369852
-Episode 460000 Average Reward: -103.47564861126652
-Episode 470000 Average Reward: -100.83410197050365
-Episode 480000 Average Reward: -101.41007097417724
-Episode 490000 Average Reward: -101.69770899695612
-Episode 500000 Average Reward: -101.63358488901629
-Episode 510000 Average Reward: -99.65043510183932
-Episode 520000 Average Reward: -97.81599584864252
-Episode 530000 Average Reward: -99.8579667288166
-Episode 540000 Average Reward: -100.40587431815165
-Episode 550000 Average Reward: -96.56335729249277
-Episode 560000 Average Reward: -97.31597223617533
-Episode 570000 Average Reward: -97.41932831165437
-Episode 580000 Average Reward: -97.20757178848253
-Episode 590000 Average Reward: -96.16098701747197
-Episode 600000 Average Reward: -93.02324120747006
-Episode 610000 Average Reward: -96.21894697540604
-Episode 620000 Average Reward: -94.22519897159677
-Episode 630000 Average Reward: -91.7882060777267
-Episode 640000 Average Reward: -95.8715820231475
-Episode 650000 Average Reward: -91.27105303223293
-Episode 660000 Average Reward: -92.09664040899581
-Episode 670000 Average Reward: -90.81455735013373
-Episode 680000 Average Reward: -90.25004324040701
-Episode 690000 Average Reward: -89.20242685352957
-Episode 700000 Average Reward: -87.45176392728574
-Episode 710000 Average Reward: -88.15528751301629
-Episode 720000 Average Reward: -89.31153308668925
-Episode 730000 Average Reward: -87.40678832818173
-Episode 740000 Average Reward: -86.02295213468669
-Episode 750000 Average Reward: -86.05959605209085
-Episode 760000 Average Reward: -84.75735052880894
-Episode 770000 Average Reward: -86.22802564619262
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [11, 2, 4]
-State: [7, 3, 5]
-State: [0, 4, 8]
--- :   0.00:  0.00:  4.00:  3.08: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [21, 1, 2]
-State: [11, 2, 3]
-State: [2, 3, 2]
-State: [0, 4, 5]
-State: [0, 5, 2]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  2.00: 13.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [11, 2, 6]
-State: [4, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  3.16:  9.49:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [11, 2, 3]
 State: [2, 3, 6]
+State: [0, 4, 2]
+State: [0, 5, 5]
+-- :   0.00:  0.00:  0.00: 12.98:  3.92:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [21, 1, 4]
+State: [11, 2, 3]
+State: [5, 3, 6]
 State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  9.84:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00:  6.96:  7.00 ->  Done!
 State: [30, 0, 3]
-State: [20, 1, 5]
+State: [21, 1, 5]
 State: [11, 2, 7]
-State: [4, 3, 4]
--- :   0.00:  0.00:  7.00:  4.00 ->  Done!
+State: [5, 3, 4]
+-- :   0.00:  0.00:  7.96:  3.60 ->  Done!
 State: [30, 0, 3]
-State: [20, 1, 4]
+State: [21, 1, 4]
 State: [11, 2, 8]
 State: [1, 3, 8]
 State: [0, 4, 6]
@@ -1251,11 +163,11 @@ State: [0, 5, 8]
 State: [30, 0, 7]
 State: [21, 1, 4]
 State: [11, 2, 2]
-State: [1, 3, 6]
--- :   1.32:  0.00:  0.00:  8.00 ->  Done!
+State: [2, 3, 6]
+-- :   1.32:  0.00:  0.00:  7.60 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 4]
-State: [11, 2, 3]
+State: [12, 2, 3]
 State: [2, 3, 4]
 State: [0, 4, 5]
 State: [0, 5, 3]
@@ -1264,38 +176,38 @@ State: [0, 7, 5]
 -- :   0.00:  0.00:  0.00: 12.76: 19.21:  8.23:  7.84:  7.00 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [11, 2, 4]
-State: [7, 3, 5]
+State: [10, 2, 4]
+State: [3, 3, 5]
 State: [0, 4, 8]
 State: [0, 5, 8]
 State: [0, 6, 2]
 State: [0, 7, 3]
--- :   0.00:  0.00:  4.00:  0.00: 30.73: 21.95:  3.92:  4.20 ->  Done!
+-- :   0.00:  0.00:  0.00: 13.76: 30.73: 21.95:  3.92:  4.20 ->  Done!
 State: [30, 0, 2]
 State: [21, 1, 5]
 State: [11, 2, 2]
-State: [1, 3, 5]
+State: [2, 3, 5]
 State: [0, 4, 6]
 State: [0, 5, 3]
 State: [0, 6, 6]
 State: [0, 7, 6]
--- :   0.00:  0.00:  0.00: 22.51: 23.05:  8.23: 11.76:  8.40 ->  Done!
+-- :   0.00:  0.00:  0.00: 18.13: 23.05:  8.23: 11.76:  8.40 ->  Done!
 State: [30, 0, 2]
 State: [21, 1, 5]
 State: [11, 2, 3]
--- :   0.00:  0.20:  0.60 ->  Done!
+-- :   0.00:  0.20:  1.80 ->  Done!
 State: [30, 0, 4]
 State: [21, 1, 3]
 State: [11, 2, 6]
-State: [4, 3, 5]
+State: [3, 3, 5]
 State: [0, 4, 3]
--- :   0.00:  0.00:  4.26:  5.96:  4.20 ->  Done!
+-- :   0.00:  0.00:  2.51:  6.92:  4.20 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 7]
 State: [11, 2, 4]
--- :   0.00:  5.08:  4.00 ->  Done!
+-- :   0.00:  5.08:  1.60 ->  Done!
 State: [30, 0, 3]
-State: [20, 1, 4]
+State: [21, 1, 4]
 State: [11, 2, 8]
 State: [1, 3, 8]
 State: [0, 4, 6]
@@ -1303,52 +215,52 @@ State: [0, 4, 6]
 State: [30, 0, 8]
 State: [21, 1, 7]
 State: [11, 2, 4]
-State: [7, 3, 2]
+State: [1, 3, 2]
 State: [0, 4, 6]
 State: [0, 5, 5]
 State: [0, 6, 4]
 State: [0, 7, 3]
--- :   0.00:  0.00:  4.00:  0.00: 23.05: 13.72:  7.84:  4.20 ->  Done!
+-- :   0.00:  0.00:  0.00:  6.38: 23.05: 13.72:  7.84:  4.20 ->  Done!
 State: [30, 0, 4]
 State: [21, 1, 5]
 State: [11, 2, 3]
-State: [2, 3, 4]
+State: [5, 3, 4]
 State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  5.92:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00:  3.04:  7.00 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [11, 2, 4]
-State: [7, 3, 5]
+State: [10, 2, 4]
+State: [3, 3, 5]
 State: [0, 4, 8]
 State: [0, 5, 8]
--- :   0.00:  0.00:  4.00:  1.51: 15.68: 11.20 ->  Done!
+-- :   0.00:  0.00:  0.00:  8.49: 15.68: 11.20 ->  Done!
 State: [30, 0, 2]
 State: [21, 1, 3]
 State: [11, 2, 2]
-State: [1, 3, 5]
+State: [2, 3, 5]
 State: [0, 4, 2]
 State: [0, 5, 5]
 State: [0, 6, 6]
 State: [0, 7, 3]
 State: [0, 8, 6]
 State: [0, 9, 6]
--- :   0.00:  0.00:  0.00: 43.17: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
+-- :   0.00:  0.00:  0.00: 33.62: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
 State: [30, 0, 2]
 State: [21, 1, 5]
 State: [11, 2, 3]
-State: [2, 3, 4]
+State: [5, 3, 4]
 State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  5.92:  4.20 ->  Done!
+-- :   0.00:  0.00:  0.00:  3.04:  4.20 ->  Done!
 State: [30, 0, 6]
 State: [20, 1, 5]
 State: [11, 2, 3]
--- :   0.00:  1.16:  0.60 ->  Done!
+-- :   0.00:  1.16:  1.80 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 7]
 State: [11, 2, 4]
--- :   0.00:  5.08:  4.00 ->  Done!
+-- :   0.00:  5.08:  1.60 ->  Done!
 State: [30, 0, 3]
-State: [20, 1, 4]
+State: [21, 1, 4]
 State: [11, 2, 8]
 -- :   0.00:  0.00:  7.20 ->  Done!
 State: [30, 0, 8]
@@ -1363,45 +275,45 @@ State: [0, 7, 5]
 State: [30, 0, 4]
 State: [21, 1, 3]
 State: [11, 2, 4]
-State: [7, 3, 5]
+State: [1, 3, 5]
 State: [0, 4, 3]
 State: [0, 5, 4]
 State: [0, 6, 5]
--- :   0.00:  0.00:  4.00:  0.00:  8.23:  7.84:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00: 16.37:  8.23:  7.84:  7.00 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [11, 2, 4]
-State: [7, 3, 5]
--- :   0.00:  0.77:  4.00:  4.20 ->  Done!
+State: [10, 2, 4]
+State: [3, 3, 5]
+-- :   0.00:  0.00:  1.12:  5.80 ->  Done!
 State: [30, 0, 8]
 State: [21, 1, 8]
 State: [11, 2, 2]
-State: [1, 3, 3]
+State: [2, 3, 3]
 State: [0, 4, 2]
 State: [0, 5, 5]
--- :   1.47:  0.00:  0.00:  6.49:  3.92:  7.00 ->  Done!
+-- :   1.47:  0.00:  0.00:  4.74:  3.92:  7.00 ->  Done!
 State: [30, 0, 2]
 State: [21, 1, 5]
 State: [11, 2, 6]
-State: [4, 3, 3]
+State: [3, 3, 3]
 State: [0, 4, 6]
 State: [0, 5, 6]
--- :   0.00:  0.00:  3.16:  1.26: 11.76:  8.40 ->  Done!
+-- :   0.00:  0.00:  0.32:  3.00: 11.76:  8.40 ->  Done!
 State: [30, 0, 2]
 State: [21, 1, 5]
 State: [11, 2, 3]
-State: [2, 3, 4]
+State: [5, 3, 4]
 State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  5.92:  4.20 ->  Done!
+-- :   0.00:  0.00:  0.00:  3.04:  4.20 ->  Done!
 State: [30, 0, 6]
 State: [20, 1, 5]
 State: [11, 2, 3]
-State: [2, 3, 5]
+State: [5, 3, 5]
 State: [0, 4, 7]
 State: [0, 5, 4]
--- :   0.00:  0.00:  0.00: 10.23: 13.72:  5.60 ->  Done!
+-- :   0.00:  0.00:  0.00:  5.00: 13.72:  5.60 ->  Done!
 State: [30, 0, 3]
-State: [20, 1, 4]
+State: [21, 1, 4]
 State: [11, 2, 8]
 State: [1, 3, 8]
 State: [0, 4, 6]
@@ -1412,156 +324,156 @@ State: [0, 7, 4]
 State: [30, 0, 2]
 State: [21, 1, 6]
 State: [11, 2, 5]
-State: [1, 3, 4]
+State: [3, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
 State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 12.52:  8.23:  7.84:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00:  6.84:  8.23:  7.84:  7.00 ->  Done!
 State: [30, 0, 3]
-State: [20, 1, 4]
+State: [21, 1, 4]
 State: [11, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
+-- :   0.00:  0.00:  3.80 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [11, 2, 4]
-State: [7, 3, 5]
+State: [10, 2, 4]
+State: [3, 3, 5]
 State: [0, 4, 8]
 State: [0, 5, 8]
 State: [0, 6, 2]
--- :   0.00:  0.00:  4.00:  0.00: 21.95: 15.68:  2.80 ->  Done!
+-- :   0.00:  0.00:  0.00: 10.68: 21.95: 15.68:  2.80 ->  Done!
 State: [30, 0, 3]
-State: [20, 1, 2]
-State: [15, 2, 5]
-State: [8, 3, 2]
--- :   0.00:  0.00:  3.08:  0.00 ->  Done!
+State: [21, 1, 2]
+State: [13, 2, 5]
+State: [6, 3, 2]
+-- :   0.00:  0.00:  3.08:  0.40 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [11, 2, 3]
-State: [2, 3, 6]
+State: [10, 2, 3]
+State: [3, 3, 6]
 State: [0, 4, 6]
 State: [0, 5, 2]
--- :   0.00:  0.00:  0.00: 12.98: 11.76:  2.80 ->  Done!
+-- :   0.00:  0.00:  0.00: 11.23: 11.76:  2.80 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 3]
-State: [11, 2, 4]
-State: [7, 3, 3]
+State: [12, 2, 4]
+State: [2, 3, 3]
 State: [0, 4, 6]
--- :   0.00:  0.00:  4.00:  0.00:  8.40 ->  Done!
+-- :   0.00:  0.00:  0.00:  3.96:  8.40 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 3]
-State: [11, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
+State: [12, 2, 5]
+-- :   0.00:  0.00:  4.60 ->  Done!
 State: [30, 0, 7]
 State: [21, 1, 4]
 State: [11, 2, 3]
-State: [2, 3, 4]
+State: [5, 3, 4]
 State: [0, 4, 8]
 State: [0, 5, 8]
 State: [0, 6, 6]
 State: [0, 7, 8]
 State: [0, 8, 7]
 State: [0, 9, 4]
--- :   0.00:  0.00:  0.00: 23.08: 60.24: 43.03: 23.05: 21.95: 13.72:  5.60 ->  Done!
+-- :   0.00:  0.00:  0.00:  0.00: 60.24: 43.03: 23.05: 21.95: 13.72:  5.60 ->  Done!
 State: [30, 0, 2]
 State: [21, 1, 6]
 State: [11, 2, 5]
-State: [1, 3, 4]
+State: [3, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
--- :   0.00:  0.00:  0.00:  9.23:  5.88:  5.60 ->  Done!
+-- :   0.00:  0.00:  0.00:  5.74:  5.88:  5.60 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 3]
-State: [11, 2, 4]
-State: [7, 3, 5]
--- :   0.00:  0.00:  4.00:  4.20 ->  Done!
+State: [12, 2, 4]
+State: [2, 3, 5]
+-- :   0.00:  0.00:  0.00:  6.20 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [11, 2, 4]
-State: [7, 3, 5]
+State: [10, 2, 4]
+State: [3, 3, 5]
 State: [0, 4, 8]
 State: [0, 5, 8]
 State: [0, 6, 2]
 State: [0, 7, 3]
 State: [0, 8, 2]
--- :   0.00:  0.00:  4.00:  0.00: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
+-- :   0.00:  0.00:  0.00: 18.06: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 2]
-State: [15, 2, 5]
-State: [8, 3, 6]
+State: [11, 2, 5]
+State: [3, 3, 6]
 State: [0, 4, 3]
 State: [0, 5, 6]
 State: [0, 6, 6]
--- :   0.00:  0.00:  0.00:  0.32:  8.23: 11.76:  8.40 ->  Done!
+-- :   0.00:  0.00:  0.00: 14.52:  8.23: 11.76:  8.40 ->  Done!
 State: [30, 0, 2]
 State: [21, 1, 5]
 State: [11, 2, 3]
-State: [2, 3, 4]
+State: [5, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 6]
 State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  9.68:  8.23: 11.76:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00:  1.16:  8.23: 11.76:  7.00 ->  Done!
 State: [30, 0, 3]
-State: [20, 1, 5]
+State: [21, 1, 5]
 State: [11, 2, 7]
-State: [4, 3, 4]
+State: [5, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
--- :   0.00:  0.00:  7.00:  4.00:  5.88:  5.60 ->  Done!
+-- :   0.00:  0.00:  9.84:  2.26:  5.88:  5.60 ->  Done!
 State: [30, 0, 8]
 State: [21, 1, 8]
 State: [11, 2, 6]
--- :   6.26:  6.08:  5.60 ->  Done!
+-- :   6.26:  6.08:  5.20 ->  Done!
 State: [30, 0, 8]
 State: [21, 1, 7]
 State: [11, 2, 4]
--- :   6.26:  4.12:  4.00 ->  Done!
+-- :   6.26:  4.12:  1.60 ->  Done!
 State: [30, 0, 2]
 State: [21, 1, 6]
 State: [11, 2, 5]
-State: [1, 3, 4]
+State: [3, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
 State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 12.52:  8.23:  7.84:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00:  6.84:  8.23:  7.84:  7.00 ->  Done!
 State: [30, 0, 3]
-State: [20, 1, 4]
+State: [21, 1, 4]
 State: [11, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
+-- :   0.00:  0.00:  3.80 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [11, 2, 4]
-State: [7, 3, 5]
+State: [10, 2, 4]
+State: [3, 3, 5]
 State: [0, 4, 8]
 State: [0, 5, 8]
 State: [0, 6, 2]
 State: [0, 7, 3]
 State: [0, 8, 2]
--- :   0.00:  0.00:  4.00:  0.00: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
+-- :   0.00:  0.00:  0.00: 18.06: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 2]
-State: [15, 2, 5]
--- :   0.00:  0.00:  4.20 ->  Done!
+State: [11, 2, 5]
+-- :   0.00:  0.00:  3.80 ->  Done!
 State: [30, 0, 6]
 State: [20, 1, 3]
-State: [11, 2, 6]
-State: [4, 3, 6]
+State: [12, 2, 6]
+State: [2, 3, 6]
 State: [0, 4, 2]
 State: [0, 5, 5]
--- :   0.00:  0.00:  3.16:  9.49:  3.92:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00: 12.98:  3.92:  7.00 ->  Done!
 State: [30, 0, 3]
-State: [20, 1, 4]
+State: [21, 1, 4]
 State: [11, 2, 3]
-State: [2, 3, 6]
+State: [5, 3, 6]
 State: [0, 4, 5]
 State: [0, 5, 3]
--- :   0.00:  0.00:  0.00: 12.98:  9.80:  4.20 ->  Done!
+-- :   0.00:  0.00:  0.00:  7.74:  9.80:  4.20 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 7]
 State: [11, 2, 4]
-State: [7, 3, 3]
+State: [1, 3, 3]
 State: [0, 4, 4]
 State: [0, 5, 8]
--- :   0.00:  0.00:  4.00:  0.00:  7.84: 11.20 ->  Done!
+-- :   0.00:  0.00:  0.00:  6.49:  7.84: 11.20 ->  Done!
 State: [30, 0, 8]
 State: [21, 1, 6]
 State: [11, 2, 8]
@@ -1571,23 +483,539 @@ State: [0, 4, 4]
 State: [30, 0, 2]
 State: [21, 1, 6]
 State: [11, 2, 5]
+State: [3, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  0.00:  5.74:  5.88:  5.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [12, 2, 4]
+State: [2, 3, 5]
+-- :   0.00:  0.00:  0.00:  6.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [3, 3, 5]
+-- :   0.00:  0.00:  1.12:  5.80 ->  Done!
+State: [30, 0, 8]
+State: [21, 1, 8]
+State: [11, 2, 2]
+State: [2, 3, 3]
+State: [0, 4, 2]
+State: [0, 5, 5]
+State: [0, 6, 2]
+State: [0, 7, 5]
+-- :   0.00:  0.00:  0.00:  7.38:  7.68: 13.72:  3.92:  7.00 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 3]
+State: [12, 2, 6]
+State: [2, 3, 6]
+-- :   0.00:  0.00:  2.16:  7.60 ->  Done!
+State: [30, 0, 2]
+State: [21, 1, 5]
+State: [11, 2, 3]
+State: [5, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 6]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00:  1.16:  8.23: 11.76:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [21, 1, 5]
+State: [11, 2, 7]
+-- :   0.00:  0.20:  7.40 ->  Done!
+State: [30, 0, 4]
+State: [21, 1, 3]
+State: [11, 2, 4]
+State: [1, 3, 8]
+State: [0, 4, 8]
+-- :   0.00:  0.00:  0.00: 14.72: 11.20 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 8]
+State: [10, 2, 7]
+State: [0, 3, 4]
+-- :   0.00:  4.51:  4.12:  5.60 ->  Done!
+State: [30, 0, 2]
+State: [21, 1, 6]
+State: [11, 2, 5]
+State: [3, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+State: [0, 6, 5]
+State: [0, 7, 3]
+State: [0, 8, 4]
+State: [0, 9, 5]
+-- :   0.00:  0.00:  0.00: 13.54: 22.59: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
+[18.119999999999997, 24.639999999999997, 23.895999999999994, 13.959999999999997, 11.559999999999997, 45.48479999999999, 8.916799999999995, 55.03647999999998, 74.56127999999998, 69.57631999999998, 1.9999999999999982, 13.631999999999994, 6.679999999999998, 27.63199999999999, 55.18783999999999, 10.04, 35.367999999999995, 127.01592319999997, 7.239999999999998, 2.9599999999999986, 6.679999999999998, 7.199999999999999, 72.88383999999998, 39.43839999999999, 6.919999999999998, 17.134463999999994, 23.47679999999999, 7.239999999999998, 24.32, 102.96927999999997, 29.913599999999995, 3.8, 51.115199999999994, 3.479999999999998, 25.79199999999999, 12.359999999999998, 4.6, 167.58380799999992, 17.223999999999997, 6.2, 105.98579199999996, 42.91679999999998, 28.150399999999994, 23.57759999999999, 17.535999999999994, 11.975999999999996, 29.913599999999995, 3.8, 105.98579199999996, 3.8, 23.895999999999994, 21.743999999999996, 25.527999999999995, 26.493759999999988, 17.223999999999997, 6.2, 6.919999999999998, 39.70143999999999, 9.759999999999996, 28.150399999999994, 7.599999999999998, 25.919999999999995, 14.231999999999994, 99.92291839999997]
+  Trial   1/200  |  value=0.8310  |  best=0.8310  |  elapsed=1811s
+Episode 10000 Average Reward: -141.66526542095355
+Episode 20000 Average Reward: -138.85243308513273
+Episode 30000 Average Reward: -134.82831763440635
+Episode 40000 Average Reward: -136.22066767647738
+Episode 50000 Average Reward: -135.49196372280318
+Episode 60000 Average Reward: -135.605067936215
+Episode 70000 Average Reward: -136.1646069808537
+Episode 80000 Average Reward: -135.36542305515516
+Episode 90000 Average Reward: -137.02198244001787
+Episode 100000 Average Reward: -131.57604507064318
+Episode 110000 Average Reward: -131.0494485160652
+Episode 120000 Average Reward: -128.65210638289912
+Episode 130000 Average Reward: -131.04379025905658
+Episode 140000 Average Reward: -129.53590676789244
+Episode 150000 Average Reward: -129.94341250526202
+Episode 160000 Average Reward: -129.83733035671548
+Episode 170000 Average Reward: -125.95508037342204
+Episode 180000 Average Reward: -127.02319631607803
+Episode 190000 Average Reward: -124.93257773369336
+Episode 200000 Average Reward: -125.8872425718681
+Episode 210000 Average Reward: -126.63167224730621
+Episode 220000 Average Reward: -125.81221611042812
+Episode 230000 Average Reward: -125.24944568953852
+Episode 240000 Average Reward: -122.5465198932582
+Episode 250000 Average Reward: -121.89532716204026
+Episode 260000 Average Reward: -122.39544390594557
+Episode 270000 Average Reward: -120.26546801720315
+Episode 280000 Average Reward: -120.1866136580403
+Episode 290000 Average Reward: -119.68966275136508
+Episode 300000 Average Reward: -120.58546511772666
+Episode 310000 Average Reward: -119.18986830773244
+Episode 320000 Average Reward: -117.15747522260989
+Episode 330000 Average Reward: -115.78688808102906
+Episode 340000 Average Reward: -117.96453634511866
+Episode 350000 Average Reward: -115.86186903728124
+Episode 360000 Average Reward: -117.36395742074875
+Episode 370000 Average Reward: -111.73489621769211
+Episode 380000 Average Reward: -113.1373440797798
+Episode 390000 Average Reward: -111.32755330422782
+Episode 400000 Average Reward: -114.21088341293051
+Episode 410000 Average Reward: -114.08128982635517
+Episode 420000 Average Reward: -113.47884599335931
+Episode 430000 Average Reward: -111.40285811921918
+Episode 440000 Average Reward: -112.41865731679229
+Episode 450000 Average Reward: -112.6353461300326
+Episode 460000 Average Reward: -108.69607477805052
+Episode 470000 Average Reward: -108.10465599210491
+Episode 480000 Average Reward: -108.47174389946363
+Episode 490000 Average Reward: -106.27101556135933
+Episode 500000 Average Reward: -106.74839152036859
+Episode 510000 Average Reward: -106.74619565694972
+Episode 520000 Average Reward: -105.11189625209852
+Episode 530000 Average Reward: -106.97236782895098
+Episode 540000 Average Reward: -106.44861643752442
+Episode 550000 Average Reward: -103.15411892953084
+Episode 560000 Average Reward: -103.6726531996774
+Episode 570000 Average Reward: -103.38788626173948
+Episode 580000 Average Reward: -101.916628638167
+Episode 590000 Average Reward: -102.06273552184317
+Episode 600000 Average Reward: -98.98223853400059
+Episode 610000 Average Reward: -102.58639011562494
+Episode 620000 Average Reward: -100.35340588821501
+Episode 630000 Average Reward: -99.96724746821627
+Episode 640000 Average Reward: -101.00281063864317
+Episode 650000 Average Reward: -98.9657736884326
+Episode 660000 Average Reward: -99.26549299853308
+Episode 670000 Average Reward: -98.55134710978557
+Episode 680000 Average Reward: -97.78662762530814
+Episode 690000 Average Reward: -97.84623347675132
+Episode 700000 Average Reward: -95.48405953977341
+Episode 710000 Average Reward: -95.125212033495
+Episode 720000 Average Reward: -94.80918541537277
+Episode 730000 Average Reward: -94.33294798051325
+Episode 740000 Average Reward: -94.42588832759803
+Episode 750000 Average Reward: -93.88862673873918
+Episode 760000 Average Reward: -94.66480968468478
+Episode 770000 Average Reward: -92.71813575016446
+Episode 780000 Average Reward: -91.51839450984444
+Episode 790000 Average Reward: -91.81142758777854
+Episode 800000 Average Reward: -91.85335947966462
+Episode 810000 Average Reward: -88.13323007022078
+Episode 820000 Average Reward: -87.37759894263804
+Episode 830000 Average Reward: -88.91971004409852
+Episode 840000 Average Reward: -88.86908349300735
+Episode 850000 Average Reward: -88.48736278358014
+Episode 860000 Average Reward: -88.8982199144243
+Episode 870000 Average Reward: -87.27577725102077
+Episode 880000 Average Reward: -88.97196608060415
+Episode 890000 Average Reward: -88.57108425911295
+Episode 900000 Average Reward: -85.74835240017917
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [7, 3, 5]
+State: [0, 4, 8]
+-- :   0.00:  0.00:  5.74:  3.08: 11.20 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 2]
+State: [12, 2, 3]
+State: [8, 3, 2]
+State: [0, 4, 5]
+State: [0, 5, 2]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00:  0.00: 13.72:  3.92:  7.00 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 3]
+State: [12, 2, 6]
+State: [2, 3, 6]
+State: [0, 4, 2]
+State: [0, 5, 5]
+-- :   0.00:  0.00:  0.00: 12.98:  3.92:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [12, 2, 3]
+State: [8, 3, 6]
+State: [0, 4, 5]
+-- :   0.00:  0.00:  1.26:  4.08:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 5]
+State: [12, 2, 7]
+State: [5, 3, 4]
+-- :   0.00:  0.00:  7.00:  3.60 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [12, 2, 8]
+State: [7, 3, 8]
+State: [0, 4, 6]
+State: [0, 5, 8]
+-- :   0.00:  0.00: 16.52:  9.74: 11.76: 11.20 ->  Done!
+State: [30, 0, 7]
+State: [20, 1, 4]
+State: [12, 2, 2]
+State: [5, 3, 6]
+-- :   0.00:  0.00:  0.00:  6.40 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 4]
+State: [12, 2, 3]
+State: [8, 3, 4]
+State: [0, 4, 5]
+State: [0, 5, 3]
+State: [0, 6, 4]
+State: [0, 7, 5]
+-- :   0.00:  0.00:  0.00:  0.00: 19.21:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [7, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+State: [0, 7, 3]
+-- :   0.00:  0.00: 10.53:  0.00: 30.73: 21.95:  3.92:  4.20 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [12, 2, 2]
+State: [5, 3, 5]
+State: [0, 4, 6]
+State: [0, 5, 3]
+State: [0, 6, 6]
+State: [0, 7, 6]
+-- :   0.00:  0.00:  0.00:  5.00: 23.05:  8.23: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [12, 2, 3]
+-- :   0.00:  2.12:  2.60 ->  Done!
+State: [30, 0, 4]
+State: [20, 1, 3]
+State: [12, 2, 6]
+State: [2, 3, 5]
+State: [0, 4, 3]
+-- :   0.00:  0.00:  0.00:  7.88:  4.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 7]
+State: [14, 2, 4]
+-- :   0.00:  7.96:  1.60 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [12, 2, 8]
+State: [7, 3, 8]
+State: [0, 4, 6]
+-- :   0.00:  0.00: 13.23:  8.96:  8.40 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 7]
+State: [14, 2, 4]
+State: [4, 3, 2]
+State: [0, 4, 6]
+State: [0, 5, 5]
+State: [0, 6, 4]
+State: [0, 7, 3]
+-- :   0.00: 16.54:  0.00:  0.00: 23.05: 13.72:  7.84:  4.20 ->  Done!
+State: [30, 0, 4]
+State: [20, 1, 5]
+State: [12, 2, 3]
+State: [8, 3, 4]
+State: [0, 4, 5]
+-- :   0.00:  0.00:  1.26:  0.16:  7.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [7, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+-- :   0.00:  0.00:  6.84:  1.51: 15.68: 11.20 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 3]
+State: [12, 2, 2]
+State: [5, 3, 5]
+State: [0, 4, 2]
+State: [0, 5, 5]
+State: [0, 6, 6]
+State: [0, 7, 3]
+State: [0, 8, 6]
+State: [0, 9, 6]
+-- :   0.00:  0.00:  0.00:  5.00: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [12, 2, 3]
+State: [8, 3, 4]
+State: [0, 4, 3]
+-- :   0.00:  0.00:  1.26:  0.16:  4.20 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 5]
+State: [12, 2, 3]
+-- :   0.00:  2.12:  2.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 7]
+State: [14, 2, 4]
+-- :   0.00:  7.96:  1.60 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [12, 2, 8]
+-- :   0.00:  0.16:  9.20 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 6]
+State: [10, 2, 8]
+State: [5, 3, 7]
+State: [0, 4, 4]
+State: [0, 5, 2]
+State: [0, 6, 6]
+State: [0, 7, 5]
+-- :   0.00:  0.00: 27.59: 15.76: 15.37:  5.49: 11.76:  7.00 ->  Done!
+State: [30, 0, 4]
+State: [20, 1, 3]
+State: [12, 2, 4]
+State: [5, 3, 5]
+State: [0, 4, 3]
+State: [0, 5, 4]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00:  5.00:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [7, 3, 5]
+-- :   0.00:  0.00:  4.96:  4.20 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 8]
+State: [10, 2, 2]
+State: [1, 3, 3]
+State: [0, 4, 2]
+State: [0, 5, 5]
+-- :   0.00:  0.00:  0.00:  6.49:  3.92:  7.00 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [12, 2, 6]
+State: [2, 3, 3]
+State: [0, 4, 6]
+State: [0, 5, 6]
+-- :   0.00:  0.00:  0.00:  4.74: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [12, 2, 3]
+State: [8, 3, 4]
+State: [0, 4, 3]
+-- :   0.00:  0.00:  1.26:  0.16:  4.20 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 5]
+State: [12, 2, 3]
+State: [8, 3, 5]
+State: [0, 4, 7]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  0.16:  0.00: 13.72:  5.60 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [12, 2, 8]
+State: [7, 3, 8]
+State: [0, 4, 6]
+State: [0, 5, 8]
+State: [0, 6, 7]
+State: [0, 7, 4]
+-- :   0.00:  0.00: 27.59: 12.38: 23.05: 21.95: 13.72:  5.60 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 6]
+State: [10, 2, 5]
+State: [1, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00: 12.52:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [12, 2, 5]
+-- :   0.00:  0.16:  4.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [7, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+-- :   0.00:  0.00:  8.38:  0.00: 21.95: 15.68:  2.80 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 2]
+State: [12, 2, 5]
+State: [5, 3, 2]
+-- :   0.00:  0.00:  3.08:  0.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 3]
+State: [2, 3, 6]
+State: [0, 4, 6]
+State: [0, 5, 2]
+-- :   0.00:  0.00:  0.00: 12.98: 11.76:  2.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [12, 2, 4]
+State: [5, 3, 3]
+State: [0, 4, 6]
+-- :   0.00:  0.00:  0.00:  1.08:  8.40 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [12, 2, 5]
+-- :   0.00:  0.00:  4.20 ->  Done!
+State: [30, 0, 7]
+State: [20, 1, 4]
+State: [12, 2, 3]
+State: [8, 3, 4]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 6]
+State: [0, 7, 8]
+State: [0, 8, 7]
+State: [0, 9, 4]
+-- :   0.00:  0.00:  0.00:  0.00: 60.24: 43.03: 23.05: 21.95: 13.72:  5.60 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 6]
+State: [10, 2, 5]
 State: [1, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
 -- :   0.00:  0.00:  0.00:  9.23:  5.88:  5.60 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 3]
-State: [11, 2, 4]
-State: [7, 3, 5]
--- :   0.00:  0.00:  4.00:  4.20 ->  Done!
+State: [12, 2, 4]
+State: [5, 3, 5]
+-- :   0.00:  0.00:  1.12:  5.00 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [11, 2, 4]
+State: [10, 2, 4]
 State: [7, 3, 5]
--- :   0.00:  0.77:  4.00:  4.20 ->  Done!
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+State: [0, 7, 3]
+State: [0, 8, 2]
+-- :   0.00:  0.00: 13.54:  0.00: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 2]
+State: [12, 2, 5]
+State: [5, 3, 6]
+State: [0, 4, 3]
+State: [0, 5, 6]
+State: [0, 6, 6]
+-- :   0.00:  0.00:  0.00:  8.84:  8.23: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [12, 2, 3]
+State: [8, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 6]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00:  0.00:  8.23: 11.76:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 5]
+State: [12, 2, 7]
+State: [5, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  7.00:  2.26:  5.88:  5.60 ->  Done!
 State: [30, 0, 8]
-State: [21, 1, 8]
-State: [11, 2, 2]
+State: [20, 1, 8]
+State: [10, 2, 6]
+-- :   4.51:  6.08:  5.20 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 7]
+State: [14, 2, 4]
+-- :   4.51:  7.96:  1.60 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 6]
+State: [10, 2, 5]
+State: [1, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00: 12.52:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [12, 2, 5]
+-- :   0.00:  0.16:  4.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [7, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+State: [0, 7, 3]
+State: [0, 8, 2]
+-- :   0.00:  0.00: 13.54:  0.00: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 2]
+State: [12, 2, 5]
+-- :   0.00:  0.00:  4.20 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 3]
+State: [12, 2, 6]
+State: [2, 3, 6]
+State: [0, 4, 2]
+State: [0, 5, 5]
+-- :   0.00:  0.00:  0.00: 12.98:  3.92:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [12, 2, 3]
+State: [8, 3, 6]
+State: [0, 4, 5]
+State: [0, 5, 3]
+-- :   0.00:  0.00:  0.16:  2.51:  9.80:  4.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 7]
+State: [14, 2, 4]
+State: [4, 3, 3]
+State: [0, 4, 4]
+State: [0, 5, 8]
+-- :   0.00: 11.38:  0.00:  1.26:  7.84: 11.20 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 6]
+State: [10, 2, 8]
+State: [5, 3, 7]
+State: [0, 4, 4]
+-- :   0.00:  0.00: 13.23:  8.92:  5.60 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 6]
+State: [10, 2, 5]
+State: [1, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  0.00:  9.23:  5.88:  5.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [12, 2, 4]
+State: [5, 3, 5]
+-- :   0.00:  0.00:  1.12:  5.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [7, 3, 5]
+-- :   0.00:  0.00:  4.96:  4.20 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 8]
+State: [10, 2, 2]
 State: [1, 3, 3]
 State: [0, 4, 2]
 State: [0, 5, 5]
@@ -1596,35 +1024,35 @@ State: [0, 7, 5]
 -- :   0.00:  0.00:  0.00: 11.76:  7.68: 13.72:  3.92:  7.00 ->  Done!
 State: [30, 0, 6]
 State: [20, 1, 3]
-State: [11, 2, 6]
-State: [4, 3, 6]
--- :   0.00:  0.00:  5.04:  6.80 ->  Done!
+State: [12, 2, 6]
+State: [2, 3, 6]
+-- :   0.00:  0.00:  2.16:  7.60 ->  Done!
 State: [30, 0, 2]
-State: [21, 1, 5]
-State: [11, 2, 3]
-State: [2, 3, 4]
+State: [20, 1, 5]
+State: [12, 2, 3]
+State: [8, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 6]
 State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  9.68:  8.23: 11.76:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00:  0.00:  8.23: 11.76:  7.00 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 5]
-State: [11, 2, 7]
--- :   0.00:  1.16:  7.00 ->  Done!
+State: [12, 2, 7]
+-- :   0.00:  2.12:  7.00 ->  Done!
 State: [30, 0, 4]
-State: [21, 1, 3]
-State: [11, 2, 4]
-State: [7, 3, 8]
+State: [20, 1, 3]
+State: [12, 2, 4]
+State: [5, 3, 8]
 State: [0, 4, 8]
--- :   0.00:  0.00:  4.00:  8.96: 11.20 ->  Done!
+-- :   0.00:  0.00:  0.00: 10.88: 11.20 ->  Done!
 State: [30, 0, 6]
 State: [20, 1, 8]
-State: [11, 2, 7]
+State: [10, 2, 7]
 State: [4, 3, 4]
--- :   0.00:  6.26:  7.00:  4.00 ->  Done!
+-- :   0.00:  4.51:  7.96:  4.00 ->  Done!
 State: [30, 0, 2]
-State: [21, 1, 6]
-State: [11, 2, 5]
+State: [20, 1, 6]
+State: [10, 2, 5]
 State: [1, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
@@ -1633,107 +1061,84 @@ State: [0, 7, 3]
 State: [0, 8, 4]
 State: [0, 9, 5]
 -- :   0.00:  0.00:  0.00: 32.62: 22.59: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
-[18.279999999999994, 26.639999999999993, 23.566399999999987, 16.839999999999996, 10.999999999999996, 45.48479999999999, 9.316799999999994, 55.03647999999998, 64.80479999999997, 73.95455999999999, 0.7999999999999985, 14.415999999999991, 9.079999999999998, 27.63199999999999, 52.80959999999998, 12.92, 32.391999999999996, 136.55727359999997, 10.12, 1.759999999999999, 9.079999999999998, 7.199999999999999, 72.88383999999998, 27.071999999999992, 8.967999999999995, 18.87846399999999, 24.574399999999983, 10.12, 29.552, 102.96927999999997, 35.59679999999999, 3.0, 44.43199999999999, 3.0799999999999987, 27.53599999999999, 12.399999999999997, 3.0, 190.66650879999992, 20.711999999999996, 8.199999999999998, 91.92671999999996, 28.70879999999999, 36.6752, 22.47999999999999, 17.935999999999993, 14.375999999999996, 35.59679999999999, 3.0, 91.92671999999996, 4.199999999999999, 23.566399999999987, 26.975999999999992, 23.039999999999996, 26.493759999999988, 20.711999999999996, 8.199999999999998, 8.967999999999995, 44.07967999999998, 11.839999999999995, 36.6752, 8.159999999999998, 24.159999999999997, 17.255999999999993, 119.00561919999997]
-  Trial   3/200  |  value=0.8193  |  best=0.8238  |  elapsed=5167s
-Episode 10000 Average Reward: -130.5792753379225
-Episode 20000 Average Reward: -126.42587996217338
-Episode 30000 Average Reward: -122.59086613499899
-Episode 40000 Average Reward: -122.80567289094138
-Episode 50000 Average Reward: -122.14861546236922
-Episode 60000 Average Reward: -125.04664115161083
-Episode 70000 Average Reward: -121.5847199973478
-Episode 80000 Average Reward: -120.00560478676987
-Episode 90000 Average Reward: -122.66458504153083
-Episode 100000 Average Reward: -122.5313713321574
-Episode 110000 Average Reward: -120.16916464695292
-Episode 120000 Average Reward: -119.09798949254139
-Episode 130000 Average Reward: -118.57465037931516
-Episode 140000 Average Reward: -116.19433758911484
-Episode 150000 Average Reward: -116.72664095088636
-Episode 160000 Average Reward: -118.04294423795706
-Episode 170000 Average Reward: -118.49276516128765
-Episode 180000 Average Reward: -115.64995257532412
-Episode 190000 Average Reward: -116.10518136647677
-Episode 200000 Average Reward: -115.21208842774524
-Episode 210000 Average Reward: -114.6793992871833
-Episode 220000 Average Reward: -114.28353719982077
-Episode 230000 Average Reward: -112.43775395842043
-Episode 240000 Average Reward: -116.49407036224508
-Episode 250000 Average Reward: -112.75731060225019
-Episode 260000 Average Reward: -111.21297762004987
-Episode 270000 Average Reward: -111.82166710221821
-Episode 280000 Average Reward: -112.77208941316093
-Episode 290000 Average Reward: -111.89539123863547
-Episode 300000 Average Reward: -110.72520727566332
-Episode 310000 Average Reward: -112.63156276734972
-Episode 320000 Average Reward: -107.08729390523388
-Episode 330000 Average Reward: -109.10114942925819
-Episode 340000 Average Reward: -109.0172018358374
-Episode 350000 Average Reward: -108.36894223715323
-Episode 360000 Average Reward: -108.9292482049638
-Episode 370000 Average Reward: -108.47529444585469
-Episode 380000 Average Reward: -111.28765376807931
-Episode 390000 Average Reward: -105.48824816342012
-Episode 400000 Average Reward: -104.53279961396221
-Episode 410000 Average Reward: -107.30558255502332
-Episode 420000 Average Reward: -106.17405590965245
-Episode 430000 Average Reward: -105.11926175244282
-Episode 440000 Average Reward: -104.73058715292669
-Episode 450000 Average Reward: -106.73328690050045
-Episode 460000 Average Reward: -103.87710480389116
-Episode 470000 Average Reward: -101.0227984515174
-Episode 480000 Average Reward: -102.05455222651901
-Episode 490000 Average Reward: -101.0022957744742
-Episode 500000 Average Reward: -101.08324492362749
-Episode 510000 Average Reward: -101.52201854520317
-Episode 520000 Average Reward: -102.63146513406971
-Episode 530000 Average Reward: -99.76609007727612
-Episode 540000 Average Reward: -100.83428980400124
-Episode 550000 Average Reward: -101.20178964512763
-Episode 560000 Average Reward: -100.70390365832188
-Episode 570000 Average Reward: -98.79997728544765
-Episode 580000 Average Reward: -96.67121549973501
-Episode 590000 Average Reward: -99.96204363321341
-Episode 600000 Average Reward: -98.84268129760252
-Episode 610000 Average Reward: -97.90557673866236
-Episode 620000 Average Reward: -97.50444187659261
-Episode 630000 Average Reward: -98.32136333731836
-Episode 640000 Average Reward: -97.18008623629309
-Episode 650000 Average Reward: -93.94329964038141
-Episode 660000 Average Reward: -95.94016976244733
-Episode 670000 Average Reward: -94.7558657477734
-Episode 680000 Average Reward: -96.57437689120765
-Episode 690000 Average Reward: -95.54361012478972
-Episode 700000 Average Reward: -95.16745718821885
-Episode 710000 Average Reward: -94.02937801530364
-Episode 720000 Average Reward: -92.6760973883494
-Episode 730000 Average Reward: -94.28176556996605
-Episode 740000 Average Reward: -92.32474735152125
-Episode 750000 Average Reward: -93.09885670473724
-Episode 760000 Average Reward: -92.26974284924925
-Episode 770000 Average Reward: -92.6788879791718
-Episode 780000 Average Reward: -92.51420553532412
-Episode 790000 Average Reward: -90.96670754187261
-Episode 800000 Average Reward: -88.96781574632446
-Episode 810000 Average Reward: -89.96392886809598
-Episode 820000 Average Reward: -87.5284944339558
-Episode 830000 Average Reward: -87.48903907599359
-Episode 840000 Average Reward: -88.79615577263102
-Episode 850000 Average Reward: -89.06404361560061
-Episode 860000 Average Reward: -90.01552813010942
-Episode 870000 Average Reward: -86.23112534975483
-Episode 880000 Average Reward: -87.56620395819006
-Episode 890000 Average Reward: -89.81190745476093
-Episode 900000 Average Reward: -84.14943123666941
-Episode 910000 Average Reward: -86.8532913333043
-Episode 920000 Average Reward: -85.2986695018598
-Episode 930000 Average Reward: -88.20648988600317
+[20.023999999999994, 24.639999999999997, 23.895999999999994, 12.335999999999995, 10.599999999999996, 49.22879999999999, 6.399999999999999, 42.27999999999999, 71.33433599999998, 56.44159999999999, 4.719999999999999, 12.079999999999998, 9.559999999999997, 30.59199999999999, 65.35095039999996, 8.415999999999997, 35.233599999999996, 98.39187199999998, 5.615999999999996, 4.719999999999999, 9.559999999999997, 9.359999999999998, 82.95948799999996, 28.071999999999996, 9.159999999999998, 17.407999999999994, 24.903999999999996, 5.615999999999996, 19.478399999999993, 104.28844799999995, 35.59679999999999, 4.359999999999998, 48.810239999999986, 3.8799999999999986, 27.53599999999999, 9.479999999999997, 4.199999999999999, 167.58380799999992, 20.711999999999996, 6.119999999999999, 101.46807039999996, 37.23359999999999, 26.991999999999997, 20.735999999999986, 15.791999999999994, 14.071999999999994, 35.59679999999999, 4.359999999999998, 101.46807039999996, 4.199999999999999, 23.895999999999994, 16.67039999999999, 31.674239999999983, 27.751999999999995, 20.711999999999996, 6.119999999999999, 9.159999999999998, 44.07967999999998, 9.759999999999996, 26.991999999999997, 9.119999999999997, 22.08, 16.471999999999994, 119.00561919999997]
+  Trial   2/200  |  value=0.8247  |  best=0.8310  |  elapsed=3491s
+Episode 10000 Average Reward: -138.6174960507289
+Episode 20000 Average Reward: -135.23630121968634
+Episode 30000 Average Reward: -139.10397274695674
+Episode 40000 Average Reward: -135.52830441086968
+Episode 50000 Average Reward: -134.87254182370302
+Episode 60000 Average Reward: -133.558246308823
+Episode 70000 Average Reward: -129.416445220567
+Episode 80000 Average Reward: -133.7946704643891
+Episode 90000 Average Reward: -128.1069654663782
+Episode 100000 Average Reward: -133.236544301271
+Episode 110000 Average Reward: -128.89040137519098
+Episode 120000 Average Reward: -125.85822951957499
+Episode 130000 Average Reward: -126.41134440116221
+Episode 140000 Average Reward: -125.85993354161147
+Episode 150000 Average Reward: -124.04331143775228
+Episode 160000 Average Reward: -125.39965346900988
+Episode 170000 Average Reward: -124.92671872429051
+Episode 180000 Average Reward: -123.43755844405243
+Episode 190000 Average Reward: -122.99321992558588
+Episode 200000 Average Reward: -123.32338603618298
+Episode 210000 Average Reward: -122.26250357432315
+Episode 220000 Average Reward: -117.68892718615545
+Episode 230000 Average Reward: -120.28048847815676
+Episode 240000 Average Reward: -117.61869627364348
+Episode 250000 Average Reward: -118.89693949627387
+Episode 260000 Average Reward: -118.38088440743931
+Episode 270000 Average Reward: -116.50554280091643
+Episode 280000 Average Reward: -113.78924844133373
+Episode 290000 Average Reward: -112.84519450726395
+Episode 300000 Average Reward: -113.27561412965372
+Episode 310000 Average Reward: -111.52155361005563
+Episode 320000 Average Reward: -112.13966171911163
+Episode 330000 Average Reward: -111.63160364412924
+Episode 340000 Average Reward: -110.4063909134438
+Episode 350000 Average Reward: -110.74937210076156
+Episode 360000 Average Reward: -108.08590935854076
+Episode 370000 Average Reward: -108.22883217944573
+Episode 380000 Average Reward: -105.78908623590395
+Episode 390000 Average Reward: -109.32973356807165
+Episode 400000 Average Reward: -105.28482845705211
+Episode 410000 Average Reward: -103.20319338489853
+Episode 420000 Average Reward: -102.83304405587964
+Episode 430000 Average Reward: -103.45767815129084
+Episode 440000 Average Reward: -102.15724934958075
+Episode 450000 Average Reward: -102.84147379435517
+Episode 460000 Average Reward: -102.05983396935676
+Episode 470000 Average Reward: -101.33458411397116
+Episode 480000 Average Reward: -100.00239949861886
+Episode 490000 Average Reward: -98.24893791388666
+Episode 500000 Average Reward: -98.21409250326525
+Episode 510000 Average Reward: -98.18472499003387
+Episode 520000 Average Reward: -96.4246039683686
+Episode 530000 Average Reward: -95.49541588727804
+Episode 540000 Average Reward: -94.72988796394493
+Episode 550000 Average Reward: -93.92033657363453
+Episode 560000 Average Reward: -95.64171077745661
+Episode 570000 Average Reward: -93.81216186415101
+Episode 580000 Average Reward: -92.22272471245822
+Episode 590000 Average Reward: -94.60179860730878
+Episode 600000 Average Reward: -92.23086475133948
+Episode 610000 Average Reward: -89.9856471362355
+Episode 620000 Average Reward: -91.09872487280637
+Episode 630000 Average Reward: -90.32315654150142
+Episode 640000 Average Reward: -88.54032907844606
+Episode 650000 Average Reward: -89.18555508409341
+Episode 660000 Average Reward: -86.74235520652283
+Episode 670000 Average Reward: -87.58927058867198
+Episode 680000 Average Reward: -87.28406876739582
+Episode 690000 Average Reward: -86.52846714773501
+Episode 700000 Average Reward: -85.71044460888062
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [11, 2, 4]
-State: [3, 3, 5]
+State: [10, 2, 4]
+State: [0, 3, 5]
 State: [0, 4, 8]
--- :   0.00:  0.00:  0.00:  6.92: 11.20 ->  Done!
+-- :   0.00:  0.00:  0.00:  9.80: 11.20 ->  Done!
 State: [30, 0, 8]
 State: [20, 1, 2]
 State: [11, 2, 3]
@@ -1745,54 +1150,54 @@ State: [0, 6, 5]
 State: [30, 0, 6]
 State: [20, 1, 3]
 State: [11, 2, 6]
-State: [7, 3, 6]
+State: [5, 3, 6]
 State: [0, 4, 2]
 State: [0, 5, 5]
--- :   0.00:  0.00: 11.68:  4.26:  3.92:  7.00 ->  Done!
+-- :   0.00:  0.00:  6.00:  7.74:  3.92:  7.00 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 4]
 State: [12, 2, 3]
-State: [6, 3, 6]
+State: [3, 3, 6]
 State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  6.00:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00:  8.88:  7.00 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 5]
-State: [11, 2, 7]
-State: [2, 3, 4]
--- :   0.00:  0.00:  5.08:  4.80 ->  Done!
+State: [10, 2, 7]
+State: [0, 3, 4]
+-- :   0.00:  0.00:  4.12:  5.60 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 4]
 State: [12, 2, 8]
-State: [5, 3, 8]
+State: [2, 3, 8]
 State: [0, 4, 6]
 State: [0, 5, 8]
--- :   0.00:  0.00: 10.84: 13.23: 11.76: 11.20 ->  Done!
+-- :   0.00:  0.00:  2.32: 18.46: 11.76: 11.20 ->  Done!
 State: [30, 0, 7]
-State: [22, 1, 4]
-State: [15, 2, 2]
-State: [8, 3, 6]
--- :   4.16:  0.00:  0.00:  5.20 ->  Done!
+State: [20, 1, 4]
+State: [12, 2, 2]
+State: [4, 3, 6]
+-- :   0.00:  0.00:  0.00:  6.80 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 4]
 State: [12, 2, 3]
-State: [6, 3, 4]
+State: [3, 3, 4]
 State: [0, 4, 5]
 State: [0, 5, 3]
 State: [0, 6, 4]
 State: [0, 7, 5]
--- :   0.00:  0.00:  0.00:  0.00: 19.21:  8.23:  7.84:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00:  8.38: 19.21:  8.23:  7.84:  7.00 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [11, 2, 4]
-State: [3, 3, 5]
+State: [10, 2, 4]
+State: [0, 3, 5]
 State: [0, 4, 8]
 State: [0, 5, 8]
 State: [0, 6, 2]
 State: [0, 7, 3]
--- :   0.00:  0.00:  0.00: 13.76: 30.73: 21.95:  3.92:  4.20 ->  Done!
+-- :   0.00:  0.00:  0.00: 26.89: 30.73: 21.95:  3.92:  4.20 ->  Done!
 State: [30, 0, 2]
 State: [20, 1, 5]
-State: [11, 2, 2]
+State: [10, 2, 2]
 State: [1, 3, 5]
 State: [0, 4, 6]
 State: [0, 5, 3]
@@ -1801,593 +1206,49 @@ State: [0, 7, 6]
 -- :   0.00:  0.00:  0.00: 22.51: 23.05:  8.23: 11.76:  8.40 ->  Done!
 State: [30, 0, 2]
 State: [20, 1, 5]
-State: [11, 2, 3]
--- :   0.00:  1.16:  0.20 ->  Done!
+State: [10, 2, 3]
+-- :   0.00:  0.20:  0.60 ->  Done!
 State: [30, 0, 4]
 State: [20, 1, 3]
 State: [11, 2, 6]
-State: [7, 3, 5]
-State: [0, 4, 3]
--- :   0.00:  0.00:  9.49:  3.08:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [13, 2, 4]
--- :   0.00:  7.00:  2.80 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [12, 2, 8]
-State: [5, 3, 8]
-State: [0, 4, 6]
--- :   0.00:  0.00:  9.74: 10.88:  8.40 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 7]
-State: [13, 2, 4]
-State: [6, 3, 2]
-State: [0, 4, 6]
-State: [0, 5, 5]
-State: [0, 6, 4]
-State: [0, 7, 3]
--- :   0.00:  7.00:  0.00:  0.00: 23.05: 13.72:  7.84:  4.20 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 5]
-State: [11, 2, 3]
-State: [1, 3, 4]
-State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  6.88:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [11, 2, 4]
-State: [3, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
--- :   0.00:  0.00:  0.00:  8.49: 15.68: 11.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 3]
-State: [11, 2, 2]
-State: [1, 3, 5]
-State: [0, 4, 2]
-State: [0, 5, 5]
-State: [0, 6, 6]
-State: [0, 7, 3]
-State: [0, 8, 6]
-State: [0, 9, 6]
--- :   0.00:  0.00:  0.00: 43.17: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 3]
-State: [1, 3, 4]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  6.88:  4.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 5]
-State: [11, 2, 3]
--- :   0.00:  1.16:  0.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [13, 2, 4]
--- :   0.00:  7.00:  2.80 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [12, 2, 8]
--- :   0.00:  0.16:  8.40 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 6]
-State: [11, 2, 8]
-State: [3, 3, 7]
-State: [0, 4, 4]
-State: [0, 5, 2]
-State: [0, 6, 6]
-State: [0, 7, 5]
--- :   0.00:  0.00:  8.00: 24.51: 15.37:  5.49: 11.76:  7.00 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [11, 2, 4]
-State: [3, 3, 5]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 10.68:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [11, 2, 4]
-State: [3, 3, 5]
--- :   0.00:  0.77:  0.16:  5.80 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [11, 2, 2]
-State: [1, 3, 3]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  3.62:  0.00:  6.49:  3.92:  7.00 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 6]
-State: [7, 3, 3]
-State: [0, 4, 6]
-State: [0, 5, 6]
--- :   0.00:  0.00: 11.68:  0.00: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 3]
-State: [1, 3, 4]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  6.88:  4.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 5]
-State: [11, 2, 3]
-State: [1, 3, 5]
-State: [0, 4, 7]
-State: [0, 5, 4]
--- :   0.00:  0.00:  0.00: 11.98: 13.72:  5.60 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [12, 2, 8]
-State: [5, 3, 8]
-State: [0, 4, 6]
-State: [0, 5, 8]
-State: [0, 6, 7]
-State: [0, 7, 4]
--- :   0.00:  0.00: 14.53: 21.13: 23.05: 21.95: 13.72:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [11, 2, 5]
-State: [5, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.62:  1.16:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [12, 2, 5]
--- :   0.00:  0.16:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [11, 2, 4]
-State: [3, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
--- :   0.00:  0.00:  0.00: 10.68: 21.95: 15.68:  2.80 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 2]
-State: [11, 2, 5]
-State: [5, 3, 2]
--- :   0.00:  0.00:  4.04:  0.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [11, 2, 3]
-State: [1, 3, 6]
-State: [0, 4, 6]
-State: [0, 5, 2]
--- :   0.00:  0.00:  0.00: 14.72: 11.76:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [11, 2, 4]
-State: [3, 3, 3]
-State: [0, 4, 6]
--- :   0.00:  0.00:  0.00:  3.00:  8.40 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [11, 2, 5]
--- :   0.00:  0.00:  4.60 ->  Done!
-State: [30, 0, 7]
-State: [22, 1, 4]
-State: [15, 2, 3]
-State: [11, 3, 4]
-State: [3, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 6]
-State: [0, 7, 8]
-State: [0, 8, 7]
-State: [0, 9, 4]
--- :   0.00:  0.00:  0.00:  0.00: 40.65: 43.03: 23.05: 21.95: 13.72:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [11, 2, 5]
-State: [5, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  2.16:  2.26:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [11, 2, 4]
-State: [3, 3, 5]
--- :   0.00:  0.00:  0.16:  5.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [11, 2, 4]
-State: [3, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00: 18.06: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 2]
-State: [11, 2, 5]
-State: [5, 3, 6]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 6]
--- :   0.00:  0.00:  0.62:  8.84:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 3]
-State: [1, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 12.52:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 5]
-State: [11, 2, 7]
-State: [2, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  1.32:  7.49:  5.88:  5.60 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [11, 2, 6]
--- :   4.51:  7.04:  6.80 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 7]
-State: [13, 2, 4]
--- :   4.51:  7.00:  2.80 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [11, 2, 5]
-State: [5, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.62:  1.16:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [12, 2, 5]
--- :   0.00:  0.16:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [11, 2, 4]
-State: [3, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00: 18.06: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 2]
-State: [11, 2, 5]
--- :   0.00:  0.00:  4.60 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [11, 2, 6]
-State: [7, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00: 11.68:  4.26:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [12, 2, 3]
-State: [6, 3, 6]
-State: [0, 4, 5]
-State: [0, 5, 3]
--- :   0.00:  0.00:  0.00:  6.00:  9.80:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [13, 2, 4]
-State: [6, 3, 3]
-State: [0, 4, 4]
-State: [0, 5, 8]
--- :   0.00:  7.00:  0.00:  0.00:  7.84: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 6]
-State: [11, 2, 8]
-State: [3, 3, 7]
-State: [0, 4, 4]
--- :   0.00:  0.00:  8.00: 10.84:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [11, 2, 5]
-State: [5, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  2.16:  2.26:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [11, 2, 4]
-State: [3, 3, 5]
--- :   0.00:  0.00:  0.16:  5.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [11, 2, 4]
-State: [3, 3, 5]
--- :   0.00:  0.77:  0.16:  5.80 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [11, 2, 2]
-State: [1, 3, 3]
-State: [0, 4, 2]
-State: [0, 5, 5]
-State: [0, 6, 2]
-State: [0, 7, 5]
--- :   0.00:  0.00:  0.00: 11.76:  7.68: 13.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [11, 2, 6]
-State: [7, 3, 6]
--- :   0.00:  0.00:  7.92:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 3]
-State: [1, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 12.52:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 5]
-State: [11, 2, 7]
--- :   0.00:  1.16:  6.20 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [11, 2, 4]
-State: [3, 3, 8]
-State: [0, 4, 8]
--- :   0.00:  0.00:  0.00: 12.80: 11.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 8]
-State: [11, 2, 7]
-State: [2, 3, 4]
--- :   0.00:  6.26:  5.08:  4.80 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [11, 2, 5]
-State: [5, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
-State: [0, 7, 3]
-State: [0, 8, 4]
-State: [0, 9, 5]
--- :   0.00:  0.00:  0.00:  0.00: 22.59: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
-[18.119999999999997, 29.481599999999997, 26.859199999999987, 12.999999999999996, 9.879999999999999, 47.03359999999999, 9.358399999999994, 42.27999999999999, 74.56127999999998, 73.95455999999999, 1.359999999999999, 16.767999999999994, 9.799999999999995, 29.023999999999994, 55.80959999999995, 13.879999999999999, 35.367999999999995, 136.55727359999997, 11.079999999999998, 1.359999999999999, 9.799999999999995, 8.559999999999997, 72.12735999999995, 33.7552, 6.727999999999995, 21.029759999999992, 31.843199999999992, 11.079999999999998, 31.295999999999992, 99.98585599999994, 24.85215999999999, 4.359999999999998, 51.115199999999994, 4.839999999999999, 29.279999999999994, 11.399999999999997, 4.6, 147.99519999999995, 15.894399999999994, 5.959999999999999, 105.98579199999996, 37.85535999999998, 39.51679999999999, 20.284799999999997, 18.351999999999997, 14.311999999999992, 24.85215999999999, 4.359999999999998, 105.98579199999996, 4.6, 26.859199999999987, 19.999999999999993, 26.03999999999998, 24.43999999999999, 15.894399999999994, 5.959999999999999, 6.727999999999995, 44.07967999999998, 13.519999999999996, 39.51679999999999, 7.359999999999999, 24.0, 16.135999999999996, 86.38156799999999]
-  Trial   4/200  |  value=0.8167  |  best=0.8238  |  elapsed=6637s
-Episode 10000 Average Reward: -123.27313551342587
-Episode 20000 Average Reward: -118.40776636083194
-Episode 30000 Average Reward: -117.1267615585382
-Episode 40000 Average Reward: -114.93976009305085
-Episode 50000 Average Reward: -116.49176667338749
-Episode 60000 Average Reward: -109.93960372599804
-Episode 70000 Average Reward: -110.94468260089853
-Episode 80000 Average Reward: -113.80100133961723
-Episode 90000 Average Reward: -113.7927965632102
-Episode 100000 Average Reward: -110.46870004049917
-Episode 110000 Average Reward: -113.87157285199868
-Episode 120000 Average Reward: -111.46627155838972
-Episode 130000 Average Reward: -112.84319511543804
-Episode 140000 Average Reward: -111.59316528424957
-Episode 150000 Average Reward: -110.50176996500475
-Episode 160000 Average Reward: -109.5474316361113
-Episode 170000 Average Reward: -108.13863253963771
-Episode 180000 Average Reward: -112.25314793237501
-Episode 190000 Average Reward: -109.00546109809662
-Episode 200000 Average Reward: -109.81068252408828
-Episode 210000 Average Reward: -110.79127583891452
-Episode 220000 Average Reward: -111.78577351238653
-Episode 230000 Average Reward: -108.51521866166269
-Episode 240000 Average Reward: -110.30549930876924
-Episode 250000 Average Reward: -109.52294329992188
-Episode 260000 Average Reward: -110.65028933551102
-Episode 270000 Average Reward: -105.67218831170555
-Episode 280000 Average Reward: -108.49380789672956
-Episode 290000 Average Reward: -108.66021173733373
-Episode 300000 Average Reward: -106.26414276357116
-Episode 310000 Average Reward: -108.21811220945916
-Episode 320000 Average Reward: -109.32694499540987
-Episode 330000 Average Reward: -106.58162469229563
-Episode 340000 Average Reward: -102.78909942974461
-Episode 350000 Average Reward: -104.9576365976166
-Episode 360000 Average Reward: -103.73314389964796
-Episode 370000 Average Reward: -103.57139206619132
-Episode 380000 Average Reward: -104.53246972533755
-Episode 390000 Average Reward: -104.14791488618492
-Episode 400000 Average Reward: -102.30423971005436
-Episode 410000 Average Reward: -103.19100764776445
-Episode 420000 Average Reward: -104.4497413369139
-Episode 430000 Average Reward: -105.17813019721724
-Episode 440000 Average Reward: -105.35750309042172
-Episode 450000 Average Reward: -103.84683195783165
-Episode 460000 Average Reward: -103.73383253524477
-Episode 470000 Average Reward: -105.44865903002619
-Episode 480000 Average Reward: -101.2284891925606
-Episode 490000 Average Reward: -102.53743271525371
-Episode 500000 Average Reward: -102.2150084588646
-Episode 510000 Average Reward: -100.94601488574459
-Episode 520000 Average Reward: -102.27537487778811
-Episode 530000 Average Reward: -99.01337247203324
-Episode 540000 Average Reward: -98.00415692045308
-Episode 550000 Average Reward: -98.6372042223206
-Episode 560000 Average Reward: -101.08253956064253
-Episode 570000 Average Reward: -101.63434896702461
-Episode 580000 Average Reward: -97.61823945436156
-Episode 590000 Average Reward: -100.57650209413116
-Episode 600000 Average Reward: -98.75976098415612
-Episode 610000 Average Reward: -98.64685028694012
-Episode 620000 Average Reward: -98.73236614963199
-Episode 630000 Average Reward: -98.1612919808614
-Episode 640000 Average Reward: -97.04118022149116
-Episode 650000 Average Reward: -96.23820888728572
-Episode 660000 Average Reward: -96.88105039597566
-Episode 670000 Average Reward: -95.3391440215654
-Episode 680000 Average Reward: -96.68500213778428
-Episode 690000 Average Reward: -97.97732522926077
-Episode 700000 Average Reward: -95.72096899064829
-Episode 710000 Average Reward: -96.31517503063037
-Episode 720000 Average Reward: -96.774483753943
-Episode 730000 Average Reward: -94.14046130188285
-Episode 740000 Average Reward: -94.87699188815868
-Episode 750000 Average Reward: -95.06029535889404
-Episode 760000 Average Reward: -95.65838525733885
-Episode 770000 Average Reward: -96.43336859896829
-Episode 780000 Average Reward: -95.34692041203708
-Episode 790000 Average Reward: -95.00044444829693
-Episode 800000 Average Reward: -92.18753229220862
-Episode 810000 Average Reward: -93.97094578164732
-Episode 820000 Average Reward: -94.65785663953918
-Episode 830000 Average Reward: -93.11151673103356
-Episode 840000 Average Reward: -91.78992436375547
-Episode 850000 Average Reward: -94.25074710799356
-Episode 860000 Average Reward: -92.3762864395366
-Episode 870000 Average Reward: -92.09695008280573
-Episode 880000 Average Reward: -92.34819209387004
-Episode 890000 Average Reward: -92.71345138976764
-Episode 900000 Average Reward: -93.69728848786428
-Episode 910000 Average Reward: -91.88260557995004
-Episode 920000 Average Reward: -91.51737399371773
-Episode 930000 Average Reward: -92.6766674220646
-Episode 940000 Average Reward: -90.70398466091005
-Episode 950000 Average Reward: -90.76249823911934
-Episode 960000 Average Reward: -89.63969959265276
-Episode 970000 Average Reward: -88.56720913041406
-Episode 980000 Average Reward: -87.2767311259955
-Episode 990000 Average Reward: -89.74832383397884
-Episode 1000000 Average Reward: -89.20128324747262
-Episode 1010000 Average Reward: -89.30959301188605
-Episode 1020000 Average Reward: -88.51212709538814
-Episode 1030000 Average Reward: -89.12479778379773
-Episode 1040000 Average Reward: -89.87512339855358
-Episode 1050000 Average Reward: -88.37033681347582
-Episode 1060000 Average Reward: -89.59223367412733
-Episode 1070000 Average Reward: -87.66805770631164
-Episode 1080000 Average Reward: -88.06173127872509
-Episode 1090000 Average Reward: -86.96124446608381
-Episode 1100000 Average Reward: -85.94847619176446
-Episode 1110000 Average Reward: -85.68396074043389
-Episode 1120000 Average Reward: -86.03719751593982
-Episode 1130000 Average Reward: -84.54983813576702
-Episode 1140000 Average Reward: -87.02837535836156
-Episode 1150000 Average Reward: -86.50373826484221
-Episode 1160000 Average Reward: -84.79357378441215
-Episode 1170000 Average Reward: -86.27513995132927
-Episode 1180000 Average Reward: -87.11581917205501
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [7, 3, 5]
-State: [0, 4, 8]
--- :   0.00:  0.32:  2.26:  3.08: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 2]
-State: [12, 2, 3]
-State: [2, 3, 2]
-State: [0, 4, 5]
-State: [0, 5, 2]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  2.00: 13.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [12, 2, 6]
-State: [5, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  3.16:  7.74:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [11, 2, 3]
-State: [1, 3, 6]
-State: [0, 4, 5]
--- :   0.00:  0.00:  0.00: 10.80:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 5]
-State: [11, 2, 7]
-State: [2, 3, 4]
--- :   0.00:  0.00:  5.08:  4.80 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [11, 2, 8]
-State: [7, 3, 8]
-State: [0, 4, 6]
-State: [0, 5, 8]
--- :   0.00:  0.00: 19.37:  9.74: 11.76: 11.20 ->  Done!
-State: [30, 0, 7]
-State: [20, 1, 4]
-State: [11, 2, 2]
-State: [6, 3, 6]
--- :   0.00:  0.00:  0.00:  6.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 4]
-State: [11, 2, 3]
-State: [1, 3, 4]
-State: [0, 4, 5]
-State: [0, 5, 3]
-State: [0, 6, 4]
-State: [0, 7, 5]
--- :   0.00:  0.00:  0.00: 17.13: 19.21:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [7, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
--- :   0.00:  0.00:  0.00:  0.00: 30.73: 21.95:  3.92:  4.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 2]
-State: [6, 3, 5]
-State: [0, 4, 6]
-State: [0, 5, 3]
-State: [0, 6, 6]
-State: [0, 7, 6]
--- :   0.00:  0.00:  0.00:  0.62: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 3]
--- :   0.00:  1.16:  0.20 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [12, 2, 6]
 State: [5, 3, 5]
 State: [0, 4, 3]
--- :   0.00:  0.00:  4.26:  5.00:  4.20 ->  Done!
+-- :   0.00:  0.00:  6.00:  5.00:  4.20 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 7]
-State: [10, 2, 4]
--- :   0.00:  4.12:  3.60 ->  Done!
+State: [11, 2, 4]
+-- :   0.00:  5.08:  2.00 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 4]
-State: [11, 2, 8]
-State: [7, 3, 8]
+State: [12, 2, 8]
+State: [2, 3, 8]
 State: [0, 4, 6]
--- :   0.00:  0.00: 14.98:  8.96:  8.40 ->  Done!
+-- :   0.00:  0.00:  4.51: 13.76:  8.40 ->  Done!
 State: [30, 0, 8]
 State: [20, 1, 7]
-State: [10, 2, 4]
-State: [5, 3, 2]
+State: [11, 2, 4]
+State: [2, 3, 2]
 State: [0, 4, 6]
 State: [0, 5, 5]
 State: [0, 6, 4]
 State: [0, 7, 3]
--- :   0.00:  0.00:  0.00:  0.00: 23.05: 13.72:  7.84:  4.20 ->  Done!
+-- :   0.00:  0.00:  0.00:  2.00: 23.05: 13.72:  7.84:  4.20 ->  Done!
 State: [30, 0, 4]
 State: [20, 1, 5]
-State: [11, 2, 3]
+State: [10, 2, 3]
 State: [1, 3, 4]
 State: [0, 4, 5]
 -- :   0.00:  0.00:  0.00:  6.88:  7.00 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 6]
-State: [12, 2, 4]
-State: [7, 3, 5]
+State: [10, 2, 4]
+State: [0, 3, 5]
 State: [0, 4, 8]
 State: [0, 5, 8]
--- :   0.00:  0.00:  1.16:  1.51: 15.68: 11.20 ->  Done!
+-- :   0.00:  0.00:  0.00: 13.72: 15.68: 11.20 ->  Done!
 State: [30, 0, 2]
 State: [20, 1, 3]
-State: [12, 2, 2]
+State: [11, 2, 2]
 State: [4, 3, 5]
 State: [0, 4, 2]
 State: [0, 5, 5]
@@ -2398,1125 +1259,22 @@ State: [0, 9, 6]
 -- :   0.00:  0.00:  0.00: 14.54: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
 State: [30, 0, 2]
 State: [20, 1, 5]
-State: [11, 2, 3]
+State: [10, 2, 3]
 State: [1, 3, 4]
 State: [0, 4, 3]
 -- :   0.00:  0.00:  0.00:  6.88:  4.20 ->  Done!
 State: [30, 0, 6]
 State: [20, 1, 5]
-State: [11, 2, 3]
--- :   0.00:  1.16:  0.20 ->  Done!
+State: [10, 2, 3]
+-- :   0.00:  0.20:  0.60 ->  Done!
 State: [30, 0, 5]
 State: [20, 1, 7]
-State: [10, 2, 4]
--- :   0.00:  4.12:  3.60 ->  Done!
+State: [11, 2, 4]
+-- :   0.00:  5.08:  2.00 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 4]
-State: [11, 2, 8]
--- :   0.00:  0.00:  9.60 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 6]
 State: [12, 2, 8]
-State: [3, 3, 7]
-State: [0, 4, 4]
-State: [0, 5, 2]
-State: [0, 6, 6]
-State: [0, 7, 5]
--- :   0.00:  0.00:  1.47: 24.51: 15.37:  5.49: 11.76:  7.00 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [12, 2, 4]
-State: [7, 3, 5]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  0.00:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [7, 3, 5]
--- :   0.00:  2.51:  3.04:  4.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [10, 2, 2]
-State: [1, 3, 3]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  0.00:  6.49:  3.92:  7.00 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 6]
-State: [1, 3, 3]
-State: [0, 4, 6]
-State: [0, 5, 6]
--- :   0.00:  0.00:  0.00:  6.49: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 3]
-State: [1, 3, 4]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  6.88:  4.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 5]
-State: [11, 2, 3]
-State: [1, 3, 5]
-State: [0, 4, 7]
-State: [0, 5, 4]
--- :   0.00:  0.00:  0.00: 11.98: 13.72:  5.60 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [11, 2, 8]
-State: [7, 3, 8]
-State: [0, 4, 6]
-State: [0, 5, 8]
-State: [0, 6, 7]
-State: [0, 7, 4]
--- :   0.00:  0.00: 34.12: 12.38: 23.05: 21.95: 13.72:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [12, 2, 5]
-State: [6, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.62:  0.00:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [11, 2, 5]
--- :   0.00:  0.00:  4.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [7, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
--- :   0.00:  0.00:  0.00:  0.00: 21.95: 15.68:  2.80 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 2]
-State: [12, 2, 5]
-State: [6, 3, 2]
--- :   0.00:  0.00:  4.04:  0.40 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 3]
-State: [2, 3, 6]
-State: [0, 4, 6]
-State: [0, 5, 2]
--- :   0.00:  0.00:  0.00: 12.98: 11.76:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [12, 2, 4]
-State: [7, 3, 3]
-State: [0, 4, 6]
--- :   0.00:  0.00:  2.26:  0.00:  8.40 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [12, 2, 5]
--- :   0.00:  0.00:  4.60 ->  Done!
-State: [30, 0, 7]
-State: [20, 1, 4]
-State: [11, 2, 3]
-State: [1, 3, 4]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 6]
-State: [0, 7, 8]
-State: [0, 8, 7]
-State: [0, 9, 4]
--- :   0.00:  0.00:  0.00: 32.62: 60.24: 43.03: 23.05: 21.95: 13.72:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [12, 2, 5]
-State: [6, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  2.16:  0.51:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [12, 2, 4]
-State: [7, 3, 5]
--- :   0.00:  0.00:  3.04:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [7, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00:  0.00: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 2]
-State: [12, 2, 5]
-State: [6, 3, 6]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 6]
--- :   0.00:  0.00:  0.62:  6.00:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 3]
-State: [1, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 12.52:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 5]
-State: [11, 2, 7]
-State: [2, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  1.32:  7.49:  5.88:  5.60 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [10, 2, 6]
--- :   4.51:  6.08:  4.80 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 7]
-State: [10, 2, 4]
--- :   4.51:  4.12:  3.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [12, 2, 5]
-State: [6, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.62:  0.00:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [11, 2, 5]
--- :   0.00:  0.00:  4.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [7, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00:  0.00: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 2]
-State: [12, 2, 5]
--- :   0.00:  0.00:  4.60 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [12, 2, 6]
-State: [5, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  3.16:  7.74:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [11, 2, 3]
-State: [1, 3, 6]
-State: [0, 4, 5]
-State: [0, 5, 3]
--- :   0.00:  0.00:  0.00: 14.72:  9.80:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [10, 2, 4]
-State: [5, 3, 3]
-State: [0, 4, 4]
-State: [0, 5, 8]
--- :   0.00:  0.00:  1.16:  0.00:  7.84: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 6]
-State: [12, 2, 8]
-State: [3, 3, 7]
-State: [0, 4, 4]
--- :   0.00:  0.32:  6.26: 10.84:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [12, 2, 5]
-State: [6, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  2.16:  0.51:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [12, 2, 4]
-State: [7, 3, 5]
--- :   0.00:  0.00:  3.04:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [12, 2, 4]
-State: [7, 3, 5]
--- :   0.00:  2.51:  3.04:  4.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [10, 2, 2]
-State: [1, 3, 3]
-State: [0, 4, 2]
-State: [0, 5, 5]
-State: [0, 6, 2]
-State: [0, 7, 5]
--- :   0.00:  0.00:  0.00: 11.76:  7.68: 13.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [12, 2, 6]
-State: [5, 3, 6]
--- :   0.00:  0.00:  5.04:  6.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [11, 2, 3]
-State: [1, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 12.52:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 5]
-State: [11, 2, 7]
--- :   0.00:  1.16:  6.20 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [12, 2, 4]
-State: [7, 3, 8]
-State: [0, 4, 8]
--- :   0.00:  0.00:  2.26:  8.96: 11.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 8]
-State: [10, 2, 7]
-State: [1, 3, 4]
--- :   0.00:  4.51:  5.08:  5.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [12, 2, 5]
-State: [6, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
-State: [0, 7, 3]
-State: [0, 8, 4]
-State: [0, 9, 5]
--- :   0.00:  0.00:  0.00:  0.00: 22.59: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
-[16.85279999999999, 26.639999999999993, 21.822399999999988, 17.799999999999997, 9.879999999999999, 52.07039999999999, 5.999999999999998, 59.414719999999974, 60.80479999999998, 52.06335999999998, 1.359999999999999, 13.455999999999992, 7.719999999999997, 32.336, 48.80959999999999, 13.879999999999999, 29.550399999999993, 107.93322239999998, 11.079999999999998, 1.359999999999999, 7.719999999999997, 9.6, 65.59782399999996, 23.071999999999996, 9.751999999999995, 17.407999999999994, 26.647999999999993, 11.079999999999998, 31.295999999999992, 110.81798399999995, 23.69375999999999, 4.6, 40.43199999999999, 4.439999999999999, 27.53599999999999, 10.655999999999997, 4.6, 200.20785919999992, 14.150399999999992, 7.239999999999998, 87.92671999999997, 35.01375999999998, 39.51679999999999, 20.284799999999997, 15.391999999999994, 12.231999999999994, 23.69375999999999, 4.6, 87.92671999999997, 4.6, 21.822399999999988, 28.719999999999995, 20.198399999999996, 23.01279999999999, 14.150399999999992, 7.239999999999998, 9.751999999999995, 44.07967999999998, 11.439999999999994, 39.51679999999999, 7.359999999999999, 22.415999999999997, 14.791999999999994, 86.38156799999999]
-  Trial   5/200  |  value=0.8290  |  best=0.8290  |  elapsed=9042s
-Episode 10000 Average Reward: -129.30423063874554
-Episode 20000 Average Reward: -125.073509676247
-Episode 30000 Average Reward: -122.3597932663193
-Episode 40000 Average Reward: -121.58348426412027
-Episode 50000 Average Reward: -121.79225197086716
-Episode 60000 Average Reward: -116.97402170670074
-Episode 70000 Average Reward: -119.87915293446139
-Episode 80000 Average Reward: -119.56685114982396
-Episode 90000 Average Reward: -117.4707385027891
-Episode 100000 Average Reward: -116.41554235868156
-Episode 110000 Average Reward: -119.72293186791418
-Episode 120000 Average Reward: -116.032018664663
-Episode 130000 Average Reward: -115.28688891849725
-Episode 140000 Average Reward: -112.99731793097723
-Episode 150000 Average Reward: -114.03643585671163
-Episode 160000 Average Reward: -113.116207115479
-Episode 170000 Average Reward: -111.91287255281662
-Episode 180000 Average Reward: -108.79025601825789
-Episode 190000 Average Reward: -108.07335339705338
-Episode 200000 Average Reward: -108.28840472020988
-Episode 210000 Average Reward: -109.98385003578365
-Episode 220000 Average Reward: -106.23901571598333
-Episode 230000 Average Reward: -109.25421911581692
-Episode 240000 Average Reward: -105.59784364231676
-Episode 250000 Average Reward: -105.862809358551
-Episode 260000 Average Reward: -105.01029420722173
-Episode 270000 Average Reward: -104.49338914828284
-Episode 280000 Average Reward: -102.31905423149053
-Episode 290000 Average Reward: -105.34778624423933
-Episode 300000 Average Reward: -102.52851196115965
-Episode 310000 Average Reward: -102.15946966883325
-Episode 320000 Average Reward: -100.76148408139773
-Episode 330000 Average Reward: -100.65066742198267
-Episode 340000 Average Reward: -100.69519385551868
-Episode 350000 Average Reward: -96.83447301969916
-Episode 360000 Average Reward: -97.97493098010621
-Episode 370000 Average Reward: -98.14467346016252
-Episode 380000 Average Reward: -96.99622529679357
-Episode 390000 Average Reward: -94.72561257524221
-Episode 400000 Average Reward: -96.41455624153085
-Episode 410000 Average Reward: -97.1838262399283
-Episode 420000 Average Reward: -96.08479233795067
-Episode 430000 Average Reward: -93.29049476620284
-Episode 440000 Average Reward: -91.51353129064445
-Episode 450000 Average Reward: -93.0504622848614
-Episode 460000 Average Reward: -91.73104969029629
-Episode 470000 Average Reward: -92.29180682625021
-Episode 480000 Average Reward: -91.90008106748925
-Episode 490000 Average Reward: -90.08180443197438
-Episode 500000 Average Reward: -88.85444723222524
-Episode 510000 Average Reward: -90.1388281668198
-Episode 520000 Average Reward: -88.1226571171123
-Episode 530000 Average Reward: -87.4381376869478
-Episode 540000 Average Reward: -85.10164000528383
-Episode 550000 Average Reward: -86.48235053523965
-Episode 560000 Average Reward: -86.67366292207612
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 8]
--- :   0.00:  0.00:  0.00:  8.84: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 2]
-State: [10, 2, 3]
-State: [2, 3, 2]
-State: [0, 4, 5]
-State: [0, 5, 2]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  2.00: 13.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [10, 2, 6]
-State: [2, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  0.32: 12.98:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 3]
-State: [2, 3, 6]
-State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  9.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 5]
-State: [10, 2, 7]
-State: [1, 3, 4]
--- :   0.00:  0.00:  5.08:  5.20 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 8]
-State: [2, 3, 8]
-State: [0, 4, 6]
-State: [0, 5, 8]
--- :   0.00:  0.00:  8.00: 18.46: 11.76: 11.20 ->  Done!
-State: [30, 0, 7]
-State: [21, 1, 4]
-State: [11, 2, 2]
-State: [7, 3, 6]
--- :   1.32:  0.00:  0.08:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 4]
-State: [10, 2, 3]
-State: [2, 3, 4]
-State: [0, 4, 5]
-State: [0, 5, 3]
-State: [0, 6, 4]
-State: [0, 7, 5]
--- :   0.00:  0.00:  0.00: 12.76: 19.21:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
--- :   0.00:  0.00:  0.00: 22.51: 30.73: 21.95:  3.92:  4.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [10, 2, 2]
-State: [3, 3, 5]
-State: [0, 4, 6]
-State: [0, 5, 3]
-State: [0, 6, 6]
-State: [0, 7, 6]
--- :   0.00:  0.00:  0.00: 13.76: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [10, 2, 3]
--- :   0.00:  0.20:  1.00 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [10, 2, 6]
-State: [2, 3, 5]
-State: [0, 4, 3]
--- :   0.00:  0.00:  2.51:  7.88:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [10, 2, 4]
--- :   0.00:  4.12:  2.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 8]
-State: [2, 3, 8]
-State: [0, 4, 6]
--- :   0.00:  0.00:  8.00: 13.76:  8.40 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 7]
-State: [10, 2, 4]
-State: [1, 3, 2]
-State: [0, 4, 6]
-State: [0, 5, 5]
-State: [0, 6, 4]
-State: [0, 7, 3]
--- :   0.00:  0.00:  0.00:  6.38: 23.05: 13.72:  7.84:  4.20 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 5]
-State: [10, 2, 3]
-State: [2, 3, 4]
-State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  5.92:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
--- :   0.00:  0.00:  0.00: 11.98: 15.68: 11.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 3]
-State: [10, 2, 2]
-State: [3, 3, 5]
-State: [0, 4, 2]
-State: [0, 5, 5]
-State: [0, 6, 6]
-State: [0, 7, 3]
-State: [0, 8, 6]
-State: [0, 9, 6]
--- :   0.00:  0.00:  0.00: 24.08: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [10, 2, 3]
-State: [2, 3, 4]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  5.92:  4.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 5]
-State: [10, 2, 3]
--- :   0.00:  0.20:  1.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [10, 2, 4]
--- :   0.00:  4.12:  2.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 8]
--- :   0.00:  0.00:  8.00 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 6]
-State: [10, 2, 8]
-State: [2, 3, 7]
-State: [0, 4, 4]
-State: [0, 5, 2]
-State: [0, 6, 6]
-State: [0, 7, 5]
--- :   0.00:  0.00:  8.00: 28.89: 15.37:  5.49: 11.76:  7.00 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 16.37:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [1, 3, 5]
--- :   0.00:  0.00:  0.00:  6.60 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [11, 2, 2]
-State: [7, 3, 3]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  3.62:  0.00:  0.00:  3.92:  7.00 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [10, 2, 6]
-State: [2, 3, 3]
-State: [0, 4, 6]
-State: [0, 5, 6]
--- :   0.00:  0.00:  0.32:  4.74: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [10, 2, 3]
-State: [2, 3, 4]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  5.92:  4.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 5]
-State: [10, 2, 3]
-State: [2, 3, 5]
-State: [0, 4, 7]
-State: [0, 5, 4]
--- :   0.00:  0.00:  0.00: 10.23: 13.72:  5.60 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 8]
-State: [2, 3, 8]
-State: [0, 4, 6]
-State: [0, 5, 8]
-State: [0, 6, 7]
-State: [0, 7, 4]
--- :   0.00:  0.00:  8.00: 34.27: 23.05: 21.95: 13.72:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [10, 2, 5]
-State: [0, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 15.37:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
--- :   0.00:  0.00:  0.00: 16.37: 21.95: 15.68:  2.80 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 2]
-State: [10, 2, 5]
-State: [0, 3, 2]
--- :   0.00:  0.00:  0.20:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 3]
-State: [2, 3, 6]
-State: [0, 4, 6]
-State: [0, 5, 2]
--- :   0.00:  0.00:  0.00: 12.98: 11.76:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [1, 3, 3]
-State: [0, 4, 6]
--- :   0.00:  0.00:  0.00:  4.92:  8.40 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
-State: [30, 0, 7]
-State: [21, 1, 4]
-State: [11, 2, 3]
-State: [9, 3, 4]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 6]
-State: [0, 7, 8]
-State: [0, 8, 7]
-State: [0, 9, 4]
--- :   0.00:  0.00: 16.76:  0.00: 60.24: 43.03: 23.05: 21.95: 13.72:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [10, 2, 5]
-State: [0, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  0.00: 10.98:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [1, 3, 5]
--- :   0.00:  0.00:  0.00:  6.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00: 31.12: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 2]
-State: [10, 2, 5]
-State: [0, 3, 6]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 6]
--- :   0.00:  0.00:  0.00: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [10, 2, 3]
-State: [2, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  9.68:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 5]
-State: [10, 2, 7]
-State: [1, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  1.32:  9.23:  5.88:  5.60 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [11, 2, 6]
--- :   4.51:  7.04:  6.00 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 7]
-State: [10, 2, 4]
--- :   4.51:  4.12:  2.00 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [10, 2, 5]
-State: [0, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 15.37:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00: 31.12: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 2]
-State: [10, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [10, 2, 6]
-State: [2, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  0.32: 12.98:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 3]
-State: [2, 3, 6]
-State: [0, 4, 5]
-State: [0, 5, 3]
--- :   0.00:  0.00:  0.00: 12.98:  9.80:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 7]
-State: [10, 2, 4]
-State: [1, 3, 3]
-State: [0, 4, 4]
-State: [0, 5, 8]
--- :   0.00:  0.00:  0.00:  6.49:  7.84: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 6]
-State: [10, 2, 8]
-State: [2, 3, 7]
-State: [0, 4, 4]
--- :   0.00:  0.00:  8.00: 11.80:  5.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [10, 2, 5]
-State: [0, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  0.00: 10.98:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [1, 3, 5]
--- :   0.00:  0.00:  0.00:  6.60 ->  Done!
-State: [30, 0, 5]
-State: [20, 1, 6]
-State: [10, 2, 4]
-State: [1, 3, 5]
--- :   0.00:  0.00:  0.00:  6.60 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 8]
-State: [11, 2, 2]
-State: [7, 3, 3]
-State: [0, 4, 2]
-State: [0, 5, 5]
-State: [0, 6, 2]
-State: [0, 7, 5]
--- :   0.00:  0.00:  0.00:  0.00:  7.68: 13.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [10, 2, 6]
-State: [2, 3, 6]
--- :   0.00:  0.00:  4.08:  7.60 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [10, 2, 3]
-State: [2, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  9.68:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 5]
-State: [10, 2, 7]
--- :   0.00:  0.20:  6.20 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [10, 2, 4]
-State: [1, 3, 8]
-State: [0, 4, 8]
--- :   0.00:  0.00:  0.00: 14.72: 11.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 8]
-State: [11, 2, 7]
-State: [3, 3, 4]
--- :   0.00:  6.26:  6.04:  4.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 6]
-State: [10, 2, 5]
-State: [0, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
-State: [0, 6, 5]
-State: [0, 7, 3]
-State: [0, 8, 4]
-State: [0, 9, 5]
--- :   0.00:  0.00:  0.00: 42.17: 22.59: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
-[20.04, 26.639999999999993, 24.212799999999987, 16.839999999999996, 10.279999999999998, 49.42399999999998, 6.996799999999993, 55.03647999999998, 83.31775999999996, 65.19807999999998, 1.1999999999999984, 14.591999999999995, 6.119999999999997, 30.15999999999999, 55.18783999999999, 12.92, 38.855999999999995, 117.47457279999998, 10.12, 1.1999999999999984, 6.119999999999997, 7.999999999999999, 76.50559999999996, 39.43839999999999, 6.6, 14.541759999999995, 25.22079999999999, 10.12, 29.552, 106.59103999999994, 38.43839999999999, 3.0, 56.79839999999999, 2.999999999999999, 27.53599999999999, 13.319999999999997, 3.0, 184.3416985599999, 22.455999999999996, 6.6, 119.04486399999996, 51.44159999999999, 36.6752, 22.02879999999999, 17.551999999999992, 10.631999999999994, 38.43839999999999, 3.0, 119.04486399999996, 3.0, 24.212799999999987, 26.975999999999992, 25.527999999999995, 25.39999999999999, 22.455999999999996, 6.6, 6.6, 32.32319999999999, 11.679999999999996, 36.6752, 6.399999999999999, 25.919999999999995, 16.695999999999994, 128.54696959999995]
-  Trial   6/200  |  value=0.8189  |  best=0.8290  |  elapsed=10074s
-Episode 10000 Average Reward: -117.26741877713916
-Episode 20000 Average Reward: -109.81229744972796
-Episode 30000 Average Reward: -107.69861098234877
-Episode 40000 Average Reward: -105.98102840350717
-Episode 50000 Average Reward: -106.71028746856445
-Episode 60000 Average Reward: -107.32589242019834
-Episode 70000 Average Reward: -108.04654992547836
-Episode 80000 Average Reward: -107.58157952695291
-Episode 90000 Average Reward: -107.54473547013116
-Episode 100000 Average Reward: -107.78034238049275
-Episode 110000 Average Reward: -104.84015167933437
-Episode 120000 Average Reward: -105.77312255930364
-Episode 130000 Average Reward: -104.07443498273787
-Episode 140000 Average Reward: -103.65410807706621
-Episode 150000 Average Reward: -106.37134128329724
-Episode 160000 Average Reward: -104.74816844208124
-Episode 170000 Average Reward: -103.77648906879996
-Episode 180000 Average Reward: -104.41401721046012
-Episode 190000 Average Reward: -103.82283460000762
-Episode 200000 Average Reward: -103.6398951608422
-Episode 210000 Average Reward: -106.84615142623228
-Episode 220000 Average Reward: -102.0360635137126
-Episode 230000 Average Reward: -102.06472773345276
-Episode 240000 Average Reward: -104.82301237047291
-Episode 250000 Average Reward: -103.26761683545085
-Episode 260000 Average Reward: -103.37381005150205
-Episode 270000 Average Reward: -103.14346215628795
-Episode 280000 Average Reward: -103.26100326603772
-Episode 290000 Average Reward: -104.22108659109885
-Episode 300000 Average Reward: -104.8193099119718
-Episode 310000 Average Reward: -102.01455743160317
-Episode 320000 Average Reward: -103.49191758804989
-Episode 330000 Average Reward: -101.62116060926972
-Episode 340000 Average Reward: -102.46052149481469
-Episode 350000 Average Reward: -102.8202071264051
-Episode 360000 Average Reward: -103.19506591740925
-Episode 370000 Average Reward: -104.13075357667324
-Episode 380000 Average Reward: -100.34189564897277
-Episode 390000 Average Reward: -104.08594217674748
-Episode 400000 Average Reward: -100.8129305887539
-Episode 410000 Average Reward: -102.57507133832189
-Episode 420000 Average Reward: -102.85425026967548
-Episode 430000 Average Reward: -101.70877104590845
-Episode 440000 Average Reward: -100.91063020144635
-Episode 450000 Average Reward: -101.62288009360381
-Episode 460000 Average Reward: -102.19190499085308
-Episode 470000 Average Reward: -101.0796262418227
-Episode 480000 Average Reward: -100.28980484885501
-Episode 490000 Average Reward: -101.32441064124413
-Episode 500000 Average Reward: -101.68670503861244
-Episode 510000 Average Reward: -99.35120571623422
-Episode 520000 Average Reward: -100.55410223777788
-Episode 530000 Average Reward: -100.70898981803005
-Episode 540000 Average Reward: -101.76590215982078
-Episode 550000 Average Reward: -99.17833364804605
-Episode 560000 Average Reward: -101.22113278213116
-Episode 570000 Average Reward: -99.5531729898291
-Episode 580000 Average Reward: -100.21898830738428
-Episode 590000 Average Reward: -97.59729282004989
-Episode 600000 Average Reward: -100.21371702492156
-Episode 610000 Average Reward: -98.42611659304957
-Episode 620000 Average Reward: -99.60246111676412
-Episode 630000 Average Reward: -98.01601534075901
-Episode 640000 Average Reward: -97.57670764466172
-Episode 650000 Average Reward: -99.31154415802364
-Episode 660000 Average Reward: -99.21406691785725
-Episode 670000 Average Reward: -98.566274996439
-Episode 680000 Average Reward: -100.24037599955965
-Episode 690000 Average Reward: -97.78261155729406
-Episode 700000 Average Reward: -100.43007680017405
-Episode 710000 Average Reward: -99.4737988306022
-Episode 720000 Average Reward: -97.15747878038525
-Episode 730000 Average Reward: -98.34771024539646
-Episode 740000 Average Reward: -98.52398758702076
-Episode 750000 Average Reward: -97.2975693722931
-Episode 760000 Average Reward: -99.19131318817789
-Episode 770000 Average Reward: -99.35479332950013
-Episode 780000 Average Reward: -99.42462984135676
-Episode 790000 Average Reward: -97.44080418192381
-Episode 800000 Average Reward: -98.66383941680124
-Episode 810000 Average Reward: -96.28666546347004
-Episode 820000 Average Reward: -97.54837744529405
-Episode 830000 Average Reward: -96.05570530674684
-Episode 840000 Average Reward: -97.79979442168828
-Episode 850000 Average Reward: -95.96243580234749
-Episode 860000 Average Reward: -97.4720093013606
-Episode 870000 Average Reward: -99.41094836435964
-Episode 880000 Average Reward: -97.58015296991228
-Episode 890000 Average Reward: -97.67764750161916
-Episode 900000 Average Reward: -100.50058688070654
-Episode 910000 Average Reward: -97.05312396924924
-Episode 920000 Average Reward: -97.54527524360189
-Episode 930000 Average Reward: -97.8260318954803
-Episode 940000 Average Reward: -96.76720021831677
-Episode 950000 Average Reward: -95.40575884845053
-Episode 960000 Average Reward: -98.56554458775548
-Episode 970000 Average Reward: -96.96653363489789
-Episode 980000 Average Reward: -95.59945671945214
-Episode 990000 Average Reward: -96.81509077037053
-Episode 1000000 Average Reward: -95.74731101439998
-Episode 1010000 Average Reward: -97.64656617038845
-Episode 1020000 Average Reward: -95.37557414325244
-Episode 1030000 Average Reward: -94.35472666103804
-Episode 1040000 Average Reward: -95.73468607114236
-Episode 1050000 Average Reward: -94.48550136155133
-Episode 1060000 Average Reward: -95.86017078156284
-Episode 1070000 Average Reward: -96.14574942161916
-Episode 1080000 Average Reward: -95.64627863257085
-Episode 1090000 Average Reward: -93.15141212034045
-Episode 1100000 Average Reward: -96.07989675063293
-Episode 1110000 Average Reward: -93.78375303005181
-Episode 1120000 Average Reward: -93.60855545460731
-Episode 1130000 Average Reward: -94.52247735492605
-Episode 1140000 Average Reward: -93.02333063827453
-Episode 1150000 Average Reward: -95.69924222076925
-Episode 1160000 Average Reward: -94.25574168624127
-Episode 1170000 Average Reward: -93.98166335342589
-Episode 1180000 Average Reward: -95.29877786550269
-Episode 1190000 Average Reward: -92.61087334739965
-Episode 1200000 Average Reward: -93.73557840705533
-Episode 1210000 Average Reward: -94.56488912851964
-Episode 1220000 Average Reward: -93.55212493688829
-Episode 1230000 Average Reward: -93.21233003762684
-Episode 1240000 Average Reward: -94.18291742696445
-Episode 1250000 Average Reward: -94.90013027706877
-Episode 1260000 Average Reward: -93.56992758113276
-Episode 1270000 Average Reward: -93.99686945218556
-Episode 1280000 Average Reward: -93.20796940428285
-Episode 1290000 Average Reward: -94.016378855639
-Episode 1300000 Average Reward: -93.80207554290685
-Episode 1310000 Average Reward: -92.80427970935804
-Episode 1320000 Average Reward: -93.14672003568637
-Episode 1330000 Average Reward: -91.31207163494398
-Episode 1340000 Average Reward: -90.59288330234878
-Episode 1350000 Average Reward: -93.53543048137725
-Episode 1360000 Average Reward: -93.20271587977213
-Episode 1370000 Average Reward: -94.01415317338109
-Episode 1380000 Average Reward: -92.36588922048509
-Episode 1390000 Average Reward: -91.27799719101436
-Episode 1400000 Average Reward: -91.29201735448574
-Episode 1410000 Average Reward: -89.87279624585213
-Episode 1420000 Average Reward: -90.13076007975933
-Episode 1430000 Average Reward: -90.39680036815868
-Episode 1440000 Average Reward: -91.62215307333629
-Episode 1450000 Average Reward: -92.0081297724723
-Episode 1460000 Average Reward: -91.6690511226982
-Episode 1470000 Average Reward: -89.75358652585982
-Episode 1480000 Average Reward: -92.74248731992061
-Episode 1490000 Average Reward: -91.80000868518908
-Episode 1500000 Average Reward: -90.32360708945916
-Episode 1510000 Average Reward: -93.5244083856281
-Episode 1520000 Average Reward: -90.00581532138493
-Episode 1530000 Average Reward: -90.98990698008572
-Episode 1540000 Average Reward: -90.58031642919934
-Episode 1550000 Average Reward: -89.92282635334654
-Episode 1560000 Average Reward: -93.11231831064573
-Episode 1570000 Average Reward: -88.719719061207
-Episode 1580000 Average Reward: -88.21838626541565
-Episode 1590000 Average Reward: -92.57484750099455
-Episode 1600000 Average Reward: -88.796639397847
-Episode 1610000 Average Reward: -89.81126870351869
-Episode 1620000 Average Reward: -90.16401254675453
-Episode 1630000 Average Reward: -89.4270844006502
-Episode 1640000 Average Reward: -90.86534192169981
-Episode 1650000 Average Reward: -89.70414891092989
-Episode 1660000 Average Reward: -88.38759829416958
-Episode 1670000 Average Reward: -89.5163373010534
-Episode 1680000 Average Reward: -89.71560409666557
-Episode 1690000 Average Reward: -89.60172419591166
-Episode 1700000 Average Reward: -89.22014885505021
-Episode 1710000 Average Reward: -86.8198140549734
-Episode 1720000 Average Reward: -89.43923707796478
-Episode 1730000 Average Reward: -89.03173992929277
-Episode 1740000 Average Reward: -89.55156627101694
-Episode 1750000 Average Reward: -87.45068536496125
-Episode 1760000 Average Reward: -88.73220251947006
-Episode 1770000 Average Reward: -87.6221859627622
-Episode 1780000 Average Reward: -87.55349218143229
-Episode 1790000 Average Reward: -86.1128132239155
-Episode 1800000 Average Reward: -91.5082888643379
-Episode 1810000 Average Reward: -88.34471867962365
-Episode 1820000 Average Reward: -86.2951684522086
-Episode 1830000 Average Reward: -87.46892589459453
-Episode 1840000 Average Reward: -86.90470123450365
-Episode 1850000 Average Reward: -87.52652527443966
-Episode 1860000 Average Reward: -86.08074615003133
-Episode 1870000 Average Reward: -89.44887562953726
-Episode 1880000 Average Reward: -88.04157295361021
-Episode 1890000 Average Reward: -88.39170268327932
-Episode 1900000 Average Reward: -85.66914924072958
-Episode 1910000 Average Reward: -87.61379692109821
-Episode 1920000 Average Reward: -85.76387757912062
-Episode 1930000 Average Reward: -86.60382954544124
-Episode 1940000 Average Reward: -85.13465039057918
-Episode 1950000 Average Reward: -87.3189881634611
-State: [30, 0, 5]
-State: [21, 1, 6]
-State: [11, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 8]
--- :   0.00:  0.00:  0.00:  8.84: 11.20 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 2]
-State: [10, 2, 3]
-State: [3, 3, 2]
-State: [0, 4, 5]
-State: [0, 5, 2]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  0.00: 13.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 3]
-State: [10, 2, 6]
-State: [1, 3, 6]
-State: [0, 4, 2]
-State: [0, 5, 5]
--- :   0.00:  0.00:  0.00: 14.72:  3.92:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 3]
-State: [3, 3, 6]
-State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  8.88:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 5]
-State: [13, 2, 7]
-State: [7, 3, 4]
--- :   0.00:  1.51:  7.96:  2.80 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 8]
-State: [1, 3, 8]
-State: [0, 4, 6]
-State: [0, 5, 8]
--- :   0.00:  0.00:  5.16: 20.21: 11.76: 11.20 ->  Done!
-State: [30, 0, 7]
-State: [20, 1, 4]
-State: [10, 2, 2]
-State: [2, 3, 6]
--- :   0.00:  0.00:  0.00:  7.60 ->  Done!
-State: [30, 0, 5]
-State: [21, 1, 4]
-State: [12, 2, 3]
-State: [5, 3, 4]
-State: [0, 4, 5]
-State: [0, 5, 3]
-State: [0, 6, 4]
-State: [0, 7, 5]
--- :   0.00:  0.00:  0.00:  0.00: 19.21:  8.23:  7.84:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [21, 1, 6]
-State: [11, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
--- :   0.00:  0.00:  0.00: 22.51: 30.73: 21.95:  3.92:  4.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 2]
-State: [5, 3, 5]
-State: [0, 4, 6]
-State: [0, 5, 3]
-State: [0, 6, 6]
-State: [0, 7, 6]
--- :   0.00:  0.00:  0.00:  5.00: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 3]
--- :   0.00:  3.08:  0.20 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 3]
-State: [10, 2, 6]
-State: [1, 3, 5]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.77:  8.84:  4.20 ->  Done!
-State: [30, 0, 5]
-State: [21, 1, 7]
-State: [12, 2, 4]
--- :   0.00:  5.08:  2.40 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 8]
-State: [1, 3, 8]
-State: [0, 4, 6]
--- :   0.00:  0.00:  6.26: 14.72:  8.40 ->  Done!
-State: [30, 0, 8]
-State: [20, 1, 7]
-State: [10, 2, 4]
-State: [2, 3, 2]
-State: [0, 4, 6]
-State: [0, 5, 5]
-State: [0, 6, 4]
-State: [0, 7, 3]
--- :   0.00:  0.00:  0.00:  2.00: 23.05: 13.72:  7.84:  4.20 ->  Done!
-State: [30, 0, 4]
-State: [20, 1, 5]
-State: [13, 2, 3]
-State: [3, 3, 4]
-State: [0, 4, 5]
--- :   0.00:  0.00:  0.00:  4.96:  7.00 ->  Done!
-State: [30, 0, 5]
-State: [21, 1, 6]
-State: [11, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
--- :   0.00:  0.00:  0.00: 11.98: 15.68: 11.20 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 3]
-State: [10, 2, 2]
-State: [2, 3, 5]
-State: [0, 4, 2]
-State: [0, 5, 5]
-State: [0, 6, 6]
-State: [0, 7, 3]
-State: [0, 8, 6]
-State: [0, 9, 6]
--- :   0.00:  0.00:  0.00: 33.62: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 3]
-State: [3, 3, 4]
-State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  4.96:  4.20 ->  Done!
-State: [30, 0, 6]
-State: [20, 1, 5]
-State: [13, 2, 3]
--- :   0.00:  3.08:  0.20 ->  Done!
-State: [30, 0, 5]
-State: [21, 1, 7]
-State: [12, 2, 4]
--- :   0.00:  5.08:  2.40 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 4]
-State: [10, 2, 8]
--- :   0.00:  0.00:  7.60 ->  Done!
+-- :   0.00:  0.16:  7.20 ->  Done!
 State: [30, 0, 8]
 State: [20, 1, 6]
 State: [10, 2, 8]
@@ -3528,98 +1286,98 @@ State: [0, 7, 5]
 -- :   0.00:  0.00:  1.47: 33.27: 15.37:  5.49: 11.76:  7.00 ->  Done!
 State: [30, 0, 4]
 State: [20, 1, 3]
-State: [10, 2, 4]
+State: [11, 2, 4]
 State: [2, 3, 5]
 State: [0, 4, 3]
 State: [0, 5, 4]
 State: [0, 6, 5]
 -- :   0.00:  0.00:  0.00: 13.52:  8.23:  7.84:  7.00 ->  Done!
 State: [30, 0, 5]
-State: [21, 1, 6]
-State: [11, 2, 4]
-State: [1, 3, 5]
--- :   0.00:  0.00:  0.00:  6.60 ->  Done!
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [0, 3, 5]
+-- :   0.00:  0.00:  0.00:  7.00 ->  Done!
 State: [30, 0, 8]
 State: [20, 1, 8]
-State: [11, 2, 2]
-State: [6, 3, 3]
+State: [12, 2, 2]
+State: [4, 3, 3]
 State: [0, 4, 2]
 State: [0, 5, 5]
--- :   0.00:  3.62:  0.00:  0.00:  3.92:  7.00 ->  Done!
+-- :   0.00:  8.00:  0.00:  1.26:  3.92:  7.00 ->  Done!
 State: [30, 0, 2]
 State: [20, 1, 5]
-State: [13, 2, 6]
-State: [4, 3, 3]
+State: [10, 2, 6]
+State: [0, 3, 3]
 State: [0, 4, 6]
 State: [0, 5, 6]
--- :   0.00:  0.00:  0.00:  1.26: 11.76:  8.40 ->  Done!
+-- :   0.00:  0.00:  0.00:  8.23: 11.76:  8.40 ->  Done!
 State: [30, 0, 2]
 State: [20, 1, 5]
-State: [13, 2, 3]
-State: [3, 3, 4]
+State: [10, 2, 3]
+State: [1, 3, 4]
 State: [0, 4, 3]
--- :   0.00:  0.00:  0.00:  4.96:  4.20 ->  Done!
+-- :   0.00:  0.00:  0.00:  6.88:  4.20 ->  Done!
 State: [30, 0, 6]
 State: [20, 1, 5]
-State: [13, 2, 3]
-State: [3, 3, 5]
+State: [10, 2, 3]
+State: [1, 3, 5]
 State: [0, 4, 7]
 State: [0, 5, 4]
--- :   0.00:  0.00:  0.00:  8.49: 13.72:  5.60 ->  Done!
+-- :   0.00:  0.00:  0.00: 11.98: 13.72:  5.60 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 4]
-State: [10, 2, 8]
-State: [1, 3, 8]
+State: [12, 2, 8]
+State: [2, 3, 8]
 State: [0, 4, 6]
 State: [0, 5, 8]
 State: [0, 6, 7]
 State: [0, 7, 4]
--- :   0.00:  0.00:  1.47: 38.65: 23.05: 21.95: 13.72:  5.60 ->  Done!
+-- :   0.00:  0.00:  0.00: 34.27: 23.05: 21.95: 13.72:  5.60 ->  Done!
 State: [30, 0, 2]
 State: [20, 1, 6]
 State: [10, 2, 5]
-State: [0, 3, 4]
+State: [2, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
 State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 15.37:  8.23:  7.84:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00:  9.68:  8.23:  7.84:  7.00 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 4]
-State: [10, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
+State: [12, 2, 5]
+-- :   0.00:  0.16:  4.60 ->  Done!
 State: [30, 0, 5]
-State: [21, 1, 6]
-State: [11, 2, 4]
-State: [1, 3, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [0, 3, 5]
 State: [0, 4, 8]
 State: [0, 5, 8]
 State: [0, 6, 2]
--- :   0.00:  0.00:  0.00: 16.37: 21.95: 15.68:  2.80 ->  Done!
+-- :   0.00:  0.00:  0.00: 19.21: 21.95: 15.68:  2.80 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 2]
-State: [10, 2, 5]
-State: [0, 3, 2]
--- :   0.00:  0.00:  0.20:  2.80 ->  Done!
+State: [11, 2, 5]
+State: [1, 3, 2]
+-- :   0.00:  0.00:  0.20:  2.40 ->  Done!
 State: [30, 0, 5]
-State: [21, 1, 6]
-State: [11, 2, 3]
-State: [5, 3, 6]
+State: [20, 1, 6]
+State: [10, 2, 3]
+State: [1, 3, 6]
 State: [0, 4, 6]
 State: [0, 5, 2]
--- :   0.00:  0.00:  0.00:  7.74: 11.76:  2.80 ->  Done!
+-- :   0.00:  0.00:  0.00: 14.72: 11.76:  2.80 ->  Done!
 State: [30, 0, 5]
-State: [21, 1, 3]
-State: [13, 2, 4]
-State: [3, 3, 3]
+State: [20, 1, 3]
+State: [11, 2, 4]
+State: [2, 3, 3]
 State: [0, 4, 6]
--- :   0.00:  0.00:  0.00:  3.00:  8.40 ->  Done!
+-- :   0.00:  0.00:  0.00:  3.96:  8.40 ->  Done!
 State: [30, 0, 5]
-State: [21, 1, 3]
-State: [13, 2, 5]
+State: [20, 1, 3]
+State: [11, 2, 5]
 -- :   0.00:  0.00:  3.00 ->  Done!
 State: [30, 0, 7]
 State: [20, 1, 4]
-State: [10, 2, 3]
+State: [12, 2, 3]
 State: [3, 3, 4]
 State: [0, 4, 8]
 State: [0, 5, 8]
@@ -3631,103 +1389,103 @@ State: [0, 9, 4]
 State: [30, 0, 2]
 State: [20, 1, 6]
 State: [10, 2, 5]
+State: [2, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  0.00:  7.49:  5.88:  5.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [11, 2, 4]
+State: [2, 3, 5]
+-- :   0.00:  0.00:  0.00:  6.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [0, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+State: [0, 7, 3]
+State: [0, 8, 2]
+-- :   0.00:  0.00:  0.00: 37.65: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 2]
+State: [11, 2, 5]
+State: [1, 3, 6]
+State: [0, 4, 3]
+State: [0, 5, 6]
+State: [0, 6, 6]
+-- :   0.00:  0.00:  0.00: 20.21:  8.23: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [10, 2, 3]
+State: [1, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 6]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00: 12.52:  8.23: 11.76:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 5]
+State: [10, 2, 7]
 State: [0, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
 -- :   0.00:  0.00:  0.00: 10.98:  5.88:  5.60 ->  Done!
-State: [30, 0, 5]
-State: [21, 1, 3]
-State: [13, 2, 4]
-State: [3, 3, 5]
--- :   0.00:  0.00:  0.00:  5.80 ->  Done!
-State: [30, 0, 5]
-State: [21, 1, 6]
-State: [11, 2, 4]
-State: [1, 3, 5]
-State: [0, 4, 8]
-State: [0, 5, 8]
-State: [0, 6, 2]
-State: [0, 7, 3]
-State: [0, 8, 2]
--- :   0.00:  0.00:  0.00: 31.12: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
-State: [30, 0, 5]
-State: [21, 1, 2]
-State: [12, 2, 5]
-State: [2, 3, 6]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 6]
--- :   0.00:  0.00:  0.00: 17.37:  8.23: 11.76:  8.40 ->  Done!
-State: [30, 0, 2]
-State: [20, 1, 5]
-State: [13, 2, 3]
-State: [3, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 6]
-State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  6.84:  8.23: 11.76:  7.00 ->  Done!
-State: [30, 0, 3]
-State: [20, 1, 5]
-State: [13, 2, 7]
-State: [7, 3, 4]
-State: [0, 4, 3]
-State: [0, 5, 4]
--- :   0.00:  0.00:  9.84:  0.00:  5.88:  5.60 ->  Done!
 State: [30, 0, 8]
 State: [20, 1, 8]
-State: [11, 2, 6]
--- :   4.51:  7.04:  6.40 ->  Done!
+State: [12, 2, 6]
+-- :   4.51:  8.00:  4.80 ->  Done!
 State: [30, 0, 8]
 State: [20, 1, 7]
-State: [10, 2, 4]
--- :   4.51:  4.12:  2.40 ->  Done!
+State: [11, 2, 4]
+-- :   4.51:  5.08:  2.00 ->  Done!
 State: [30, 0, 2]
 State: [20, 1, 6]
 State: [10, 2, 5]
-State: [0, 3, 4]
+State: [2, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
 State: [0, 6, 5]
--- :   0.00:  0.00:  0.00: 15.37:  8.23:  7.84:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00:  9.68:  8.23:  7.84:  7.00 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 4]
-State: [10, 2, 5]
--- :   0.00:  0.00:  3.00 ->  Done!
+State: [12, 2, 5]
+-- :   0.00:  0.16:  4.60 ->  Done!
 State: [30, 0, 5]
-State: [21, 1, 6]
-State: [11, 2, 4]
-State: [1, 3, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [0, 3, 5]
 State: [0, 4, 8]
 State: [0, 5, 8]
 State: [0, 6, 2]
 State: [0, 7, 3]
 State: [0, 8, 2]
--- :   0.00:  0.00:  0.00: 31.12: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
+-- :   0.00:  0.00:  0.00: 37.65: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
 State: [30, 0, 5]
-State: [21, 1, 2]
-State: [12, 2, 5]
+State: [20, 1, 2]
+State: [11, 2, 5]
 -- :   0.00:  0.00:  3.00 ->  Done!
 State: [30, 0, 6]
 State: [20, 1, 3]
-State: [10, 2, 6]
-State: [1, 3, 6]
+State: [11, 2, 6]
+State: [5, 3, 6]
 State: [0, 4, 2]
 State: [0, 5, 5]
--- :   0.00:  0.00:  0.00: 14.72:  3.92:  7.00 ->  Done!
+-- :   0.00:  0.00:  6.00:  7.74:  3.92:  7.00 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 4]
-State: [10, 2, 3]
+State: [12, 2, 3]
 State: [3, 3, 6]
 State: [0, 4, 5]
 State: [0, 5, 3]
 -- :   0.00:  0.00:  0.00: 11.23:  9.80:  4.20 ->  Done!
 State: [30, 0, 5]
-State: [21, 1, 7]
-State: [12, 2, 4]
-State: [4, 3, 3]
+State: [20, 1, 7]
+State: [11, 2, 4]
+State: [2, 3, 3]
 State: [0, 4, 4]
 State: [0, 5, 8]
--- :   0.00:  0.00:  0.00:  1.26:  7.84: 11.20 ->  Done!
+-- :   0.00:  0.00:  0.00:  4.74:  7.84: 11.20 ->  Done!
 State: [30, 0, 8]
 State: [20, 1, 6]
 State: [10, 2, 8]
@@ -3737,23 +1495,529 @@ State: [0, 4, 4]
 State: [30, 0, 2]
 State: [20, 1, 6]
 State: [10, 2, 5]
-State: [0, 3, 4]
+State: [2, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
--- :   0.00:  0.00:  0.00: 10.98:  5.88:  5.60 ->  Done!
+-- :   0.00:  0.00:  0.00:  7.49:  5.88:  5.60 ->  Done!
 State: [30, 0, 5]
-State: [21, 1, 3]
-State: [13, 2, 4]
-State: [3, 3, 5]
--- :   0.00:  0.00:  0.00:  5.80 ->  Done!
-State: [30, 0, 5]
-State: [21, 1, 6]
+State: [20, 1, 3]
 State: [11, 2, 4]
-State: [1, 3, 5]
--- :   0.00:  0.00:  0.00:  6.60 ->  Done!
+State: [2, 3, 5]
+-- :   0.00:  0.00:  0.00:  6.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [10, 2, 4]
+State: [0, 3, 5]
+-- :   0.00:  0.00:  0.00:  7.00 ->  Done!
 State: [30, 0, 8]
 State: [20, 1, 8]
-State: [11, 2, 2]
+State: [12, 2, 2]
+State: [4, 3, 3]
+State: [0, 4, 2]
+State: [0, 5, 5]
+State: [0, 6, 2]
+State: [0, 7, 5]
+-- :   0.00:  8.00:  0.00:  0.00:  7.68: 13.72:  3.92:  7.00 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 3]
+State: [11, 2, 6]
+State: [5, 3, 6]
+-- :   0.00:  0.00:  6.00:  6.40 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [10, 2, 3]
+State: [1, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 6]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00: 12.52:  8.23: 11.76:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 5]
+State: [10, 2, 7]
+-- :   0.00:  0.20:  5.80 ->  Done!
+State: [30, 0, 4]
+State: [20, 1, 3]
+State: [11, 2, 4]
+State: [2, 3, 8]
+State: [0, 4, 8]
+-- :   0.00:  0.00:  0.00: 13.76: 11.20 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 8]
+State: [12, 2, 7]
+State: [5, 3, 4]
+-- :   0.00:  8.00:  7.00:  3.60 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 6]
+State: [10, 2, 5]
+State: [2, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+State: [0, 6, 5]
+State: [0, 7, 3]
+State: [0, 8, 4]
+State: [0, 9, 5]
+-- :   0.00:  0.00:  0.00: 23.08: 22.59: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
+[21.0, 29.481599999999997, 24.663999999999987, 15.879999999999995, 9.719999999999997, 43.74079999999998, 6.799999999999999, 50.65823999999998, 87.69599999999997, 73.95455999999999, 0.7999999999999985, 15.199999999999994, 7.079999999999998, 26.67199999999999, 50.80959999999999, 13.879999999999999, 40.599999999999994, 107.93322239999998, 11.079999999999998, 0.7999999999999985, 7.079999999999998, 7.359999999999998, 74.35430399999997, 36.596799999999995, 7.0, 20.175999999999988, 28.391999999999996, 11.079999999999998, 31.295999999999992, 98.59103999999996, 32.7552, 4.759999999999998, 59.639999999999986, 2.599999999999999, 29.279999999999994, 12.359999999999998, 3.0, 181.12515839999992, 18.967999999999996, 6.2, 125.57439999999995, 48.59999999999999, 39.51679999999999, 22.455999999999996, 17.31199999999999, 11.591999999999995, 32.7552, 4.759999999999998, 125.57439999999995, 3.0, 24.663999999999987, 25.23199999999999, 23.784, 24.615999999999993, 18.967999999999996, 6.2, 7.0, 40.32319999999997, 12.399999999999995, 39.51679999999999, 5.999999999999998, 24.959999999999994, 18.599999999999994, 109.46426879999999]
+  Trial   3/200  |  value=0.8181  |  best=0.8310  |  elapsed=4581s
+Episode 10000 Average Reward: -130.43030129642491
+Episode 20000 Average Reward: -128.40626848870394
+Episode 30000 Average Reward: -123.01698895331323
+Episode 40000 Average Reward: -123.05200037110778
+Episode 50000 Average Reward: -123.01700856804347
+Episode 60000 Average Reward: -120.63901782364157
+Episode 70000 Average Reward: -120.7680038621286
+Episode 80000 Average Reward: -119.46745408451578
+Episode 90000 Average Reward: -120.46301614689276
+Episode 100000 Average Reward: -120.3225189056614
+Episode 110000 Average Reward: -115.59463952316412
+Episode 120000 Average Reward: -117.53465602918395
+Episode 130000 Average Reward: -117.60653845388282
+Episode 140000 Average Reward: -117.12910356495355
+Episode 150000 Average Reward: -117.08319954127867
+Episode 160000 Average Reward: -115.5497071115878
+Episode 170000 Average Reward: -114.95667267576829
+Episode 180000 Average Reward: -112.73340416024571
+Episode 190000 Average Reward: -113.90384085555195
+Episode 200000 Average Reward: -117.42702493130746
+Episode 210000 Average Reward: -113.20649049255931
+Episode 220000 Average Reward: -111.72988990684156
+Episode 230000 Average Reward: -112.1587320799334
+Episode 240000 Average Reward: -112.13144089509885
+Episode 250000 Average Reward: -111.5135485703577
+Episode 260000 Average Reward: -110.23287974921213
+Episode 270000 Average Reward: -112.08380318600186
+Episode 280000 Average Reward: -108.32633687159806
+Episode 290000 Average Reward: -111.51769493968892
+Episode 300000 Average Reward: -109.6111105218457
+Episode 310000 Average Reward: -108.36795067146237
+Episode 320000 Average Reward: -107.38571700137979
+Episode 330000 Average Reward: -107.7004557794406
+Episode 340000 Average Reward: -105.97693435968507
+Episode 350000 Average Reward: -107.22918784220155
+Episode 360000 Average Reward: -103.98436401773563
+Episode 370000 Average Reward: -103.49804598376444
+Episode 380000 Average Reward: -102.47770834240508
+Episode 390000 Average Reward: -104.36833680505853
+Episode 400000 Average Reward: -103.17576904321021
+Episode 410000 Average Reward: -105.51954919748604
+Episode 420000 Average Reward: -102.53618958751741
+Episode 430000 Average Reward: -102.11646930556925
+Episode 440000 Average Reward: -100.99574119899133
+Episode 450000 Average Reward: -102.499903174103
+Episode 460000 Average Reward: -101.63814316867581
+Episode 470000 Average Reward: -99.64204983228413
+Episode 480000 Average Reward: -98.27416262627324
+Episode 490000 Average Reward: -98.78336073215998
+Episode 500000 Average Reward: -100.91661652790269
+Episode 510000 Average Reward: -97.7605225864294
+Episode 520000 Average Reward: -96.62197196274685
+Episode 530000 Average Reward: -98.27828943793149
+Episode 540000 Average Reward: -95.9531710306406
+Episode 550000 Average Reward: -97.27540105924604
+Episode 560000 Average Reward: -97.91126986893309
+Episode 570000 Average Reward: -95.36776790383612
+Episode 580000 Average Reward: -95.0536099755622
+Episode 590000 Average Reward: -97.17852711869438
+Episode 600000 Average Reward: -93.20108297974781
+Episode 610000 Average Reward: -93.07084285155325
+Episode 620000 Average Reward: -92.73292178006012
+Episode 630000 Average Reward: -94.24139455405053
+Episode 640000 Average Reward: -93.06990077474813
+Episode 650000 Average Reward: -93.35280066878461
+Episode 660000 Average Reward: -89.73119236504573
+Episode 670000 Average Reward: -92.56942295705596
+Episode 680000 Average Reward: -90.07844692515836
+Episode 690000 Average Reward: -90.89416730772479
+Episode 700000 Average Reward: -89.19376617893884
+Episode 710000 Average Reward: -88.98354086407167
+Episode 720000 Average Reward: -87.21990685389822
+Episode 730000 Average Reward: -89.28445255551998
+Episode 740000 Average Reward: -88.30787110520829
+Episode 750000 Average Reward: -87.93292182573053
+Episode 760000 Average Reward: -87.01960258605052
+Episode 770000 Average Reward: -87.44299078076413
+Episode 780000 Average Reward: -86.17037461903358
+Episode 790000 Average Reward: -86.96300829220863
+Episode 800000 Average Reward: -86.76954027767805
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [11, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 8]
+-- :   0.00:  0.00:  0.00:  5.96: 11.20 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 2]
+State: [10, 2, 3]
+State: [0, 3, 2]
+State: [0, 4, 5]
+State: [0, 5, 2]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00:  7.68: 13.72:  3.92:  7.00 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 3]
+State: [10, 2, 6]
+State: [4, 3, 6]
+State: [0, 4, 2]
+State: [0, 5, 5]
+-- :   0.00:  0.00:  6.00:  9.49:  3.92:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 3]
+State: [0, 3, 6]
+State: [0, 4, 5]
+-- :   0.00:  0.00:  0.00: 11.76:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 5]
+State: [10, 2, 7]
+State: [2, 3, 4]
+-- :   0.00:  0.00:  6.04:  4.80 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 8]
+State: [2, 3, 8]
+State: [0, 4, 6]
+State: [0, 5, 8]
+-- :   0.00:  0.00:  8.00: 18.46: 11.76: 11.20 ->  Done!
+State: [30, 0, 7]
+State: [20, 1, 4]
+State: [10, 2, 2]
+State: [6, 3, 6]
+-- :   0.00:  0.00:  0.08:  6.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 4]
+State: [10, 2, 3]
+State: [0, 3, 4]
+State: [0, 4, 5]
+State: [0, 5, 3]
+State: [0, 6, 4]
+State: [0, 7, 5]
+-- :   0.00:  0.00:  0.00: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [11, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+State: [0, 7, 3]
+-- :   0.00:  0.00:  0.00:  9.38: 30.73: 21.95:  3.92:  4.20 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [10, 2, 2]
+State: [6, 3, 5]
+State: [0, 4, 6]
+State: [0, 5, 3]
+State: [0, 6, 6]
+State: [0, 7, 6]
+-- :   0.00:  0.00:  0.00:  0.62: 23.05:  8.23: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [10, 2, 3]
+-- :   0.00:  0.20:  0.20 ->  Done!
+State: [30, 0, 4]
+State: [20, 1, 3]
+State: [10, 2, 6]
+State: [4, 3, 5]
+State: [0, 4, 3]
+-- :   0.00:  0.00:  6.00:  5.96:  4.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 7]
+State: [13, 2, 4]
+-- :   0.00:  7.00:  3.20 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 8]
+State: [2, 3, 8]
+State: [0, 4, 6]
+-- :   0.00:  0.00:  8.00: 13.76:  8.40 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 7]
+State: [13, 2, 4]
+State: [7, 3, 2]
+State: [0, 4, 6]
+State: [0, 5, 5]
+State: [0, 6, 4]
+State: [0, 7, 3]
+-- :   0.00:  7.00:  0.00:  0.00: 23.05: 13.72:  7.84:  4.20 ->  Done!
+State: [30, 0, 4]
+State: [20, 1, 5]
+State: [10, 2, 3]
+State: [0, 3, 4]
+State: [0, 4, 5]
+-- :   0.00:  0.00:  0.00:  7.84:  7.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [11, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+-- :   0.00:  0.00:  0.00:  6.74: 15.68: 11.20 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 3]
+State: [10, 2, 2]
+State: [6, 3, 5]
+State: [0, 4, 2]
+State: [0, 5, 5]
+State: [0, 6, 6]
+State: [0, 7, 3]
+State: [0, 8, 6]
+State: [0, 9, 6]
+-- :   0.00:  0.00:  0.00:  0.00: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [10, 2, 3]
+State: [0, 3, 4]
+State: [0, 4, 3]
+-- :   0.00:  0.00:  0.00:  7.84:  4.20 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 5]
+State: [10, 2, 3]
+-- :   0.00:  0.20:  0.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 7]
+State: [13, 2, 4]
+-- :   0.00:  7.00:  3.20 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 8]
+-- :   0.00:  0.00:  8.00 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 6]
+State: [11, 2, 8]
+State: [4, 3, 7]
+State: [0, 4, 4]
+State: [0, 5, 2]
+State: [0, 6, 6]
+State: [0, 7, 5]
+-- :   0.00:  0.00: 14.53: 20.13: 15.37:  5.49: 11.76:  7.00 ->  Done!
+State: [30, 0, 4]
+State: [20, 1, 3]
+State: [10, 2, 4]
+State: [1, 3, 5]
+State: [0, 4, 3]
+State: [0, 5, 4]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00: 16.37:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [11, 2, 4]
+State: [4, 3, 5]
+-- :   0.00:  0.77:  1.12:  5.40 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 8]
+State: [10, 2, 2]
+State: [6, 3, 3]
+State: [0, 4, 2]
+State: [0, 5, 5]
+-- :   0.00:  0.00:  0.00:  0.00:  3.92:  7.00 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [10, 2, 6]
+State: [4, 3, 3]
+State: [0, 4, 6]
+State: [0, 5, 6]
+-- :   0.00:  0.00:  6.00:  1.26: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [10, 2, 3]
+State: [0, 3, 4]
+State: [0, 4, 3]
+-- :   0.00:  0.00:  0.00:  7.84:  4.20 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 5]
+State: [10, 2, 3]
+State: [0, 3, 5]
+State: [0, 4, 7]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  0.00: 13.72: 13.72:  5.60 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 8]
+State: [2, 3, 8]
+State: [0, 4, 6]
+State: [0, 5, 8]
+State: [0, 6, 7]
+State: [0, 7, 4]
+-- :   0.00:  0.00:  8.00: 34.27: 23.05: 21.95: 13.72:  5.60 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 6]
+State: [11, 2, 5]
+State: [1, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00: 12.52:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 5]
+-- :   0.00:  0.00:  3.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [11, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+-- :   0.00:  0.00:  0.00:  7.84: 21.95: 15.68:  2.80 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 2]
+State: [10, 2, 5]
+State: [2, 3, 2]
+-- :   0.00:  0.00:  2.12:  2.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [11, 2, 3]
+State: [3, 3, 6]
+State: [0, 4, 6]
+State: [0, 5, 2]
+-- :   0.00:  0.00:  0.00: 11.23: 11.76:  2.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [10, 2, 4]
+State: [1, 3, 3]
+State: [0, 4, 6]
+-- :   0.00:  0.00:  0.00:  4.92:  8.40 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [10, 2, 5]
+-- :   0.00:  0.00:  3.80 ->  Done!
+State: [30, 0, 7]
+State: [20, 1, 4]
+State: [10, 2, 3]
+State: [0, 3, 4]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 6]
+State: [0, 7, 8]
+State: [0, 8, 7]
+State: [0, 9, 4]
+-- :   0.00:  0.00:  0.00: 42.17: 60.24: 43.03: 23.05: 21.95: 13.72:  5.60 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 6]
+State: [11, 2, 5]
+State: [1, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  0.00:  9.23:  5.88:  5.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [10, 2, 4]
+State: [1, 3, 5]
+-- :   0.00:  0.00:  0.00:  6.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [11, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+State: [0, 7, 3]
+State: [0, 8, 2]
+-- :   0.00:  0.00:  0.00: 11.53: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 2]
+State: [10, 2, 5]
+State: [2, 3, 6]
+State: [0, 4, 3]
+State: [0, 5, 6]
+State: [0, 6, 6]
+-- :   0.00:  0.00:  0.00: 17.37:  8.23: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 5]
+State: [10, 2, 3]
+State: [0, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 6]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00: 15.37:  8.23: 11.76:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 5]
+State: [10, 2, 7]
+State: [2, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  4.16:  7.49:  5.88:  5.60 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 8]
+State: [10, 2, 6]
+-- :   4.51:  6.08:  6.00 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 7]
+State: [13, 2, 4]
+-- :   4.51:  7.00:  3.20 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 6]
+State: [11, 2, 5]
+State: [1, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00: 12.52:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 5]
+-- :   0.00:  0.00:  3.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [11, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+State: [0, 7, 3]
+State: [0, 8, 2]
+-- :   0.00:  0.00:  0.00: 11.53: 43.03: 30.73:  5.49:  5.88:  2.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 2]
+State: [10, 2, 5]
+-- :   0.00:  0.00:  3.80 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 3]
+State: [10, 2, 6]
+State: [4, 3, 6]
+State: [0, 4, 2]
+State: [0, 5, 5]
+-- :   0.00:  0.00:  6.00:  9.49:  3.92:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 3]
+State: [0, 3, 6]
+State: [0, 4, 5]
+State: [0, 5, 3]
+-- :   0.00:  0.00:  0.00: 16.46:  9.80:  4.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 7]
+State: [13, 2, 4]
+State: [7, 3, 3]
+State: [0, 4, 4]
+State: [0, 5, 8]
+-- :   0.00:  7.00:  0.00:  0.00:  7.84: 11.20 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 6]
+State: [11, 2, 8]
+State: [4, 3, 7]
+State: [0, 4, 4]
+-- :   0.00:  0.00:  9.74:  9.88:  5.60 ->  Done!
+State: [30, 0, 2]
+State: [20, 1, 6]
+State: [11, 2, 5]
+State: [1, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  0.00:  9.23:  5.88:  5.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [10, 2, 4]
+State: [1, 3, 5]
+-- :   0.00:  0.00:  0.00:  6.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [11, 2, 4]
+State: [4, 3, 5]
+-- :   0.00:  0.77:  1.12:  5.40 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 8]
+State: [10, 2, 2]
 State: [6, 3, 3]
 State: [0, 4, 2]
 State: [0, 5, 5]
@@ -3763,120 +2027,386 @@ State: [0, 7, 5]
 State: [30, 0, 6]
 State: [20, 1, 3]
 State: [10, 2, 6]
-State: [1, 3, 6]
--- :   0.00:  0.00:  3.12:  8.00 ->  Done!
+State: [4, 3, 6]
+-- :   0.00:  0.00:  6.00:  6.80 ->  Done!
 State: [30, 0, 2]
 State: [20, 1, 5]
-State: [13, 2, 3]
-State: [3, 3, 4]
+State: [10, 2, 3]
+State: [0, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 6]
 State: [0, 6, 5]
--- :   0.00:  0.00:  0.00:  6.84:  8.23: 11.76:  7.00 ->  Done!
+-- :   0.00:  0.00:  0.00: 15.37:  8.23: 11.76:  7.00 ->  Done!
 State: [30, 0, 3]
 State: [20, 1, 5]
-State: [13, 2, 7]
--- :   0.00:  3.08:  7.40 ->  Done!
+State: [10, 2, 7]
+-- :   0.00:  0.20:  6.60 ->  Done!
 State: [30, 0, 4]
 State: [20, 1, 3]
 State: [10, 2, 4]
-State: [2, 3, 8]
+State: [1, 3, 8]
 State: [0, 4, 8]
--- :   0.00:  0.00:  0.00: 13.76: 11.20 ->  Done!
+-- :   0.00:  0.00:  0.00: 14.72: 11.20 ->  Done!
 State: [30, 0, 6]
 State: [20, 1, 8]
-State: [11, 2, 7]
-State: [1, 3, 4]
--- :   0.00:  6.26:  4.12:  5.20 ->  Done!
+State: [10, 2, 7]
+State: [2, 3, 4]
+-- :   0.00:  4.51:  6.04:  4.80 ->  Done!
 State: [30, 0, 2]
 State: [20, 1, 6]
-State: [10, 2, 5]
-State: [0, 3, 4]
+State: [11, 2, 5]
+State: [1, 3, 4]
 State: [0, 4, 3]
 State: [0, 5, 4]
 State: [0, 6, 5]
 State: [0, 7, 3]
 State: [0, 8, 4]
 State: [0, 9, 5]
--- :   0.00:  0.00:  0.00: 42.17: 22.59: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
-[20.04, 24.639999999999997, 25.639999999999993, 15.879999999999995, 12.271999999999993, 48.32639999999999, 7.599999999999999, 42.27999999999999, 83.31775999999996, 56.44159999999999, 3.279999999999998, 13.807999999999995, 7.479999999999998, 29.375999999999994, 50.80959999999999, 11.959999999999999, 38.855999999999995, 127.01592319999997, 9.159999999999998, 3.279999999999998, 7.479999999999998, 7.6, 74.35430399999997, 36.596799999999995, 6.6, 14.541759999999995, 21.415999999999997, 9.159999999999998, 27.808, 104.43974399999996, 38.43839999999999, 3.0, 56.79839999999999, 2.999999999999999, 22.303999999999995, 11.399999999999997, 3.0, 181.12515839999992, 22.455999999999996, 5.8, 119.04486399999996, 45.75839999999998, 33.83359999999999, 21.32159999999999, 17.951999999999995, 11.031999999999993, 38.43839999999999, 3.0, 119.04486399999996, 3.0, 25.639999999999993, 25.23199999999999, 20.295999999999996, 24.615999999999993, 22.455999999999996, 5.8, 6.6, 32.32319999999999, 11.119999999999996, 33.83359999999999, 10.479999999999997, 24.959999999999994, 15.575999999999995, 128.54696959999995]
-  Trial   7/200  |  value=0.8206  |  best=0.8290  |  elapsed=13636s
-Episode 10000 Average Reward: -119.33738565887995
-Episode 20000 Average Reward: -110.77739697599486
-Episode 30000 Average Reward: -108.73835269834748
-Episode 40000 Average Reward: -107.45457211322365
-Episode 50000 Average Reward: -106.40850568621052
-Episode 60000 Average Reward: -105.57848843187196
-Episode 70000 Average Reward: -104.78713878263804
-Episode 80000 Average Reward: -105.37546964828155
-Episode 90000 Average Reward: -108.64761865827325
-Episode 100000 Average Reward: -107.01709912980476
-Episode 110000 Average Reward: -105.20748053938173
-Episode 120000 Average Reward: -105.71244610144251
-Episode 130000 Average Reward: -102.0967825962598
-Episode 140000 Average Reward: -104.95653625806845
-Episode 150000 Average Reward: -103.66658769236989
-Episode 160000 Average Reward: -102.40506769976317
-Episode 170000 Average Reward: -104.34164096437244
-Episode 180000 Average Reward: -104.50829122004987
-Episode 190000 Average Reward: -103.63348409553916
-Episode 200000 Average Reward: -102.20099153319933
-Episode 210000 Average Reward: -104.31615407251452
-Episode 220000 Average Reward: -104.083448897495
-Episode 230000 Average Reward: -102.592559678935
-Episode 240000 Average Reward: -102.60423437759485
-Episode 250000 Average Reward: -102.64220702706685
-Episode 260000 Average Reward: -103.76275186941947
-Episode 270000 Average Reward: -101.13070843774972
-Episode 280000 Average Reward: -102.39882066051067
-Episode 290000 Average Reward: -101.341036482775
-Episode 300000 Average Reward: -104.04327906375677
-Episode 310000 Average Reward: -101.31856654406653
-Episode 320000 Average Reward: -99.65761546933244
-Episode 330000 Average Reward: -99.63319623221244
-Episode 340000 Average Reward: -101.21184554140667
-Episode 350000 Average Reward: -100.5706906920038
-Episode 360000 Average Reward: -103.18219347787772
-Episode 370000 Average Reward: -99.87504878218236
-Episode 380000 Average Reward: -100.77118898937853
-Episode 390000 Average Reward: -100.73240869107707
-Episode 400000 Average Reward: -100.19397166708733
-Episode 410000 Average Reward: -98.00578546060285
-Episode 420000 Average Reward: -98.72256631881726
-Episode 430000 Average Reward: -98.45051619076092
-Episode 440000 Average Reward: -99.0999079983411
-Episode 450000 Average Reward: -97.52379306637309
-Episode 460000 Average Reward: -99.31574449870845
-Episode 470000 Average Reward: -97.40506044711931
-Episode 480000 Average Reward: -96.45699942295548
-Episode 490000 Average Reward: -96.96274042996733
-Episode 500000 Average Reward: -98.02345733097468
-Episode 510000 Average Reward: -96.5905155657318
-Episode 520000 Average Reward: -97.68083408835581
-Episode 530000 Average Reward: -98.17083531232252
-Episode 540000 Average Reward: -95.79270331525116
-Episode 550000 Average Reward: -96.74195477073917
-Episode 560000 Average Reward: -95.77357814524925
-Episode 570000 Average Reward: -96.6619792108851
-Episode 580000 Average Reward: -95.92605719869437
-Episode 590000 Average Reward: -96.17030047582205
-Episode 600000 Average Reward: -96.43388088250366
-Episode 610000 Average Reward: -95.3720799975731
-Episode 620000 Average Reward: -96.97053244277755
-Episode 630000 Average Reward: -94.51591026336764
-Episode 640000 Average Reward: -94.9488780261478
-Episode 650000 Average Reward: -94.86396662593533
-Episode 660000 Average Reward: -93.62705125303292
-Episode 670000 Average Reward: -94.50083851856893
-Episode 680000 Average Reward: -94.91747438557181
-Episode 690000 Average Reward: -95.90639363986428
-Episode 700000 Average Reward: -93.8340710620774
-Episode 710000 Average Reward: -93.51978054087677
-Episode 720000 Average Reward: -95.70352998443003
-Episode 730000 Average Reward: -92.25488528200701
-Episode 740000 Average Reward: -93.21577949564924
-Episode 750000 Average Reward: -95.25220509520892
-Episode 760000 Average Reward: -93.9670672024678
-Episode 770000 Average Reward: -93.11674550202366
-Episode 780000 Average Reward: -93.67580438476796
-Episode 790000 Average Reward: -92.33866358519805
+-- :   0.00:  0.00:  0.00: 32.62: 22.59: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
+[17.159999999999997, 32.32319999999999, 26.407999999999987, 18.759999999999998, 10.839999999999998, 49.42399999999998, 6.079999999999997, 63.79295999999998, 70.18303999999998, 52.06335999999998, 0.3999999999999986, 16.159999999999993, 10.199999999999996, 30.15999999999999, 55.80959999999995, 14.84, 33.623999999999995, 93.39187199999998, 12.04, 0.3999999999999986, 10.199999999999996, 7.999999999999999, 74.27865599999996, 39.43839999999999, 7.287999999999996, 10.92, 27.415999999999986, 12.04, 33.03999999999999, 106.59103999999994, 35.59679999999999, 3.8, 48.27359999999999, 4.119999999999999, 25.79199999999999, 13.319999999999997, 3.8, 209.74920959999992, 20.711999999999996, 6.6, 99.45625599999997, 45.75839999999998, 42.35839999999999, 23.126399999999997, 16.59199999999999, 14.711999999999993, 35.59679999999999, 3.8, 99.45625599999997, 3.8, 26.407999999999987, 30.463999999999995, 26.03999999999998, 25.223999999999997, 20.711999999999996, 6.6, 7.287999999999996, 32.32319999999999, 12.799999999999995, 42.35839999999999, 6.799999999999998, 25.919999999999995, 15.351999999999997, 119.00561919999997]
+  Trial   4/200  |  value=0.8118  |  best=0.8310  |  elapsed=5992s
+Episode 10000 Average Reward: -124.897200585431
+Episode 20000 Average Reward: -116.12574785472509
+Episode 30000 Average Reward: -117.23904383462396
+Episode 40000 Average Reward: -115.68572372444156
+Episode 50000 Average Reward: -111.56359142998012
+Episode 60000 Average Reward: -113.7973158515814
+Episode 70000 Average Reward: -110.79078350994429
+Episode 80000 Average Reward: -113.09992848466939
+Episode 90000 Average Reward: -112.76688926347259
+Episode 100000 Average Reward: -113.76965021135868
+Episode 110000 Average Reward: -112.0941219565158
+Episode 120000 Average Reward: -111.42136957626364
+Episode 130000 Average Reward: -110.3693803301478
+Episode 140000 Average Reward: -108.60479203272699
+Episode 150000 Average Reward: -109.37881618812925
+Episode 160000 Average Reward: -107.82411610652667
+Episode 170000 Average Reward: -107.35317137507323
+Episode 180000 Average Reward: -106.13989923321851
+Episode 190000 Average Reward: -107.94516713245693
+Episode 200000 Average Reward: -105.9894818739302
+Episode 210000 Average Reward: -108.48060853066747
+Episode 220000 Average Reward: -106.31747685949436
+Episode 230000 Average Reward: -104.09857990850557
+Episode 240000 Average Reward: -105.33639758732284
+Episode 250000 Average Reward: -103.84071102019581
+Episode 260000 Average Reward: -105.08097040233467
+Episode 270000 Average Reward: -105.3094292551782
+Episode 280000 Average Reward: -105.05812129012733
+Episode 290000 Average Reward: -102.2608637464883
+Episode 300000 Average Reward: -104.5167954699878
+Episode 310000 Average Reward: -104.15895622844413
+Episode 320000 Average Reward: -105.15183718218749
+Episode 330000 Average Reward: -103.83431420572668
+Episode 340000 Average Reward: -101.56672280693756
+Episode 350000 Average Reward: -102.50621699314685
+Episode 360000 Average Reward: -100.48343241940988
+Episode 370000 Average Reward: -102.30821120867326
+Episode 380000 Average Reward: -101.85210602132477
+Episode 390000 Average Reward: -99.7438007382835
+Episode 400000 Average Reward: -98.38237442295805
+Episode 410000 Average Reward: -99.12729287004157
+Episode 420000 Average Reward: -97.00551343683581
+Episode 430000 Average Reward: -96.04765695433724
+Episode 440000 Average Reward: -96.76129496318973
+Episode 450000 Average Reward: -98.64363929722877
+Episode 460000 Average Reward: -97.29739191462909
+Episode 470000 Average Reward: -97.5729936338227
+Episode 480000 Average Reward: -95.67512004184061
+Episode 490000 Average Reward: -96.24321608952829
+Episode 500000 Average Reward: -96.11473174754302
+Episode 510000 Average Reward: -95.78778470256637
+Episode 520000 Average Reward: -97.13172733944828
+Episode 530000 Average Reward: -92.5796898294579
+Episode 540000 Average Reward: -94.06471200967675
+Episode 550000 Average Reward: -93.6362084245094
+Episode 560000 Average Reward: -92.56068253262845
+Episode 570000 Average Reward: -92.63168016444412
+Episode 580000 Average Reward: -94.34499593676797
+Episode 590000 Average Reward: -95.87064325216252
+Episode 600000 Average Reward: -90.8930334703718
+Episode 610000 Average Reward: -91.49390051682302
+Episode 620000 Average Reward: -93.555485490903
+Episode 630000 Average Reward: -91.19539656893437
+Episode 640000 Average Reward: -90.62544428039165
+Episode 650000 Average Reward: -89.10506691137533
+Episode 660000 Average Reward: -89.43315581807613
+Episode 670000 Average Reward: -90.09404582472699
+Episode 680000 Average Reward: -87.85071663255549
+Episode 690000 Average Reward: -90.37436599880701
+Episode 700000 Average Reward: -88.73791098483709
+Episode 710000 Average Reward: -86.45871491164158
+Episode 720000 Average Reward: -89.7072658954035
+Episode 730000 Average Reward: -86.98464374499325
+Episode 740000 Average Reward: -86.83068192700414
+Episode 750000 Average Reward: -86.92634163940349
+Episode 760000 Average Reward: -87.30440515292156
+Episode 770000 Average Reward: -86.45631468239868
+Episode 780000 Average Reward: -86.40086664395773
+Episode 790000 Average Reward: -82.34445173601277
+Episode 800000 Average Reward: -85.97272898413566
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [12, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 8]
+-- :   0.00:  0.32:  0.00:  5.96: 11.20 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 2]
+State: [12, 2, 3]
+State: [2, 3, 2]
+State: [0, 4, 5]
+State: [0, 5, 2]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00:  2.00: 13.72:  3.92:  7.00 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 3]
+State: [10, 2, 6]
+State: [0, 3, 6]
+State: [0, 4, 2]
+State: [0, 5, 5]
+-- :   0.00:  0.00:  0.00: 16.46:  3.92:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 3]
+State: [0, 3, 6]
+State: [0, 4, 5]
+-- :   0.00:  0.00:  0.00: 11.76:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 5]
+State: [11, 2, 7]
+State: [7, 3, 4]
+-- :   0.00:  0.00:  9.88:  2.80 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 8]
+State: [3, 3, 8]
+State: [0, 4, 6]
+State: [0, 5, 8]
+-- :   0.00:  0.00: 10.84: 16.72: 11.76: 11.20 ->  Done!
+State: [30, 0, 7]
+State: [20, 1, 4]
+State: [10, 2, 2]
+State: [2, 3, 6]
+-- :   0.00:  0.00:  0.00:  7.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 4]
+State: [10, 2, 3]
+State: [0, 3, 4]
+State: [0, 4, 5]
+State: [0, 5, 3]
+State: [0, 6, 4]
+State: [0, 7, 5]
+-- :   0.00:  0.00:  0.00: 21.51: 19.21:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [12, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+State: [0, 7, 3]
+-- :   0.00:  0.00:  0.00:  9.38: 30.73: 21.95:  3.92:  4.20 ->  Done!
+State: [30, 0, 2]
+State: [22, 1, 5]
+State: [14, 2, 2]
+State: [5, 3, 5]
+State: [0, 4, 6]
+State: [0, 5, 3]
+State: [0, 6, 6]
+State: [0, 7, 6]
+-- :   0.00:  0.00:  0.00:  5.00: 23.05:  8.23: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [22, 1, 5]
+State: [14, 2, 3]
+-- :   0.00:  2.12:  0.60 ->  Done!
+State: [30, 0, 4]
+State: [20, 1, 3]
+State: [10, 2, 6]
+State: [0, 3, 5]
+State: [0, 4, 3]
+-- :   0.00:  0.00:  0.00:  9.80:  4.20 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 7]
+State: [10, 2, 4]
+-- :   0.00:  4.12:  3.20 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 8]
+State: [3, 3, 8]
+State: [0, 4, 6]
+-- :   0.00:  0.00:  9.74: 12.80:  8.40 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 7]
+State: [10, 2, 4]
+State: [4, 3, 2]
+State: [0, 4, 6]
+State: [0, 5, 5]
+State: [0, 6, 4]
+State: [0, 7, 3]
+-- :   0.00:  0.00:  0.00:  0.00: 23.05: 13.72:  7.84:  4.20 ->  Done!
+State: [30, 0, 4]
+State: [20, 1, 5]
+State: [11, 2, 3]
+State: [7, 3, 4]
+State: [0, 4, 5]
+-- :   0.00:  0.00:  1.26:  1.12:  7.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [12, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+-- :   0.00:  0.00:  0.00:  6.74: 15.68: 11.20 ->  Done!
+State: [30, 0, 2]
+State: [22, 1, 3]
+State: [12, 2, 2]
+State: [5, 3, 5]
+State: [0, 4, 2]
+State: [0, 5, 5]
+State: [0, 6, 6]
+State: [0, 7, 3]
+State: [0, 8, 6]
+State: [0, 9, 6]
+-- :   0.00:  0.00:  0.00:  5.00: 15.06: 26.89: 23.05:  8.23: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [22, 1, 5]
+State: [14, 2, 3]
+State: [5, 3, 4]
+State: [0, 4, 3]
+-- :   0.00:  0.00:  0.00:  3.04:  4.20 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 5]
+State: [11, 2, 3]
+-- :   0.00:  1.16:  2.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 7]
+State: [10, 2, 4]
+-- :   0.00:  4.12:  3.20 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 8]
+-- :   0.00:  0.00:  8.40 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 6]
+State: [12, 2, 8]
+State: [2, 3, 7]
+State: [0, 4, 4]
+State: [0, 5, 2]
+State: [0, 6, 6]
+State: [0, 7, 5]
+-- :   0.00:  0.00:  0.00: 28.89: 15.37:  5.49: 11.76:  7.00 ->  Done!
+State: [30, 0, 4]
+State: [20, 1, 3]
+State: [10, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 3]
+State: [0, 5, 4]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  0.00:  7.84:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [12, 2, 4]
+State: [4, 3, 5]
+-- :   0.00:  2.51:  0.16:  5.40 ->  Done!
+State: [30, 0, 8]
+State: [20, 1, 8]
+State: [10, 2, 2]
+State: [2, 3, 3]
+State: [0, 4, 2]
+State: [0, 5, 5]
+-- :   0.00:  0.00:  0.00:  4.74:  3.92:  7.00 ->  Done!
+State: [30, 0, 2]
+State: [22, 1, 5]
+State: [14, 2, 6]
+State: [6, 3, 3]
+State: [0, 4, 6]
+State: [0, 5, 6]
+-- :   0.00:  0.00:  0.32:  0.00: 11.76:  8.40 ->  Done!
+State: [30, 0, 2]
+State: [22, 1, 5]
+State: [14, 2, 3]
+State: [5, 3, 4]
+State: [0, 4, 3]
+-- :   0.00:  0.00:  0.00:  3.04:  4.20 ->  Done!
+State: [30, 0, 6]
+State: [20, 1, 5]
+State: [11, 2, 3]
+State: [7, 3, 5]
+State: [0, 4, 7]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  0.16:  1.51: 13.72:  5.60 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 8]
+State: [3, 3, 8]
+State: [0, 4, 6]
+State: [0, 5, 8]
+State: [0, 6, 7]
+State: [0, 7, 4]
+-- :   0.00:  0.00: 14.53: 29.89: 23.05: 21.95: 13.72:  5.60 ->  Done!
+State: [30, 0, 2]
+State: [22, 1, 6]
+State: [12, 2, 5]
+State: [7, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+State: [0, 6, 5]
+-- :   0.00:  0.00:  5.00:  0.00:  8.23:  7.84:  7.00 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 4]
+State: [10, 2, 5]
+-- :   0.00:  0.00:  3.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [12, 2, 4]
+State: [4, 3, 5]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 2]
+-- :   0.00:  0.00:  0.00:  7.84: 21.95: 15.68:  2.80 ->  Done!
+State: [30, 0, 3]
+State: [20, 1, 2]
+State: [12, 2, 5]
+State: [7, 3, 2]
+-- :   0.00:  0.00:  5.00:  0.00 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 6]
+State: [12, 2, 3]
+State: [2, 3, 6]
+State: [0, 4, 6]
+State: [0, 5, 2]
+-- :   0.00:  0.00:  0.00: 12.98: 11.76:  2.80 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [10, 2, 4]
+State: [4, 3, 3]
+State: [0, 4, 6]
+-- :   0.00:  0.00:  0.51:  2.04:  8.40 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [10, 2, 5]
+-- :   0.00:  0.00:  3.80 ->  Done!
+State: [30, 0, 7]
+State: [20, 1, 4]
+State: [10, 2, 3]
+State: [0, 3, 4]
+State: [0, 4, 8]
+State: [0, 5, 8]
+State: [0, 6, 6]
+State: [0, 7, 8]
+State: [0, 8, 7]
+State: [0, 9, 4]
+-- :   0.00:  0.00:  0.00: 42.17: 60.24: 43.03: 23.05: 21.95: 13.72:  5.60 ->  Done!
+State: [30, 0, 2]
+State: [22, 1, 6]
+State: [12, 2, 5]
+State: [7, 3, 4]
+State: [0, 4, 3]
+State: [0, 5, 4]
+-- :   0.00:  0.00:  5.00:  0.00:  5.88:  5.60 ->  Done!
+State: [30, 0, 5]
+State: [20, 1, 3]
+State: [10, 2, 4]
+State: [4, 3, 5]
+-- : 
