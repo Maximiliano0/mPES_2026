@@ -1,0 +1,7 @@
+nohup: no se tendrá en cuenta la entrada
+[watch_and_push] Vigilando PIDs: 243816 243840
+[watch_and_push] Proyecto: /home/mecatronica/Documentos/maximiliano/mPES
+[watch_and_push] Rama: rl_optim
+[watch_and_push] PID 243816 -> PES_QLv2.ext.optimize_rl 80
+[watch_and_push] PID 243840 -> PES_Bayesian.ext.optimize_rl 50
+[watch_and_push] [2026-02-19 12:32] PID 243840 (PES_Bayesian.ext.optimize_rl 50) terminó. Realizando commit + push...
