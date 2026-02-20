@@ -603,7 +603,12 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes, UsePreloadedR
         numpy.random.seed(seed)
         random.seed(seed)
 
-    # Initialize Q table
+    # Initialize Q-table with random values in [-1, 1].
+    # Shape: (resources, trial, severity, action) → e.g. (31, 11, 10, 11) = 37 510 celdas.
+    # Q[r, t, s, a] = "¿Qué tan bueno es asignar 'a' recursos cuando tengo 'r'
+    #                   disponibles, estoy en el trial 't' y la severidad es 's'?"
+    # Valores aleatorios (no ceros) para que argmax no sea determinista al inicio
+    # y favorezca la exploración antes de que los Q-values reales se aprendan.
     Q = numpy.random.uniform(low = -1, high = 1, 
                         size = (  env.available_resources_states, 
                                     env.trial_no_states, 

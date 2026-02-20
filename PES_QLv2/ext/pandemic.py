@@ -713,7 +713,11 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes,
         numpy.random.seed(seed)
         random.seed(seed)
 
-    # Q-table shape
+    # Q-table shape: (resources, trial, severity, action) → e.g. (31, 11, 10, 11) = 37 510 celdas.
+    # Q[r, t, s, a] = "¿Qué tan bueno es asignar 'a' recursos cuando tengo 'r'
+    #                   disponibles, estoy en el trial 't' y la severidad es 's'?"
+    # Valores aleatorios en [-1, 1] (no ceros) para que argmax no sea determinista
+    # al inicio y favorezca la exploración antes de que los Q-values se aprendan.
     q_shape = (env.available_resources_states, 
                env.trial_no_states, 
                env.severity_states,
