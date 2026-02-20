@@ -10,18 +10,24 @@ optimización Bayesiana de hiperparámetros.
 
 | Aspecto | Valor |
 |---------|-------|
-| Algoritmo | Q-Learning tabular |
+| Algoritmo | Double Q-Learning tabular |
 | Espacio de estados | Discreto: `(31 × 11 × 10)` = 3,410 estados |
 | Espacio de acciones | Discreto: 11 acciones (0–10 recursos) |
-| Episodios por entrenamiento | 500k–2M (optimizable por Bayesiana) |
+| Episodios por entrenamiento | 800k–1.2M (optimizable por Bayesiana) |
 | Steps por episodio | 3–10 |
-| Exploración | ε-greedy con decaimiento lineal |
-| Optimización de hiperparámetros | Bayesiana (Optuna, TPE) sobre 5 parámetros |
+| Exploración | ε-greedy con decaimiento exponencial + warm-up |
+| Reward Shaping | PBRS (Ng et al., 1999), coeficiente β optimizable |
+| Optimización de hiperparámetros | Bayesiana (Optuna, TPE) sobre 8 parámetros |
+| Semilla de entrenamiento | CONFIG.SEED (default 42) — fija para comparabilidad |
 | Rendimiento actual | ~0.84 normalizado sobre 64 secuencias |
 
 ---
 
-## Mejoras propuestas
+## Mejoras implementadas
+
+Las tres mejoras propuestas originalmente ya están implementadas e integradas
+en `QLearning()` dentro de `pandemic.py`. Ver `mejoras_qlearning.md` para
+detalles de teoría e implementación.
 
 Se proponen tres mejoras combinables entre sí, ordenadas por facilidad de
 implementación. Las tres son compatibles con la optimización Bayesiana existente.
@@ -398,17 +404,18 @@ nueva función `QLearning_v2()`:
 
 | Símbolo | Parámetro | Origen | Rango sugerido | Escala |
 |---|---|---|---|---|
-| $\alpha$ | `learning_rate` | Original | $[0.01, 0.5]$ | logarítmica |
+| $\alpha$ | `learning_rate` | Original | $[0.2, 0.4]$ | logarítmica |
 | $\gamma$ | `discount_factor` | Original | $[0.80, 0.99]$ | lineal |
-| $\varepsilon_0$ | `epsilon_initial` | Original | $[0.3, 1.0]$ | lineal |
-| $\varepsilon_{\min}$ | `epsilon_min` | Original | $[0.0, 0.1]$ | lineal |
-| $N$ | `num_episodes` | Original | $[5k, 40k]$ | paso 5k |
-| $\lambda$ | `decay_rate` | **Nuevo** | $[0.9990, 0.9999]$ | logarítmica |
-| $W$ | `warmup_ratio` | **Nuevo** | $[0.0, 0.1]$ | lineal (fracción de N) |
-| $\beta$ | `penalty_coeff` | **Nuevo** | $[0.01, 0.5]$ | logarítmica |
+| $\varepsilon_0$ | `epsilon_initial` | Original | $[0.4, 1.0]$ | lineal |
+| $\varepsilon_{\min}$ | `epsilon_min` | Original | $[0.05, 0.1]$ | lineal |
+| $N$ | `num_episodes` | Original | $[800k, 1.2M]$ | paso 10k |
+| $w$ | `warmup_ratio` | **Nuevo** | $[0.01, 0.1]$ | lineal (fracción de N) |
+| $f$ | `target_ratio` | **Nuevo** | $[0.50, 0.80]$ | lineal |
+| $\beta$ | `penalty_coeff` | **Nuevo** | $[0.001, 0.5]$ | logarítmica |
 
-Pasar de 5 a 8 hiperparámetros aumenta los trials de Bayesiana necesarios
-de ~100 a ~150-200, pero sigue siendo factible (~1-2 horas de cómputo).
+Todos los trials de entrenamiento usan la misma semilla (`SEED` de `CONFIG.py`,
+default 42) para que las diferencias de rendimiento reflejen exclusivamente
+los hiperparámetros.
 
 ---
 
@@ -449,7 +456,7 @@ de ~100 a ~150-200, pero sigue siendo factible (~1-2 horas de cómputo).
 
 ---
 
-## Plan de implementación recomendado
+## Plan de implementación
 
 ```
 Fase 1
@@ -460,13 +467,13 @@ Fase 2
 ├── ✅ Implementar las 3 mejoras en QLearning()
 │   ├── ✅ 2a. Decaimiento exponencial + warm-up
 │   ├── ✅ 2b. Double Q-Learning
-│   └── ✅ 2c. Reward Shaping
+│   └── ✅ 2c. Reward Shaping (PBRS)
 │
-└── Re-optimización Bayesiana sobre QLearning mejorado (8 params, ~200 trials)
-     └── Resultado: mejores α, γ, ε₀, ε_min, N, λ, W, β
+└── ✅ Adaptar optimize_rl.py para los 3 nuevos params
+     (+ semilla fija SEED en CONFIG para comparabilidad)
 
 Fase 3 (siguiente)
-└── Comparar rendimiento QLearning original vs mejorado
+└── Re-optimización Bayesiana sobre QLearning mejorado (8 params)
     ├── Mismo benchmark (64 secuencias)
     ├── Gráficos de convergencia
     └── Análisis de importancia de hiperparámetros nuevos
@@ -477,10 +484,11 @@ Fase 3 (siguiente)
 | Tarea | Tiempo |
 |---|---|
 | ✅ Implementar las 3 mejoras en `QLearning()` | Completado |
-| Adaptar `optimize_rl.py` para los 3 nuevos params | 30 min |
-| Correr Bayesiana 200 trials | 1-2 horas (background) |
+| ✅ Adaptar `optimize_rl.py` para los 3 nuevos params | Completado |
+| ✅ Centralizar semilla en `CONFIG.SEED` | Completado |
+| Correr Bayesiana ~200 trials | 1-2 horas (background) |
 | Comparar resultados | 30 min |
-| **Total restante** | **~2-3 horas** |
+| **Total restante** | **~1.5–2.5 horas** |
 
 ---
 

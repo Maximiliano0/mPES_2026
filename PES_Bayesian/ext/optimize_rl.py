@@ -20,11 +20,11 @@ Usage:
         Resume a previous optimization run stored under that date.
 
 Search space:
-    learning_rate    ∈ [0.2, 0.4]       (log scale)
+    learning_rate    ∈ [0.10, 0.4]       (log scale)
     discount_factor  ∈ [0.80, 0.99]
     epsilon_initial  ∈ [0.4, 1.0]
     epsilon_min      ∈ [0.05, 0.1]
-    num_episodes     ∈ [700000, 1000000] (step=100000)
+    num_episodes     ∈ [800000, 1000000] (step=100000)
 
 Outputs (saved to INPUTS_PATH/<date>_BAYESIAN_OPT/):
     - q_best_<date>.npy              : Q-table from the best optimization trial
@@ -63,10 +63,15 @@ warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 ##  Internal imports    ##
 ##########################
 from .. import INPUTS_PATH
+from ..config.CONFIG import SEED
 
 from .tools import convert_globalseq_to_seqs
 from ..src.terminal_utils import header, section, success, info, list_item
 from .pandemic import Pandemic, run_experiment, QLearning
+from ..utils.notify import notify
+
+# Nombre del paquete para las notificaciones push
+_PKG_NAME = __package__.split('.')[0] if __package__ else 'mPES'
 
 
 ###################################
@@ -125,7 +130,7 @@ def objective(trial: optuna.Trial) -> float:
     rewards, Q, _ = QLearning(
         env, learning_rate, discount_factor,
         epsilon_initial, epsilon_min, num_episodes,
-        seed=trial.number
+        seed=SEED
     )
 
     # --- Evaluate on fixed sequences ---
@@ -311,11 +316,11 @@ def main():
     # --- Run optimisation ---
     section("Running Bayesian Optimisation", width=80)
     info("Search space:")
-    list_item("learning_rate    ∈ [0.2, 0.4]    (log scale)")
+    list_item("learning_rate    ∈ [0.10, 0.4]   (log scale)")
     list_item("discount_factor  ∈ [0.80, 0.99]")
     list_item("epsilon_initial  ∈ [0.4, 1.0]")
     list_item("epsilon_min      ∈ [0.05, 0.1]")
-    list_item("num_episodes     ∈ [700000, 1000000]  (step=100000)")
+    list_item("num_episodes     ∈ [800000, 1000000]  (step=100000)")
     print()
 
     # Suppress Optuna's verbose default logging
@@ -354,6 +359,16 @@ def main():
             f"value={trial.value:.4f}  |  best={best_val:.4f}  |  "
             f"elapsed={elapsed:.0f}s"
         )
+        # Notificar cada 10 trials completados
+        if done > 0 and done % 10 == 0:
+            notify(
+                f"[{_PKG_NAME}] {done}/{n_trials} trials",
+                f"Se completaron {done} de {n_trials} trials.\n"
+                f"Mejor valor hasta ahora: {best_val:.6f}\n"
+                f"Último trial: value={trial.value:.4f}\n"
+                f"Tiempo transcurrido: {elapsed:.0f}s ({elapsed/60:.1f} min)",
+                tags="chart_with_upwards_trend"
+            )
 
     if remaining > 0:
         # Ensure underflow is ignored during optimisation (Optuna's TPE
@@ -404,9 +419,9 @@ def main():
             bp['epsilon_initial'],
             bp['epsilon_min'],
             bp['num_episodes'],
-            seed=best.number
+            seed=SEED
         )
-        success("Retrained Q-table (deterministic — seed = best trial number)")
+        success(f"Retrained Q-table (deterministic — seed = {SEED})")
 
     list_item(f"Q-table shape: {best_Q.shape}")
     print()
@@ -423,4 +438,14 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as exc:
+        import traceback
+        notify(
+            f"[{_PKG_NAME}] ERROR en optimización",
+            f"Se produjo un error durante la optimización:\n\n"
+            f"{traceback.format_exc()}",
+            priority="urgent", tags="rotating_light"
+        )
+        raise

@@ -114,7 +114,7 @@ tail -5 PES_Bayesian/inputs/bayesian_opt.log
 
 ### Tiempo estimado
 
-- Varios minutos por trial (depende del `num_episodes` muestreado entre 700k y 1M)
+- Varios minutos por trial (depende del `num_episodes` muestreado entre 800k y 1M)
 - 100 trials puede tomar varias horas
 - 200 trials puede tomar un día completo
 

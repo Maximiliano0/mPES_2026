@@ -25,7 +25,7 @@ Search space:
     discount_factor  ∈ [0.80, 0.99]
     epsilon_initial  ∈ [0.4, 1.0]
     epsilon_min      ∈ [0.05, 0.1]
-    num_episodes     ∈ [700000, 1000000] (step=100000)
+    num_episodes     ∈ [800000, 1200000] (step=10000)
     warmup_ratio     ∈ [0.01, 0.10]
     target_ratio     ∈ [0.50, 0.80]
     penalty_coeff    ∈ [0.001, 0.5]     (log scale)  — PBRS coefficient
@@ -67,10 +67,15 @@ warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 ##  Internal imports    ##
 ##########################
 from .. import INPUTS_PATH
+from ..config.CONFIG import SEED
 
 from .tools import convert_globalseq_to_seqs
 from ..src.terminal_utils import header, section, success, info, list_item
 from .pandemic import Pandemic, run_experiment, QLearning
+from ..utils.notify import notify
+
+# Nombre del paquete para las notificaciones push
+_PKG_NAME = __package__.split('.')[0] if __package__ else 'mPES'
 
 
 ###################################
@@ -134,7 +139,7 @@ def objective(trial: optuna.Trial) -> float:
         epsilon_initial, epsilon_min, num_episodes,
         warmup_ratio=warmup_ratio, target_ratio=target_ratio,
         double_q=True, penalty_coeff=penalty_coeff,
-        seed=trial.number
+        seed=SEED
     )
 
     # --- Evaluate on fixed sequences ---
@@ -327,7 +332,7 @@ def main():
     list_item("discount_factor  ∈ [0.80, 0.99]")
     list_item("epsilon_initial  ∈ [0.4, 1.0]")
     list_item("epsilon_min      ∈ [0.05, 0.1]")
-    list_item("num_episodes     ∈ [700000, 1000000]  (step=100000)")
+    list_item("num_episodes     ∈ [800000, 1200000]  (step=10000)")
     list_item("warmup_ratio     ∈ [0.01, 0.10]")
     list_item("target_ratio     ∈ [0.50, 0.80]")
     list_item("penalty_coeff    ∈ [0.001, 0.5]   (log scale, PBRS)")
@@ -369,6 +374,16 @@ def main():
             f"value={trial.value:.4f}  |  best={best_val:.4f}  |  "
             f"elapsed={elapsed:.0f}s"
         )
+        # Notificar cada 10 trials completados
+        if done > 0 and done % 10 == 0:
+            notify(
+                f"[{_PKG_NAME}] {done}/{n_trials} trials",
+                f"Se completaron {done} de {n_trials} trials.\n"
+                f"Mejor valor hasta ahora: {best_val:.6f}\n"
+                f"Último trial: value={trial.value:.4f}\n"
+                f"Tiempo transcurrido: {elapsed:.0f}s ({elapsed/60:.1f} min)",
+                tags="chart_with_upwards_trend"
+            )
 
     if remaining > 0:
         # Ensure underflow is ignored during optimisation (Optuna's TPE
@@ -423,9 +438,9 @@ def main():
             target_ratio=bp.get('target_ratio', 0.66),
             double_q=True,
             penalty_coeff=bp.get('penalty_coeff', 0.0),
-            seed=best.number
+            seed=SEED
         )
-        success("Retrained Q-table (deterministic — seed = best trial number)")
+        success(f"Retrained Q-table (deterministic — seed = {SEED})")
 
     list_item(f"Q-table shape: {best_Q.shape}")
     print()
@@ -442,4 +457,14 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as exc:
+        import traceback
+        notify(
+            f"[{_PKG_NAME}] ERROR en optimización",
+            f"Se produjo un error durante la optimización:\n\n"
+            f"{traceback.format_exc()}",
+            priority="urgent", tags="rotating_light"
+        )
+        raise

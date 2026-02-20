@@ -17,15 +17,16 @@ Q-Learning depende de cinco hiperparámetros cuyo valor óptimo se desconoce a p
 
 | Símbolo | Parámetro | Rango explorado | Escala |
 |---------|-----------|-----------------|--------|
-| $\alpha$ | `learning_rate` | $[0.2,\; 0.4]$ | logarítmica |
+| $\alpha$ | `learning_rate` | $[0.10,\; 0.4]$ | logarítmica |
 | $\gamma$ | `discount_factor` | $[0.80,\; 0.99]$ | lineal |
 | $\varepsilon_0$ | `epsilon_initial` | $[0.4,\; 1.0]$ | lineal |
 | $\varepsilon_{\min}$ | `epsilon_min` | $[0.05,\; 0.1]$ | lineal |
-| $N$ | `num_episodes` | $[700\,000,\; 1\,000\,000]$ | paso = 100 000 |
+| $N$ | `num_episodes` | $[800\,000,\; 1\,000\,000]$ | paso = 100 000 |
 
 Probar todas las combinaciones (grid search) requiere un número exponencial de
-evaluaciones.  Cada evaluación implica **entrenar una Q-table completa** y después
-evaluar sobre 64 secuencias fijas, lo que puede tardar varios minutos por combinación
+evaluaciones.  Cada evaluación implica **entrenar una Q-table completa** (con
+semilla fija `SEED` de `CONFIG.py` para reproducibilidad) y después evaluar sobre
+64 secuencias fijas, lo que puede tardar varios minutos por combinación
 dependiendo del `num_episodes` muestreado.
 
 ### 1.2 Optimización Bayesiana
@@ -133,20 +134,21 @@ que el agente vea secuencias representativas del mismo dominio.
 ```python
 def objective(trial: optuna.Trial) -> float:
     # (1) Muestrear hiperparámetros
-    learning_rate    = trial.suggest_float('learning_rate',    0.2,  0.4,  log=True)
+    learning_rate    = trial.suggest_float('learning_rate',    0.10,  0.4,  log=True)
     discount_factor  = trial.suggest_float('discount_factor',  0.80,  0.99)
-    epsilon_initial  = trial.suggest_float('epsilon_initial',  0.4,   1.0)
-    epsilon_min      = trial.suggest_float('epsilon_min',      0.05,   0.1)
-    num_episodes     = trial.suggest_int('num_episodes',       700000, 1000000, step=100000)
+    epsilon_initial  = trial.suggest_float('epsilon_initial',  0.40,   1.0)
+    epsilon_min      = trial.suggest_float('epsilon_min',      0.05,   0.10)
+    num_episodes     = trial.suggest_int('num_episodes',       800000, 1000000, step=100000)
 
-    # (2) Entrenar Q-table
+    # (2) Entrenar Q-table (semilla fija para comparabilidad entre trials)
     env = Pandemic()
     env.number_cities_prob = _number_cities_prob
     env.severity_prob      = _severity_prob
     env.verbose = False
     rewards, Q, _ = QLearning(
         env, learning_rate, discount_factor,
-        epsilon_initial, epsilon_min, num_episodes
+        epsilon_initial, epsilon_min, num_episodes,
+        seed=SEED
     )
 
     # (3) Evaluar sobre 64 secuencias fijas
@@ -193,14 +195,19 @@ def objective(trial: optuna.Trial) -> float:
 
 #### Detalle de `trial.suggest_*`
 
-- `suggest_float('learning_rate', 0.2, 0.4, log=True)`:
-  Muestrea $\alpha$ en escala logarítmica dentro de un rango estrecho
-  ($0.2$–$0.4$) determinado por corridas exploratorias previas.
+- `suggest_float('learning_rate', 0.10, 0.4, log=True)`:
+  Muestrea $\alpha$ en escala logarítmica dentro de un rango
+  ($0.10$–$0.4$) determinado por corridas exploratorias previas.
 
-- `suggest_int('num_episodes', 700000, 1000000, step=100000)`:
+- `suggest_int('num_episodes', 800000, 1000000, step=100000)`:
   Discretiza en múltiplos de 100 000 para reducir la dimensionalidad.
-  El rango alto ($700\text{k}$–$1\text{M}$) asegura convergencia
+  El rango alto ($800\text{k}$–$1\text{M}$) asegura convergencia
   suficiente de la Q-table.
+
+**Nota sobre la semilla:** Todos los trials de entrenamiento usan `seed=SEED`
+(importado de `CONFIG.py`, valor por defecto 42).  Esto garantiza que las
+diferencias de rendimiento entre trials se deban exclusivamente a los
+hiperparámetros y no a variabilidad aleatoria del entrenamiento.
 
 #### Función `qf` (política greedy con masking)
 
@@ -302,7 +309,8 @@ Una vez completada la optimización, `main()` realiza dos pasos finales:
 1. **Usar la Q-table preservada** — Si `_best_artifacts` contiene la Q-table del
    mejor trial (corrida completa sin interrupción), se usa directamente sin
    re-entrenar.  Solo si se reanudó un estudio previo y la Q-table no está en
-   memoria se aplica re-entrenamiento como fallback:
+   memoria se aplica re-entrenamiento como fallback (usando la misma `SEED` de
+   CONFIG para obtener resultados idénticos):
 
 ```python
 if _best_artifacts['Q'] is not None and _best_artifacts['value'] >= best.value:
@@ -310,7 +318,7 @@ if _best_artifacts['Q'] is not None and _best_artifacts['value'] >= best.value:
     best_rewards = numpy.array(_best_artifacts['rewards'])
 else:
     # Fallback: retrain (solo si se resumió y la Q-table original no está en memoria)
-    best_rewards, best_Q, _ = QLearning(env_final, ...)
+    best_rewards, best_Q, _ = QLearning(env_final, ..., seed=SEED)
 ```
 
 2. **Generar reportes** mediante `_save_report()`:
@@ -414,11 +422,11 @@ python3 -m PES_Bayesian.ext.optimize_rl 100 --resume 2026-02-12
 
 ── Running Bayesian Optimisation ──
 ℹ Search space:
-  ● learning_rate    ∈ [0.2, 0.4]    (log scale)
+  ● learning_rate    ∈ [0.10, 0.4]   (log scale)
   ● discount_factor  ∈ [0.80, 0.99]
   ● epsilon_initial  ∈ [0.4, 1.0]
   ● epsilon_min      ∈ [0.05, 0.1]
-  ● num_episodes     ∈ [700000, 1000000]  (step=100000)
+  ● num_episodes     ∈ [800000, 1000000]  (step=100000)
 
   Trial   1/100  |  value=0.7563  |  best=0.7563  |  elapsed=19s
   Trial   2/100  |  value=0.6941  |  best=0.7563  |  elapsed=76s
@@ -474,18 +482,21 @@ el algoritmo, sino que busca los valores de $(\alpha, \gamma, \varepsilon_0,
 \varepsilon_{\min}, N)$ que maximicen el rendimiento de la política resultante.
 Es decir, es una **meta-optimización** (optimización de la optimización).
 
+Todos los trials de entrenamiento usan la misma semilla (`SEED` de `CONFIG.py`)
+para que las diferencias de rendimiento reflejen exclusivamente los hiperparámetros.
+
 ```
-┌────────────────────────────────────────────────┐
-│  Nivel externo: Optimización Bayesiana (Optuna)│
-│  Decide θ = (α, γ, ε₀, ε_min, N)              │
-│                                                │
-│  ┌──────────────────────────────────────────┐  │
-│  │  Nivel interno: Q-Learning               │  │
-│  │  Entrena Q-table con θ durante N episodios│  │
-│  │  Q(s,a) ← Q(s,a) + α[r + γ·max Q - Q]  │  │
-│  └──────────────────────────────────────────┘  │
-│                                                │
-│  Evaluar Q-table → f(θ) = rendimiento medio    │
-│  Devolver f(θ) a Optuna                        │
-└────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────┐
+│  Nivel externo: Optimización Bayesiana (Optuna)    │
+│  Decide θ = (α, γ, ε₀, ε_min, N)                  │
+│                                                    │
+│  ┌──────────────────────────────────────────────┐  │
+│  │  Nivel interno: Q-Learning (seed=SEED)       │  │
+│  │  Entrena Q-table con θ durante N episodios   │  │
+│  │  Q(s,a) ← Q(s,a) + α[r + γ·max Q - Q]      │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                    │
+│  Evaluar Q-table → f(θ) = rendimiento medio        │
+│  Devolver f(θ) a Optuna                            │
+└────────────────────────────────────────────────────┘
 ```

@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------
 #  Vigila las optimizaciones bayesianas activas.
-#  Cuando cada una termina, hace git add + commit + push a rl_optim.
+#  Cuando cada una termina, hace git add + commit + push a la rama actual.
 #
 #  Todas las rutas se resuelven de forma relativa a la ubicación
-#  de este script (utils/ -> PES_QLv2/ -> mPES/).
+#  de este script (utils/ → <PKG>/ → mPES/).  Funciona sin cambios
+#  en cualquier módulo del proyecto.
 #
 #  Lógica:
 #    - Recibe uno o más PIDs como argumentos.
 #    - Cada 30 segundos comprueba si cada PID sigue vivo (kill -0).
 #    - Cuando un PID termina, ejecuta git add -A, commit y push
-#      a la rama configurada (por defecto: rl_optim).
+#      a la rama actual de Git.
+#    - Envía un e-mail de notificación tras el push (o si hay error).
 #    - Sale cuando todos los PIDs han terminado.
 #
 #  Uso:
@@ -21,7 +23,14 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PKG_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECT_DIR="$(cd "$PKG_DIR/.." && pwd)"
-BRANCH="rl_optim"
+PKG_NAME="$(basename "$PKG_DIR")"
+NOTIFY="$PKG_DIR/utils/notify.py"
+VENV="$PROJECT_DIR/linux_mpes_env/bin/activate"
+
+source "$VENV"
+
+# Rama actual de Git (se detecta automáticamente)
+BRANCH="$(cd "$PROJECT_DIR" && git branch --show-current)"
 
 # PIDs a vigilar (recibidos como argumentos)
 if [[ $# -lt 1 ]]; then
@@ -44,23 +53,26 @@ do_commit_push() {
 
     cd "$PROJECT_DIR" || return 1
 
-    # Asegurar que estamos en la rama correcta
-    current_branch="$(git branch --show-current)"
-    if [[ "$current_branch" != "$BRANCH" ]]; then
-        echo "[watch_and_push] WARN: Rama actual es '$current_branch', cambiando a '$BRANCH'"
-        git checkout "$BRANCH" 2>/dev/null || {
-            echo "[watch_and_push] ERROR: No se pudo cambiar a $BRANCH"
-            return 1
-        }
-    fi
-
     git add -A
     git commit -m "auto: Optimización $label completada ($ts)" || {
         echo "[watch_and_push] Sin cambios para commit (PID $pid)"
         return 0
     }
-    git push origin "$BRANCH" 2>&1
-    echo "[watch_and_push] [$ts] Push completado para $label"
+    if git push origin "$BRANCH" 2>&1; then
+        echo "[watch_and_push] [$ts] Push completado para $label"
+        BODY=$(printf "La optimización '%s' (PID %s) terminó correctamente.\nCommit y push a rama '%s' completados (%s).\nProyecto: %s" \
+            "$label" "$pid" "$BRANCH" "$ts" "$PROJECT_DIR")
+        python3 "$NOTIFY" \
+            "[$PKG_NAME] Optimización completada — push realizado" \
+            "$BODY" || true
+    else
+        echo "[watch_and_push] [$ts] ERROR en push para $label"
+        BODY=$(printf "Error al hacer push de la optimización '%s' (PID %s).\nRama: %s\nTimestamp: %s\nProyecto: %s" \
+            "$label" "$pid" "$BRANCH" "$ts" "$PROJECT_DIR")
+        python3 "$NOTIFY" \
+            "[$PKG_NAME] ERROR en git push" \
+            "$BODY" || true
+    fi
 }
 
 # Obtener el comando de cada PID para usarlo como label

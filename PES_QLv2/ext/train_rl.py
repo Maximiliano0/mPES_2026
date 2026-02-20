@@ -24,9 +24,9 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 ##  Imports internos    ##
 ##########################
 from .. import INPUTS_PATH
+from ..config.CONFIG import SEED
 
-from .tools import plot_confidences 
-from ..src.pygameMediator import convert_globalseq_to_seqs
+from .tools import plot_confidences, convert_globalseq_to_seqs
 from ..src.terminal_utils import header, section, success, info, list_item
 from .pandemic import Pandemic, rl_agent_meta_cognitive, run_experiment, QLearning  
 
@@ -172,7 +172,7 @@ def main():
     rewards, Q, confsrl = QLearning(env, learning_rate, discount_factor, epsilon_initial, epsilon_min, num_episodes,
                                      decay_rate=decay_rate, warmup_ratio=warmup_ratio,
                                      target_ratio=target_ratio, double_q=double_q,
-                                     penalty_coeff=penalty_coeff, seed=42)
+                                     penalty_coeff=penalty_coeff, seed=SEED)
     print()
     success(f"Entrenamiento completado ({num_episodes:,} episodios)")
     list_item(f"Q-Table shape: {Q.shape}")

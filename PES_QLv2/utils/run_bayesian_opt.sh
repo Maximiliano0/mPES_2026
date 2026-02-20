@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------
-#  Lanzar optimización Bayesiana de Q-Learning (PES_QLv2)
+#  Lanzar optimización Bayesiana de Q-Learning
 #
 #  Todas las rutas se resuelven de forma relativa a la ubicación
-#  de este script (utils/ -> PES_QLv2/ -> mPES/).  El nombre del
-#  paquete (PKG_NAME) se deriva automáticamente del directorio padre.
+#  de este script (utils/ → <PKG>/ → mPES/).  El nombre del
+#  paquete se deriva automáticamente del directorio padre, por lo que
+#  este script funciona sin cambios en cualquier módulo del proyecto.
 #
 #  Funcionalidades:
 #    - Lanza la optimización en segundo plano con nohup.
@@ -21,9 +22,9 @@ set -euo pipefail
 
 # Determinar rutas relativas al script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PKG_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"        # PES_QLv2/
-PROJECT_DIR="$(cd "$PKG_DIR/.." && pwd)"        # mPES/
-PKG_NAME="$(basename "$PKG_DIR")"               # PES_QLv2
+PKG_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_DIR="$(cd "$PKG_DIR/.." && pwd)"
+PKG_NAME="$(basename "$PKG_DIR")"
 
 VENV="$PROJECT_DIR/linux_mpes_env/bin/activate"
 LOG_DIR="$PKG_DIR/inputs"

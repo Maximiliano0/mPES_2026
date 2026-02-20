@@ -75,6 +75,9 @@ PANDEMIC_PARAMETER = 0.4   # Alpha (α) parameter controlling disease dynamics
 TRUST_MAX = 100            # Maximum scale value for confidence slider (upgraded from 4 to 100)
 USE_FIXED_BLOCK_SEQUENCES = True  # Load sequence trial lengths from CSV file (vs. random)
 
+# ==================== REPRODUCIBILITY ====================
+SEED = 42                  # Random seed for Q-Learning training reproducibility
+
 # ==================== RUNTIME & PERSISTENCE ====================
 VERBOSE = True             # Enable detailed console logging and initialization messages
 SAVE_RESULTS = True        # Save experiment results to JSON/TXT files after each sequence

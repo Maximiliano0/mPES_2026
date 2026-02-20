@@ -587,11 +587,11 @@ señales de shaping más ricas.
 
 | Símbolo | Parámetro | Tipo | Rango | Origen |
 |---|---|---|---|---|
-| $\alpha$ | `learning_rate` | float | $[0.01, 0.5]$ | Original |
+| $\alpha$ | `learning_rate` | float | $[0.2, 0.4]$ | Original |
 | $\gamma$ | `discount_factor` | float | $[0.80, 0.99]$ | Original |
-| $\varepsilon_0$ | `epsilon_initial` | float | $[0.3, 1.0]$ | Original |
-| $\varepsilon_{\min}$ | `epsilon_min` | float | $[0.0, 0.1]$ | Original |
-| $N$ | `num_episodes` | int | $[500k, 1M]$ | Original |
+| $\varepsilon_0$ | `epsilon_initial` | float | $[0.4, 1.0]$ | Original |
+| $\varepsilon_{\min}$ | `epsilon_min` | float | $[0.05, 0.1]$ | Original |
+| $N$ | `num_episodes` | int | $[800k, 1.2M]$ | Original |
 | $w$ | `warmup_ratio` | float | $[0.01, 0.10]$ | Nuevo — Mejora 3 |
 | $f$ | `target_ratio` | float | $[0.50, 0.80]$ | Nuevo — Mejora 3 |
 | $\beta$ | `penalty_coeff` | float | $[0.001, 0.5]$ | Nuevo — Mejora 4 |
@@ -603,6 +603,10 @@ y $W = w \cdot N$.
 La variable `double_q` no es un hiperparámetro optimizable: se fija en `True`
 porque Double Q-Learning es estrictamente superior o igual a Q-Learning estándar
 (nunca peor).
+
+Todos los trials de entrenamiento usan la misma semilla (`SEED` de `CONFIG.py`,
+default 42) para garantizar que las diferencias de rendimiento reflejen
+exclusivamente los hiperparámetros.
 
 ---
 

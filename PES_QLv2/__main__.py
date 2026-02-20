@@ -80,7 +80,7 @@ def main():
       terminal_utils.error("Q-Table file not found!")
       terminal_utils.list_item(f"Expected path: {q_file}", level=2)
       print("\nTo train the RL-Agent, run:")
-      terminal_utils.list_item("python3 -m PES.ext.train_rl")
+      terminal_utils.list_item("python3 -m PES_QLv2.ext.train_rl")
       print()
       return
     
@@ -88,7 +88,7 @@ def main():
       terminal_utils.error("Rewards history file not found!")
       terminal_utils.list_item(f"Expected path: {rewards_file}", level=2)
       print("\nTo train the RL-Agent, run:")
-      terminal_utils.list_item("python3 -m PES.ext.train_rl")
+      terminal_utils.list_item("python3 -m PES_QLv2.ext.train_rl")
       print()
       return
     
@@ -108,7 +108,7 @@ def main():
       terminal_utils.error("Failed to load training files!")
       terminal_utils.list_item(f"Error: {str(e)}", level=2)
       print("\nPlease retrain the model by running:")
-      terminal_utils.list_item("python3 -m PES.ext.train_rl")
+      terminal_utils.list_item("python3 -m PES_QLv2.ext.train_rl")
       print()
       return
     
