@@ -29,10 +29,15 @@ Search space:
 Outputs (saved to INPUTS_PATH/<date>_BAYESIAN_OPT/):
     - q_best_<date>.npy              : Q-table from the best optimization trial
     - rewards_best_<date>.npy        : Reward history of the best training run
-    - optimization_results_<date>.txt: Full report of the optimization
-    - optimization_history_<date>.png: Convergence plot
+    - optimization_results_<date>.txt: Full report of the optimization (1-based trial #)
+    - optimization_history_<date>.png: Convergence plot (1-based trial #)
     - hyperparameter_importances_<date>.png: Parameter importance plot
     - optuna_study_<date>.db         : SQLite database for resumable studies
+
+Note:
+    Trial numbering in reports and plots uses 1-based indexing to match
+    the trial_id in the SQLite database.  Optuna internally uses 0-based
+    trial.number; the +1 offset is applied at report-generation time.
 '''
 
 ##########################
@@ -105,11 +110,11 @@ def objective(trial: optuna.Trial) -> float:
     evaluate on the fixed 64 sequences, and return mean normalised performance.
     """
     # --- Sample hyperparameters ---
-    learning_rate    = trial.suggest_float('learning_rate',    0.2,  0.4,  log=True)
+    learning_rate    = trial.suggest_float('learning_rate',    0.10,  0.4,  log=True)
     discount_factor  = trial.suggest_float('discount_factor',  0.80,  0.99)
-    epsilon_initial  = trial.suggest_float('epsilon_initial',  0.4,   1.0)
-    epsilon_min      = trial.suggest_float('epsilon_min',      0.05,   0.1)
-    num_episodes     = trial.suggest_int('num_episodes',       700000, 1000000, step=100000)
+    epsilon_initial  = trial.suggest_float('epsilon_initial',  0.40,   1.0)
+    epsilon_min      = trial.suggest_float('epsilon_min',      0.05,   0.10)
+    num_episodes     = trial.suggest_int('num_episodes',       800000, 1000000, step=100000)
 
     # --- Train ---
     env = Pandemic()
@@ -119,7 +124,8 @@ def objective(trial: optuna.Trial) -> float:
 
     rewards, Q, _ = QLearning(
         env, learning_rate, discount_factor,
-        epsilon_initial, epsilon_min, num_episodes
+        epsilon_initial, epsilon_min, num_episodes,
+        seed=trial.number
     )
 
     # --- Evaluate on fixed sequences ---
@@ -159,7 +165,11 @@ def objective(trial: optuna.Trial) -> float:
 ##        Reporting              ##
 ###################################
 def _save_report(study, opt_dir, opt_date, best_Q, best_rewards):
-    """Generate and save optimization results report and visualizations."""
+    """Generate and save optimization results report and visualizations.
+
+    Trial numbers are converted to 1-based indexing (trial.number + 1)
+    so they match the trial_id column in the Optuna SQLite database.
+    """
 
     best = study.best_trial
 
@@ -171,7 +181,7 @@ def _save_report(study, opt_dir, opt_date, best_Q, best_rewards):
         f.write("=" * 80 + "\n\n")
         f.write(f"Date:              {opt_date}\n")
         f.write(f"Total trials:      {len(study.trials)}\n")
-        f.write(f"Best trial:        #{best.number}\n")
+        f.write(f"Best trial:        #{best.number + 1}\n")
         f.write(f"Best mean perf:    {best.value:.6f}\n\n")
 
         f.write("BEST HYPERPARAMETERS\n")
@@ -196,7 +206,7 @@ def _save_report(study, opt_dir, opt_date, best_Q, best_rewards):
                 continue
             p = t.params
             f.write(
-                f"{t.number:4d}  {t.value:10.6f}  "
+                f"{t.number + 1:4d}  {t.value:10.6f}  "
                 f"{p['learning_rate']:10.5f}  {p['discount_factor']:8.4f}  "
                 f"{p['epsilon_initial']:6.3f}  {p['epsilon_min']:7.4f}  "
                 f"{p['num_episodes']:8d}\n"
@@ -211,7 +221,7 @@ def _save_report(study, opt_dir, opt_date, best_Q, best_rewards):
         pass
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    trial_numbers = [t.number for t in study.trials if t.value is not None]
+    trial_numbers = [t.number + 1 for t in study.trials if t.value is not None]
     trial_values  = [t.value  for t in study.trials if t.value is not None]
 
     # Running best
@@ -393,9 +403,10 @@ def main():
             bp['discount_factor'],
             bp['epsilon_initial'],
             bp['epsilon_min'],
-            bp['num_episodes']
+            bp['num_episodes'],
+            seed=best.number
         )
-        success("Retrained Q-table (note: may differ slightly from original due to stochasticity)")
+        success("Retrained Q-table (deterministic — seed = best trial number)")
 
     list_item(f"Q-table shape: {best_Q.shape}")
     print()

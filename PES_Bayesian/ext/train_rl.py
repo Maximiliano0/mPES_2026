@@ -138,18 +138,18 @@ def main():
     # Run Q-learning algorithm (always trains and overwrites previous files)
     section("Q-Learning Training", width=80)
 
-    # Q-Learning hyperparameters
-    learning_rate   = 0.3006658240741172
-    discount_factor = 0.8989957380285539
-    epsilon_initial = 0.49148318724777224
-    epsilon_min     = 0.07095544578432121
-    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 40000
+    # Q-Learning hyperparameters (from Bayesian opt trial #40, trial_id=40)
+    learning_rate             = 0.207346214311593
+    discount_factor           = 0.857911056692539
+    epsilon_initial           = 0.607731576695056
+    epsilon_min               = 0.0718806501721637
+    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 1000000
     
     info(f"Starting Q-Table training ({num_episodes:,} episodes)...")
     info("(This may take several minutes)")
     print()
     
-    rewards, Q, confsrl = QLearning(env, learning_rate, discount_factor, epsilon_initial, epsilon_min, num_episodes)
+    rewards, Q, confsrl = QLearning(env, learning_rate, discount_factor, epsilon_initial, epsilon_min, num_episodes, seed=42)
     print()
     success(f"Training completed")
     list_item(f"Q-Table shape: {Q.shape}")

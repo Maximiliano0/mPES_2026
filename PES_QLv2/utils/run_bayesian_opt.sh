@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------
-#  Lanzar optimización Bayesiana de Q-Learning 
+#  Lanzar optimización Bayesiana de Q-Learning (PES_QLv2)
+#
+#  Todas las rutas se resuelven de forma relativa a la ubicación
+#  de este script (utils/ -> PES_QLv2/ -> mPES/).  El nombre del
+#  paquete (PKG_NAME) se deriva automáticamente del directorio padre.
+#
+#  Funcionalidades:
+#    - Lanza la optimización en segundo plano con nohup.
+#    - Inhibe la suspensión del sistema (systemd-inhibit) mientras
+#      el proceso esté vivo.
+#    - Configura GNOME para ignorar el cierre de tapa.
 #
 #  Uso:
 #    chmod +x run_bayesian_opt.sh

@@ -527,7 +527,7 @@ def run_experiment(env, actionfunction, RandomSequences=True,
 
     return seqs, perfs, seq_ev
 
-def QLearning(env, learning, discount, epsilon, min_eps, episodes, UsePreloadedReward=False, R=None):
+def QLearning(env, learning, discount, epsilon, min_eps, episodes, UsePreloadedReward=False, R=None, seed=None):
     """
     Implements the Q-Learning algorithm to train an agent in the Pandemic environment.
     
@@ -559,6 +559,10 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes, UsePreloadedR
     R : array-like, optional
         Preloaded reward matrix. Shape: (available_resources, trials, severities, actions).
         Required if UsePreloadedReward=True. Default: None
+    seed : int or None, optional
+        Random seed for reproducibility.  When set, both ``numpy.random`` and
+        ``random`` are seeded before Q-table initialisation so that identical
+        hyperparameters produce identical training runs.  Default: None (non-deterministic).
     
     Returns
     -------
@@ -590,7 +594,14 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes, UsePreloadedR
     - Meta-cognitive confidence is tracked but doesn't affect learning
     - The environment is closed after training completes
     - State representation: [available_resources, trial_number, current_severity]
+    - When *seed* is provided, results are fully reproducible across runs
+      with the same hyperparameters.
     """
+
+    # Seed RNGs for reproducibility
+    if seed is not None:
+        numpy.random.seed(seed)
+        random.seed(seed)
 
     # Initialize Q table
     Q = numpy.random.uniform(low = -1, high = 1, 

@@ -559,7 +559,7 @@ def run_experiment(env, actionfunction, RandomSequences=True,
 def QLearning(env, learning, discount, epsilon, min_eps, episodes, 
               decay_rate=None, warmup_ratio=0.05, target_ratio=0.66,
               double_q=True, penalty_coeff=0.0,
-              UsePreloadedReward=False, R=None):
+              UsePreloadedReward=False, R=None, seed=None):
     """
     Implements Q-Learning (standard or Double) to train an agent in the Pandemic environment.
     
@@ -637,6 +637,10 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes,
     R : array-like, optional
         Preloaded reward matrix. Shape: (available_resources, trials, severities, actions).
         Required if UsePreloadedReward=True. Default: None
+    seed : int or None, optional
+        Random seed for reproducibility.  When set, both ``numpy.random`` and
+        ``random`` are seeded before Q-table initialisation so that identical
+        hyperparameters produce identical training runs.  Default: None (non-deterministic).
     
     Returns
     -------
@@ -674,6 +678,8 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes,
     - Meta-cognitive confidence is tracked but doesn't affect learning
     - The environment is closed after training completes
     - State representation: [available_resources, trial_number, current_severity]
+    - When *seed* is provided, results are fully reproducible across runs
+      with the same hyperparameters.
     - Exponential decay concentrates ~80% of exploration in the first third of training,
       leaving more episodes for pure exploitation compared to linear decay.
       Decay rate (λ) is auto-computed unless explicitly provided, ensuring
@@ -701,6 +707,11 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes,
     Sutton, R. S., & Barto, A. G. (2018). "Reinforcement Learning: An Introduction"
     (2nd ed.). MIT Press. Chapters 6.5 (ε-greedy), 6.7 (Q-learning).
     """
+
+    # Seed RNGs for reproducibility
+    if seed is not None:
+        numpy.random.seed(seed)
+        random.seed(seed)
 
     # Q-table shape
     q_shape = (env.available_resources_states, 
