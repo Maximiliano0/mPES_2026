@@ -1,0 +1,7 @@
+nohup: no se tendrá en cuenta la entrada
+[watch_and_push] Vigilando PIDs: 333569 333652
+[watch_and_push] Proyecto: /home/mecatronica/Documentos/maximiliano/mPES
+[watch_and_push] Rama: optim_rlv2
+[watch_and_push] PID 333569 -> PES_Bayesian.ext.optimize_rl 50
+[watch_and_push] PID 333652 -> PES_QLv2.ext.optimize_rl 80
+[watch_and_push] [2026-02-21 13:29] PID 333569 (PES_Bayesian.ext.optimize_rl 50) terminó. Realizando commit + push...
