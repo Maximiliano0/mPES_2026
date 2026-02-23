@@ -2,10 +2,9 @@
 # ------------------------------------------------------------------
 #  Lanzar optimización Bayesiana de Q-Learning
 #
+#  Script compartido para PES_Bayesian y PES_QLv2.
 #  Todas las rutas se resuelven de forma relativa a la ubicación
-#  de este script (utils/ → <PKG>/ → mPES/).  El nombre del
-#  paquete se deriva automáticamente del directorio padre, por lo que
-#  este script funciona sin cambios en cualquier módulo del proyecto.
+#  de este script (utils/ → mPES/).
 #
 #  Funcionalidades:
 #    - Lanza la optimización en segundo plano con nohup.
@@ -15,30 +14,49 @@
 #
 #  Uso:
 #    chmod +x run_bayesian_opt.sh
-#    ./run_bayesian_opt.sh <n_trials>              # corrida nueva
-#    ./run_bayesian_opt.sh <n_trials> 2026-02-12   # reanudar desde fecha indicada
+#    ./run_bayesian_opt.sh bayesian 100              # PES_Bayesian, corrida nueva
+#    ./run_bayesian_opt.sh qlv2 100                  # PES_QLv2, corrida nueva
+#    ./run_bayesian_opt.sh bayesian 100 2026-02-12   # reanudar desde fecha
 # ------------------------------------------------------------------
 set -euo pipefail
 
-# Determinar rutas relativas al script
+# ── Rutas base ───────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PKG_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_DIR="$(cd "$PKG_DIR/.." && pwd)"
-PKG_NAME="$(basename "$PKG_DIR")"
-
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"       # mPES/ (raíz del workspace)
 VENV="$PROJECT_DIR/linux_mpes_env/bin/activate"
-LOG_DIR="$PKG_DIR/inputs"
 
-# Verificar que se pasó el número de trials
-if [[ $# -lt 1 ]]; then
-    echo "Error: Debe especificar el número de trials"
-    echo "Uso: $0 <n_trials> [fecha_resume]"
-    echo "Ejemplo: $0 100"
-    echo "Ejemplo: $0 100 2026-02-12"
+# ── Resolver paquete desde primer argumento ──────────────────────
+resolve_package() {
+    case "${1:-}" in
+        bayesian|Bayesian|BAYESIAN|bay|1) echo "PES_Bayesian" ;;
+        qlv2|QLv2|QLVAL2|ql|2)           echo "PES_QLv2"     ;;
+        *) return 1 ;;
+    esac
+}
+
+# ── Verificar argumentos ────────────────────────────────────────
+if [[ $# -lt 2 ]]; then
+    echo "Error: Debe especificar el paquete y el número de trials"
+    echo ""
+    echo "Uso: $0 <paquete> <n_trials> [fecha_resume]"
+    echo ""
+    echo "  Paquetes: bayesian (PES_Bayesian), qlv2 (PES_QLv2)"
+    echo ""
+    echo "Ejemplos:"
+    echo "  $0 bayesian 100"
+    echo "  $0 qlv2 100"
+    echo "  $0 bayesian 100 2026-02-12"
     exit 1
 fi
 
-N_TRIALS="$1"
+PKG_NAME="$(resolve_package "$1")" || {
+    echo "Error: Paquete desconocido: '$1'"
+    echo "  Opciones válidas: bayesian, qlv2"
+    exit 1
+}
+N_TRIALS="$2"
+
+LOG_DIR="$PROJECT_DIR/$PKG_NAME/inputs"
 
 cd "$PROJECT_DIR"
 source "$VENV"
@@ -46,9 +64,9 @@ source "$VENV"
 # Construir argumentos (--resume si se pasa una fecha)
 ARGS="$N_TRIALS"
 LOG_SUFFIX=""
-if [[ ${2:-} != "" ]]; then
-    ARGS="$N_TRIALS --resume $2"
-    LOG_SUFFIX="_resume_$2"
+if [[ ${3:-} != "" ]]; then
+    ARGS="$N_TRIALS --resume $3"
+    LOG_SUFFIX="_resume_$3"
 fi
 
 LOGFILE="$LOG_DIR/bayesian_opt${LOG_SUFFIX}.log"

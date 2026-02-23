@@ -139,11 +139,11 @@ def main():
     section("Q-Learning Training", width=80)
 
     # Q-Learning hyperparameters (from Bayesian opt trial #40, trial_id=40)
-    learning_rate             = 0.207346214311593
-    discount_factor           = 0.857911056692539
-    epsilon_initial           = 0.607731576695056
-    epsilon_min               = 0.0718806501721637
-    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 1000000
+    learning_rate             = 0.35965545888114453
+    discount_factor           = 0.8650520580454709
+    epsilon_initial           = 0.6791201210873763
+    epsilon_min               = 0.08483331103075126
+    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 900000
     
     info(f"Starting Q-Table training ({num_episodes:,} episodes)...")
     info("(This may take several minutes)")

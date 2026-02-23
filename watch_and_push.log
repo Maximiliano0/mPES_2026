@@ -22,3 +22,15 @@ To https://github.com/Maximiliano0/mPES_2026.git
 [watch_and_push] [2026-02-21 13:29] Push completado para PES_Bayesian.ext.optimize_rl 50
 [notify] ERROR al enviar notificación: 'latin-1' codec can't encode character '\u2014' in position 35: ordinal not in range(256)
 [watch_and_push] [2026-02-22 05:27] PID 333652 (PES_QLv2.ext.optimize_rl 80) terminó. Realizando commit + push...
+[optim_rlv2 bd1cf1c] auto: Optimización PES_QLv2.ext.optimize_rl 80 completada (2026-02-22 05:27)
+ 8 files changed, 19559 insertions(+), 1 deletion(-)
+ create mode 100644 PES_QLv2/inputs/2026-02-20_BAYESIAN_OPT/hyperparameter_importances_2026-02-20.png
+ create mode 100644 PES_QLv2/inputs/2026-02-20_BAYESIAN_OPT/optimization_history_2026-02-20.png
+ create mode 100644 PES_QLv2/inputs/2026-02-20_BAYESIAN_OPT/optimization_results_2026-02-20.txt
+ create mode 100644 PES_QLv2/inputs/2026-02-20_BAYESIAN_OPT/q_best_2026-02-20.npy
+ create mode 100644 PES_QLv2/inputs/2026-02-20_BAYESIAN_OPT/rewards_best_2026-02-20.npy
+To https://github.com/Maximiliano0/mPES_2026.git
+   9bd1470..bd1cf1c  optim_rlv2 -> optim_rlv2
+[watch_and_push] [2026-02-22 05:27] Push completado para PES_QLv2.ext.optimize_rl 80
+[notify] ERROR al enviar notificación: 'latin-1' codec can't encode character '\u2014' in position 35: ordinal not in range(256)
+[watch_and_push] Todas las optimizaciones terminaron. Saliendo.

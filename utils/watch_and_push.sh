@@ -3,42 +3,63 @@
 #  Vigila las optimizaciones bayesianas activas.
 #  Cuando cada una termina, hace git add + commit + push a la rama actual.
 #
+#  Script compartido para PES_Bayesian y PES_QLv2.
 #  Todas las rutas se resuelven de forma relativa a la ubicación
-#  de este script (utils/ → <PKG>/ → mPES/).  Funciona sin cambios
-#  en cualquier módulo del proyecto.
+#  de este script (utils/ → mPES/).
 #
 #  Lógica:
-#    - Recibe uno o más PIDs como argumentos.
+#    - Recibe el nombre del paquete y uno o más PIDs como argumentos.
 #    - Cada 30 segundos comprueba si cada PID sigue vivo (kill -0).
 #    - Cuando un PID termina, ejecuta git add -A, commit y push
 #      a la rama actual de Git.
-#    - Envía un e-mail de notificación tras el push (o si hay error).
+#    - Envía una notificación push tras el push (o si hay error).
 #    - Sale cuando todos los PIDs han terminado.
 #
 #  Uso:
-#    nohup ./watch_and_push.sh <pid1> [pid2] ... &
+#    nohup ./watch_and_push.sh bayesian <pid1> [pid2] ... &
+#    nohup ./watch_and_push.sh qlv2 <pid1> [pid2] ... &
 # ------------------------------------------------------------------
 set -uo pipefail
 
+# ── Rutas base ───────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PKG_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_DIR="$(cd "$PKG_DIR/.." && pwd)"
-PKG_NAME="$(basename "$PKG_DIR")"
-NOTIFY="$PKG_DIR/utils/notify.py"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"       # mPES/ (raíz del workspace)
+NOTIFY="$SCRIPT_DIR/notify.py"                     # notify.py vive en utils/
 VENV="$PROJECT_DIR/linux_mpes_env/bin/activate"
 
 source "$VENV"
 
-# Rama actual de Git (se detecta automáticamente)
-BRANCH="$(cd "$PROJECT_DIR" && git branch --show-current)"
+# ── Resolver paquete desde primer argumento ──────────────────────
+resolve_package() {
+    case "${1:-}" in
+        bayesian|Bayesian|BAYESIAN|bay|1) echo "PES_Bayesian" ;;
+        qlv2|QLv2|QLVAL2|ql|2)           echo "PES_QLv2"     ;;
+        *) return 1 ;;
+    esac
+}
 
-# PIDs a vigilar (recibidos como argumentos)
-if [[ $# -lt 1 ]]; then
-    echo "Uso: $0 <pid1> [pid2] ..."
+# ── Verificar argumentos ────────────────────────────────────────
+if [[ $# -lt 2 ]]; then
+    echo "Uso: $0 <paquete> <pid1> [pid2] ..."
+    echo ""
+    echo "  Paquetes: bayesian (PES_Bayesian), qlv2 (PES_QLv2)"
+    echo ""
+    echo "Ejemplo: nohup $0 bayesian 12345 &"
     exit 1
 fi
 
+PKG_NAME="$(resolve_package "$1")" || {
+    echo "Error: Paquete desconocido: '$1'"
+    echo "  Opciones válidas: bayesian, qlv2"
+    exit 1
+}
+shift  # Quitar el primer argumento (paquete); quedan solo PIDs
+
+# Rama actual de Git (se detecta automáticamente)
+BRANCH="$(cd "$PROJECT_DIR" && git branch --show-current)"
+
 PIDS=("$@")
+echo "[watch_and_push] Paquete: $PKG_NAME"
 echo "[watch_and_push] Vigilando PIDs: ${PIDS[*]}"
 echo "[watch_and_push] Proyecto: $PROJECT_DIR"
 echo "[watch_and_push] Rama: $BRANCH"

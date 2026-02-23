@@ -139,11 +139,12 @@ def main():
     section("Q-Learning Training", width=80)
 
     # Q-Learning hyperparameters
-    learning_rate             = 0.28110558617690556
-    discount_factor           = 0.9500336060605875
-    epsilon_initial           = 0.5292542047283241
-    epsilon_min               = 0.08796664682180029
-    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 1000000
+    learning_rate             = 0.2592852466099094
+    discount_factor           = 0.9806357182178841
+    epsilon_initial           = 0.839196365086843
+    epsilon_min               = 0.07993292420985183
+
+    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 860000
 
     # Epsilon decay hyperparameters (exponential with warm-up)
     # λ is computed dynamically based on num_episodes (N):
@@ -151,8 +152,8 @@ def main():
     #   where  T = target_ratio · N  →  episode where ε reaches ε_min
     #          W = warmup_ratio · N  →  warm-up episodes with pure exploration
     # ε reaches ε_min at ~66% of N, leaving ~34% of episodes for pure exploitation.
-    warmup_ratio = 0.052165618495463514     # W: fraction of N dedicated to pure exploration
-    target_ratio = 0.7486830779760179       # T: fraction of N at which ε reaches ε_min
+    warmup_ratio = 0.02403950683025824     # W: fraction of N dedicated to pure exploration
+    target_ratio = 0.5174250836504598       # T: fraction of N at which ε reaches ε_min
     decay_rate   = (epsilon_min / epsilon_initial) ** (1.0 / ((target_ratio - warmup_ratio) * num_episodes))
 
     # Double Q-Learning: reduces maximization bias for more stable convergence
@@ -161,7 +162,7 @@ def main():
     # Reward Shaping: penalización por severidad residual acumulada
     # β > 0 incentiva al agente a priorizar ciudades con alta severidad.
     # r' = r - β · Σ max(0, s_i).  β=0 desactiva el shaping.
-    penalty_coeff = 0.06060976593621523
+    penalty_coeff = 0.21766241123453672
     
     warmup_episodes = int(warmup_ratio * num_episodes)
     target_episodes = int(target_ratio * num_episodes)

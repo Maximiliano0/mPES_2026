@@ -4,12 +4,12 @@ Notificaciones push vía ntfy.sh (https://ntfy.sh).
 Instala la app «ntfy» en tu celular (Android/iOS) y suscríbete al
 tema configurado en NTFY_TOPIC para recibir las notificaciones.
 
-Uso desde Python (import relativo dentro del paquete):
+Uso desde Python (import relativo dentro de PES_Bayesian o PES_QLv2):
     from ..utils.notify import notify
     notify("Título", "Cuerpo del mensaje")
 
-Uso desde bash:
-    python3 "$PKG_DIR/utils/notify.py" "Título" "Cuerpo del mensaje"
+Uso desde bash (desde el directorio utils/):
+    python3 utils/notify.py "Título" "Cuerpo del mensaje"
 
 Uso directo con curl (referencia):
     curl -H "Title: Mi título" -d "Mi mensaje" ntfy.sh/mpes-bayesian-max
