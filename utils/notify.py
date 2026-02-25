@@ -18,6 +18,7 @@ Uso directo con curl (referencia):
 import sys
 import urllib.request
 import urllib.error
+import base64
 
 # ── Configuración ntfy ──────────────────────────────────────────
 NTFY_SERVER = "https://ntfy.sh"
@@ -49,7 +50,10 @@ def notify(title: str, body: str, *, priority: str = "default",
         data = body.encode("utf-8")
 
         req = urllib.request.Request(url, data=data, method="POST")
-        req.add_header("Title", title)
+        # Encode title as base64 to avoid latin-1 header encoding issues
+        # with non-ASCII characters (ntfy supports RFC 2047-style encoding)
+        title_b64 = base64.b64encode(title.encode("utf-8")).decode("ascii")
+        req.add_header("Title", f"=?UTF-8?B?{title_b64}?=")
         req.add_header("Priority", priority)
         if tags:
             req.add_header("Tags", tags)

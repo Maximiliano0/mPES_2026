@@ -4,6 +4,6 @@
 
 Do not read, reference, or modify files in:
 - PES/
-# - PES_Bayesian/
+- PES_Bayesian/
 
 Only work with files outside these directories.

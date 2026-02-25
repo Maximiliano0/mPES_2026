@@ -84,7 +84,7 @@ do_commit_push() {
         BODY=$(printf "La optimización '%s' (PID %s) terminó correctamente.\nCommit y push a rama '%s' completados (%s).\nProyecto: %s" \
             "$label" "$pid" "$BRANCH" "$ts" "$PROJECT_DIR")
         python3 "$NOTIFY" \
-            "[$PKG_NAME] Optimización completada — push realizado" \
+            "[$PKG_NAME] Optimizacion completada - push realizado" \
             "$BODY" || true
     else
         echo "[watch_and_push] [$ts] ERROR en push para $label"

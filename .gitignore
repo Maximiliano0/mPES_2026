@@ -47,6 +47,19 @@ htmlcov/
 .ipynb_checkpoints/
 *.ipynb
 
+# Data / Binary outputs (tracked via dated folders, not loose)
+*.npy
+*.db
+*.png
+*.log
+
+# Experiment inputs/outputs (large data, generated per run)
+*/inputs/
+*/outputs/
+
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime logs
+watch_and_push.log
