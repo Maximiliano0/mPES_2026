@@ -72,7 +72,11 @@ from ..config.CONFIG import SEED
 from .tools import convert_globalseq_to_seqs
 from ..src.terminal_utils import header, section, success, info, list_item
 from .pandemic import Pandemic, run_experiment, QLearning
-from ..utils.notify import notify
+
+try:
+    from utils.notify import notify
+except ImportError:
+    notify = lambda *a, **kw: None   # no-op if utils is not on sys.path
 
 # Nombre del paquete para las notificaciones push
 _PKG_NAME = __package__.split('.')[0] if __package__ else 'mPES'
