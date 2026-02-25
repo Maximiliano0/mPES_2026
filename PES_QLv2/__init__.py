@@ -1,13 +1,23 @@
 """
-Package initialization module for the mPES project.
+PES_QLv2 — Pandemic Experiment Scenario (Q-Learning v2)
+
+Package initialization module for the PES_QLv2 project, an enhanced variant
+of PES featuring Double Q-Learning, exponential ε-decay with warm-up, and
+Potential-Based Reward Shaping (PBRS).  A Bayesian optimisation pipeline
+(Optuna / TPE) searches over 8 hyperparameters.
 
 Handles package setup including:
-- Configuration loading from config.py
+- Configuration loading from config/CONFIG.py
 - Path definitions for documentation, outputs, and inputs
-- ANSI color codes for terminal output
-- Virtual environment validation
-- Numpy and TensorFlow configuration
-- Package exports via __all__
+- ANSI colour codes for terminal output (ANSI class)
+- NumPy and TensorFlow configuration
+- Package exports via __all__ (37 symbols)
+
+Usage
+-----
+Run experiment:          ``python3 -m PES_QLv2``
+Train RL-Agent:          ``python3 -m PES_QLv2.ext.train_rl``
+Bayesian optimisation:   ``python3 -m PES_QLv2.ext.optimize_rl [n_trials] [--resume YYYY-MM-DD]``
 """
 ######################
 ## External Imports ##

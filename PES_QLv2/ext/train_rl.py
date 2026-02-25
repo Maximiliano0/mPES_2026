@@ -1,10 +1,34 @@
 '''
-PES - Pandemic Experiment Scenario
+PES_QLv2 — Standalone RL-Agent training script.
 
-This script can be used to train a Reinforcement Learning Agent that will try to optimize its own performance on the pandemic scenario.
-It takes the parameters of the experiment directly from CONFIG.py 
+Trains a Q-Learning agent on the Pandemic environment using Bayesian-optimised
+hyperparameters and three algorithmic improvements:
 
-The trained Q-Table and the log of the obtained rewards are stored into the INPUTS_PATH directory.  They can be used later to use the trained agent.
+1. **Double Q-Learning** (``double_q=True``) — two independent Q-tables.
+2. **Exponential ε-decay with warm-up** — ``warmup_ratio`` / ``target_ratio``.
+3. **PBRS** — Potential-Based Reward Shaping with ``penalty_coeff``.
+
+Pipeline stages:
+    1. Instantiate Pandemic environment with CONFIG parameters.
+    2. Train via ``QLearning()`` (default 860 000 episodes, SEED=42).
+    3. Evaluate the Q-table over 64 sequences with infeasible-action masking.
+    4. Save Q-table (``q.npy``), rewards (``rewards.npy``), and confidence
+       plots to ``INPUTS_PATH/<date>_RL_TRAIN/``.
+
+Optimised hyperparameters (from Bayesian optimisation)::
+
+    learning_rate    = 0.2593
+    discount_factor  = 0.9806
+    epsilon_initial  = 0.8392
+    epsilon_min      = 0.0799
+    warmup_ratio     = 0.0240
+    target_ratio     = 0.5174
+    penalty_coeff    = 0.2177  (PBRS)
+    num_episodes     = 860 000
+
+Usage::
+
+    python3 -m PES_QLv2.ext.train_rl
 '''
 
 ##########################

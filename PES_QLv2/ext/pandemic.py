@@ -1,13 +1,28 @@
 '''
-PES - Pandemic Experiment Scenario
+PES_QLv2 — Pandemic Gym Environment and Enhanced Q-Learning.
 
-This is the Pandemic Scenario represented as a custom scenario of OpenAI's Gym environment.
+Implements the Pandemic environment as a custom OpenAI Gym ``Env`` and provides
+four public entry points:
 
-Pandemic Class:
-    This can be used to perform simulations on the game given the current parameters that it may have now.  
-    It relies on 
-        'calculate_normalised_final_severity_performance_metric' from exp_utils 
-        'get_updated_severity' from exp_utils.
+1. **Pandemic** — Gym environment (state space 31×11×10, action space 11).
+2. **QLearning()** — Tabular Q-Learning with three optional improvements:
+   - *Double Q-Learning* (van Hasselt, 2010): two independent Q-tables to
+     eliminate maximisation bias.
+   - *Exponential ε-decay with warm-up*: configurable warm-up phase followed
+     by exponential schedule calibrated via ``warmup_ratio`` / ``target_ratio``.
+   - *Potential-Based Reward Shaping — PBRS* (Ng et al., 1999):
+     Φ(s) = −Σ sᵢ  →  F(s, s') = β·(γ·Φ(s') − Φ(s)), controlled by
+     ``penalty_coeff``.
+3. **run_experiment()** — Greedy evaluation of a trained Q-table over the
+   64 experimental sequences (8 blocks × 8 sequences).
+4. **rl_agent_meta_cognitive()** — Entropy-based confidence estimation.
+
+Q-table shape: (31, 11, 10, 11) = 37 510 cells.
+
+Dependencies:
+    - ``exp_utils.get_updated_severity``
+    - ``exp_utils.calculate_normalised_final_severity_performance_metric``
+    - ``tools.entropy_from_pdf``
 '''
 
 ##########################

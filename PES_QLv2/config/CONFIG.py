@@ -1,21 +1,33 @@
 """
-Configuration file for the PES experiment
+PES_QLv2 — Configuration file.
 
-Experiment Structure:
+Centralises every tuneable parameter for the Pandemic Experiment Scenario
+(Q-Learning v2).  Values here apply to the experiment loop (__main__.py),
+RL training (train_rl.py), and Bayesian optimisation (optimize_rl.py).
+
+Experiment Structure::
+
     Experimento (1)
     ├─ Bloque (8)
     │    ├─ Secuencia / Mapa (8)
     │    │    ├─ Trial / Ciudad (3~10)
     │    │    │    └─ Decision de Recursos (0-10)
 
-Summary:
-    - Total: 1 Experimento
-    - 8 Bloques
-    - 8 Secuencias por Bloque
-    - Entre 3 y 10 Trials por Secuencia
+Key Differences vs PES (baseline):
+    - MAX_SEVERITY = 9 (PES uses 10)
+    - SEED = 42 (fixed for reproducible Q-Learning training)
+    - AVAILABLE_RESOURCES_PER_SEQUENCE = 39 (PES uses 49)
 
-Note:
-    Las configuraciones de cada Experimento se definen en este archivo.
+Sections:
+    - Resource allocation settings
+    - Data files & initialisation
+    - Decision aggregation
+    - Value ranges & limits
+    - Severity dynamics
+    - Experiment structure (blocks, sequences, trials)
+    - Player type configuration
+    - Reproducibility (SEED)
+    - Output preferences
 """
 
 # ==================== RESOURCE ALLOCATION SETTINGS ====================

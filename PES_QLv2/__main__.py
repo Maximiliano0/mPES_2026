@@ -1,22 +1,31 @@
 """
-This is the package's main module; it defines a main function, acting as the main entry point / execution logic of the
-whole package at a high-level, delegating implementation details to the package's specialised modules in a top-down
-manner.
+PES_QLv2 — Main entry point for the Pandemic Experiment Scenario (Q-Learning v2).
 
-Experiment Structure:
-  Experimento (1)
-  ├─ Bloque (8)
-  │  ├─ Secuencia / Mapa (8)
-  │  │  ├─ Trial / Ciudad (3~10)
-  │  │  │  └─ Decision de Recursos (0-10)
+Orchestrates the full experiment lifecycle: configuration validation,
+RL-Agent loading (Double Q-Learning + PBRS), experiment execution across
+blocks/sequences/trials, result formatting, and log management.
+Delegates implementation details to specialised modules in a top-down manner.
+
+Experiment Structure::
+
+    Experimento (1)
+    ├─ Bloque (8)
+    │  ├─ Secuencia / Mapa (8)
+    │  │  ├─ Trial / Ciudad (3~10)
+    │  │  │  └─ Decision de Recursos (0-10)
 
 Summary:
     - Total: 1 Experimento
     - 8 Bloques
-    - 8 Secuencias por Bloque
-    - Entre 3 y 10 Trials por Secuencia
+    - 8 Secuencias por Bloque (64 total)
+    - Entre 3 y 10 Trials por Secuencia (~360 total)
 
-Note: Experiment configurations are defined in this file.
+Configuration:
+    All experiment parameters are defined in ``config/CONFIG.py``.
+
+Usage::
+
+    python3 -m PES_QLv2
 """
 
 ##############################################################

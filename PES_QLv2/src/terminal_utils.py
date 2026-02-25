@@ -1,5 +1,5 @@
 """
-Terminal Utilities for PES (Pandemic Experiment Scenario)
+PES_QLv2 — Terminal Utilities for the Pandemic Experiment Scenario (Q-Learning v2).
 
 Provides styled text formatting and visual elements for enhanced console output.
 Enables creation of formatted headers, sections, progress indicators, and data displays.

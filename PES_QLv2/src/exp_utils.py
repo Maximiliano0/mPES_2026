@@ -1,8 +1,8 @@
 """
-PES - Pandemic Experiment Scenario
+PES_QLv2 — Utility functions for the Pandemic Experiment Scenario (Q-Learning v2).
 
-Utility functions module providing essential functionality for experiment execution,
-severity calculations, resource allocation aggregation, and performance metrics.
+Provides essential functionality for experiment execution, severity calculations,
+resource allocation aggregation, and performance metrics.
 
 Key Components
 --------------

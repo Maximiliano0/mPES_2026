@@ -1,9 +1,13 @@
 '''
-PES - Pandemic Experiment Scenario
+PES_QLv2 — Utility functions for the Pandemic Experiment Scenario.
 
-Set of handy functions to deal with several calculations in the PES game.
-Contains only actively used utility functions for entropy calculations, 
-sequence conversion, confidence plotting, and confidence calibration.
+Provides helper functions shared by the training and evaluation pipelines:
+
+• ``entropy_from_pdf(pdf)`` — Shannon entropy of a discrete distribution.
+• ``convert_globalseq_to_seqs(global_seq)`` — Map a global sequence index
+  to its (block, sequence) pair.
+• ``plot_confidences(confs, rewards, path)`` — Scatter + ECDF plots of
+  confidence vs. reward.
 '''
 
 ##########################

@@ -1,5 +1,5 @@
 """
-Logging Utilities for PES (Pandemic Experiment Scenario)
+PES_QLv2 — Logging Utilities for the Pandemic Experiment Scenario (Q-Learning v2).
 
 Provides centralized console logging with simultaneous file and terminal output.
 Enables dual-stream logging where messages are printed to both the console and

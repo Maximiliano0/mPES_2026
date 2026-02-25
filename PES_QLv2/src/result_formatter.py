@@ -1,5 +1,5 @@
 """
-Result Formatter for PES (Pandemic Experiment Scenario)
+PES_QLv2 — Result Formatter for the Pandemic Experiment Scenario (Q-Learning v2).
 
 Provides comprehensive formatting and visualization of experiment results.
 Generates JSON summary files and multi-panel PNG plots for performance analysis.

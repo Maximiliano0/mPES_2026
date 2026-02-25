@@ -1,24 +1,28 @@
-"""RL Agent Game Display Mediator and Response Handler.
+"""PES_QLv2 — RL Agent Response Handler and Confidence Estimator.
 
-This module bridges the Pygame game interface with the trained RL agent (Q-Learning model),
-handling agent decision-making, response timing, and confidence calculations. It manages
-the communication between the game display and the RL agent by processing game states
-and generating appropriately timed and confident responses.
+Bridges the experiment loop (__main__.py) with the trained Q-Learning model,
+handling agent decision-making, response timing, and entropy-based confidence
+calculations.
 
 Key Functions:
-    - rl_agent_meta_cognitive: Meta-cognitive decision making with entropy-based confidence
-    - provide_rl_agent_response: Main interface returning agent response and timing
+    - rl_agent_meta_cognitive: Entropy-based confidence over Q-value distribution.
+    - provide_rl_agent_response: Main interface — loads Q-table (q.npy),
+      selects greedy action, computes confidence, returns formatted response.
+
+Q-table layout (loaded from ``q.npy``):
+    Shape: (31, 11, 10, 11)
+        - 31 resource-left states   (0 … 30)
+        - 11 trial-number states    (0 … 10)
+        - 10 severity states        (0 … MAX_SEVERITY=9)
+        - 11 actions                (allocate 0 … 10 resources)
 
 Module Dependencies:
     External: numpy, tensorflow, os
     Internal: log_utils, convert_globalseq_to_seqs, CONFIG constants
 
 Global Variables:
-    first_severity: Initial severity array loaded by caller
-    number_of_trials: Total trial count for experiment
-
-Author: PES Development Team
-Version: 1.0
+    first_severity: Initial severity array set by caller before first use.
+    number_of_trials: Total trial count for the experiment.
 """
 
 ##########################
@@ -212,7 +216,7 @@ def provide_rl_agent_response(
     -----
     - Requires Q-table pre-training via: python3 -m PES_QLv2.ext.train_rl
     - Requires first_severity initialized: call before using this function
-    - Q-table dimensions: [resources (31) × trials (11) × severity (6)]
+    - Q-table dimensions: [resources (31) × trials (11) × severity (10) × actions (11)]
     - State indices automatically clamped to valid ranges
     - All Q-table values converted to integers for safe array indexing
     - Uses VERBOSE flag to enable debug output during execution
