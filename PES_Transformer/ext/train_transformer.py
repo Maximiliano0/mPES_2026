@@ -75,7 +75,7 @@ from .pandemic import (
     Pandemic, rl_agent_meta_cognitive, run_experiment,
     calculate_normalised_final_severity_performance_metric,
 )
-from .transformer_model import PandemicTransformer, TransformerAgent
+from PES_Transformer.ext.transformer_model import PandemicTransformer, TransformerAgent
 
 warnings.filterwarnings('ignore', category=UserWarning,
                         message='.*Box bound precision.*')
