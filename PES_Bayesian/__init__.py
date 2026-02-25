@@ -1,13 +1,19 @@
 """
-Package initialization module for the mPES project.
+Package initialization module for PES_Bayesian (Pandemic Experiment Scenario
+with Bayesian Optimisation).
+
+Variant of PES that adds Bayesian hyperparameter optimisation (Optuna / TPE)
+on top of Q-Learning.  This __init__ is structurally identical to PES/__init__;
+the Bayesian-specific behaviour lives in ext/optimize_rl.py and ext/train_rl.py.
 
 Handles package setup including:
-- Configuration loading from config.py
-- Path definitions for documentation, outputs, and inputs
-- ANSI color codes for terminal output
-- Virtual environment validation
-- Numpy and TensorFlow configuration
-- Package exports via __all__
+- Configuration loading from config/CONFIG.py (includes SEED for reproducibility)
+- Path definitions for documentation, outputs, and inputs directories
+- ANSI color class for styled terminal output (BOLD, RED, GREEN, etc.)
+- Virtual environment validation with user prompt
+- NumPy print/error configuration and TensorFlow log suppression
+- Pandemic dynamic parameters (RESPONSE_MULTIPLIER α, SEVERITY_MULTIPLIER β)
+- Package exports via __all__ (37 symbols)
 """
 ######################
 ## External Imports ##

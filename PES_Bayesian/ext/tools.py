@@ -1,9 +1,12 @@
 '''
-PES - Pandemic Experiment Scenario
+PES_Bayesian - Pandemic Experiment Scenario: Utility Functions
 
-Set of handy functions to deal with several calculations in the PES game.
-Contains only actively used utility functions for entropy calculations, 
-sequence conversion, confidence plotting, and confidence calibration.
+Small collection of helper functions used across PES_Bayesian modules:
+
+- **entropy_from_pdf**:  Shannon entropy (bits) of a probability distribution.
+- **convert_globalseq_to_seqs**:  Splits a flat values array into nested
+  lists grouped by per-sequence lengths.
+- **plot_confidences**:  Histogram visualization of confidence scores.
 '''
 
 ##########################

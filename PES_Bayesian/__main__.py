@@ -1,22 +1,43 @@
 """
-This is the package's main module; it defines a main function, acting as the main entry point / execution logic of the
-whole package at a high-level, delegating implementation details to the package's specialised modules in a top-down
-manner.
+Main entry point for the PES_Bayesian experiment.
 
-Experiment Structure:
+Defines the main() function that orchestrates the full experiment lifecycle:
+validation of RL-Agent training files, session creation with logging,
+block/sequence/trial assignment, RL-Agent decision collection via
+pygameMediator, severity updates, performance calculation, and
+result report generation (JSON + PNG).
+
+This module is structurally identical to PES/__main__.py.  The Bayesian-specific
+behaviour (hyperparameter search) is performed offline via ext/optimize_rl.py;
+the resulting Q-table is consumed here at experiment time.
+
+Experiment Structure
+--------------------
+::
+
   Experimento (1)
   ├─ Bloque (8)
   │  ├─ Secuencia / Mapa (8)
   │  │  ├─ Trial / Ciudad (3~10)
-  │  │  │  └─ Decision de Recursos (0-10)
+  │  │  │  └─ Decisión de Recursos (0-10)
 
-Summary:
-    - Total: 1 Experimento
-    - 8 Bloques
-    - 8 Secuencias por Bloque
-    - Entre 3 y 10 Trials por Secuencia
+Summary
+-------
+- 1 Experimento
+- 8 Bloques (NUM_BLOCKS)
+- 8 Secuencias por Bloque (NUM_SEQUENCES)
+- 3-10 Trials por Secuencia (NUM_MIN_TRIALS - NUM_MAX_TRIALS)
+- ~360 trials totales, ~45 por bloque (TOTAL_NUM_TRIALS_IN_BLOCK)
 
-Note: Experiment configurations are defined in this file.
+Usage
+-----
+::
+
+    python3 -m PES_Bayesian
+
+Configuration
+-------------
+All experiment parameters come from config/CONFIG.py.
 """
 
 ##############################################################

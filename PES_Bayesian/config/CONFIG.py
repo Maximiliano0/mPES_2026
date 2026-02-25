@@ -1,21 +1,43 @@
 """
-Configuration file for the PES experiment
+Configuration file for the PES_Bayesian experiment.
 
-Experiment Structure:
+Centralises all tunable experiment parameters in one place.
+Values are imported by PES_Bayesian/__init__.py and re-exported at package level.
+
+Sections
+--------
+- Resource Allocation Settings  (budget, initial cities)
+- Data Files & Initialization   (CSV paths, random flags)
+- Decision Aggregation           (mean / median / mode selector)
+- Value Ranges & Limits          (severity, allocation bounds)
+- Experiment Structure           (blocks, sequences, trials)
+- Player & Agent Settings        (RL_AGENT selection)
+- Pandemic Dynamics              (α / β multipliers)
+- UI & Interaction               (trust scale, fixed sequences)
+- Runtime & Persistence          (verbose, save flags)
+- Reproducibility                (SEED = 42 for Q-Learning training)
+
+Key differences from PES/config/CONFIG.py
+-----------------------------------------
+- MAX_SEVERITY = 9  (PES uses 10) → Q-table shape 31 × 11 × 10 × 11
+- SEED = 42         (PES has no SEED) → deterministic Q-Learning training
+
+Experiment Structure
+--------------------
+::
+
     Experimento (1)
     ├─ Bloque (8)
     │    ├─ Secuencia / Mapa (8)
     │    │    ├─ Trial / Ciudad (3~10)
-    │    │    │    └─ Decision de Recursos (0-10)
+    │    │    │    └─ Decisión de Recursos (0-10)
 
-Summary:
-    - Total: 1 Experimento
-    - 8 Bloques
-    - 8 Secuencias por Bloque
-    - Entre 3 y 10 Trials por Secuencia
-
-Note:
-    Las configuraciones de cada Experimento se definen en este archivo.
+Summary
+-------
+- 1 Experimento
+- 8 Bloques
+- 8 Secuencias por Bloque
+- 3-10 Trials por Secuencia
 """
 
 # ==================== RESOURCE ALLOCATION SETTINGS ====================

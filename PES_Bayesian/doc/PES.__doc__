@@ -17,12 +17,12 @@ hyperparameters that maximise normalised performance over the 64 evaluation sequ
 
 ## RL-Agent Technical Specification:
 - **State space**: (resources_left, city_number, severity)
-  - Resources: 0-30 values
-  - City/Trial number: 0-12 values
-  - Severity: 0-10 values
-- **Action space**: Resource allocation (0-10, discrete)
-- **Training**: up to 1,000,000 episodes using Q-Learning algorithm
-- **Q-Table dimensions**: 31 × 13 × 11 × 11 (after reshaping)
+  - Resources: 0-30 (31 values)
+  - City/Trial number: 0-10 (11 values, NUM_MAX_TRIALS = 10)
+  - Severity: 0-9 (10 values, MAX_SEVERITY = 9)
+- **Action space**: Resource allocation (0-10, discrete, 11 choices)
+- **Training**: default 900 000 episodes (configurable via CLI)
+- **Q-Table dimensions**: 31 × 11 × 10 × 11 = 37 510 cells
 - **Policy**: Greedy (deterministic) with epsilon-decay during training
 - **Confidence estimation**: Entropy-based metacognitive scores
 - **Training seed**: CONFIG.SEED (default 42) — reproducible across runs
