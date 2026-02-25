@@ -30,15 +30,15 @@ class Pandemic(Env):
     def __init__(self):
         # S - ESPACIO DE ESTADOS
         self.observation_space = spaces.Box(
-            low = numpy.zeros((31, 11, 10)),      # Min values
-            high = numpy.ones((31, 11, 10)),      # Max values
+            low = numpy.zeros((31, 11, 11)),      # Min values
+            high = numpy.ones((31, 11, 11)),      # Max values
             dtype = numpy.float16
         )
         # Estado = [available_resources, trial_number, severity]
         # Componentes:
         #   - available_resources: 0-30 (39 total - 9 pre-asignados)
         #   - trial_number: 0-10 (max 10 trials por secuencia)
-        #   - severity: 0-9 (severidad actual de la ciudad)
+        #   - severity: 0-10 (severidad actual de la ciudad)
         
         # A - ESPACIO DE ACCIONES
         self.action_space = spaces.Discrete(11)
@@ -110,12 +110,12 @@ Archivo: ext/train_rl.py, líneas 175-200
 
 # Inicialización de Q-table
 Q = numpy.random.uniform(low=-1, high=1,
-                        size=(31, 11, 10, 11))
+                        size=(31, 11, 11, 11))
 # Shape: (recursos, trials, severidad, acciones)
 # Q[s_resources, s_trial, s_severity, a_action] = valor esperado
 
 # Archivo guardado como: inputs/q.npy
-# Forma: Q-table entrenada con 1M episodios
+# Forma: Q-table entrenada (episodios configurables vía CLI, default 20,000)
 ```
 
 ### 2.3 Ecuación de Actualización Q-Learning
@@ -600,14 +600,14 @@ rt_hold = numpy.random.normal(mu=mu_hold, sigma=3)
 
 | Concepto RL | Fórmula | Implantación | Archivo | Líneas |
 |-----------|---------|-----------|---------|--------|
-| **MDP** | ⟨S, A, P, R, γ⟩ | `Pandemic(Env)` | `pandemic.py` | 1-100 |
-| **Estado** | $s \in S$ | `[resources, trial, severity]` | `pandemic.py` | 105-115 |
-| **Acción** | $a \in A$ | `Discrete(11)` | `pandemic.py` | 90-95 |
-| **Transición** | $P(s' \mid s,a)$ | `step()` | `pandemic.py` | 300-350 |
-| **Recompensa** | $r = R(s,a,s')$ | `reward = -sum(severities)` | `pandemic.py` | 330 |
-| **Q-función** | $Q(s,a)$ | `Q[s[0], s[1], s[2], a]` | `pandemic.py` | 600 |
-| **Bellman Update** | $Q \leftarrow Q + \alpha(r + \gamma\max Q' - Q)$ | Ver línea 625 | `pandemic.py` | 615-630 |
-| **Epsilon-Greedy** | $\pi_\varepsilon$ | `if rand < ε: random`, `else: argmax Q` | `pandemic.py` | 610-620 |
+| **MDP** | ⟨S, A, P, R, γ⟩ | `Pandemic(Env)` | `pandemic.py` | 42-115 |
+| **Estado** | $s \in S$ | `[resources, trial, severity]` | `pandemic.py` | 97-100 |
+| **Acción** | $a \in A$ | `Discrete(11)` | `pandemic.py` | 106 |
+| **Transición** | $P(s' \mid s,a)$ | `step()` | `pandemic.py` | 296-365 |
+| **Recompensa** | $r = R(s,a,s')$ | `reward = -sum(severities)` | `pandemic.py` | 352 |
+| **Q-función** | $Q(s,a)$ | `Q[s[0], s[1], s[2], a]` | `pandemic.py` | 605-609 |
+| **Bellman Update** | $Q \leftarrow Q + \alpha(r + \gamma\max Q' - Q)$ | Ver línea 649 | `pandemic.py` | 645-655 |
+| **Epsilon-Greedy** | $\pi_\varepsilon$ | `if rand < ε: random`, `else: argmax Q` | `pandemic.py` | 635-638 |
 | **Entropía** | $H = -\sum p_i \log p_i$ | `entropy_from_pdf()` | `tools.py` | 10-30 |
 | **Confianza** | $conf = (H - H_{max}) / (H_{min} - H_{max})$ | `rl_agent_meta_cognitive()` | `pandemic.py` | 400-415 |
 
@@ -622,7 +622,7 @@ FASE 1: ENTRENAMIENTO
 python3 -m PES.ext.train_rl [episodios]  # default: 20,000
 │
 ├─ 1. Inicializar Pandemic() environment
-├─ 2. Inicializar Q = random_uniform(31, 11, 10, 11)
+├─ 2. Inicializar Q = random_uniform(31, 11, 11, 11)
 ├─ 3. LOOP episodios (configurable vía CLI, default 20,000):
 │   ├─ state = reset()  [recursos, trial, severidad]
 │   ├─ MIENTRAS no done:
@@ -634,7 +634,7 @@ python3 -m PES.ext.train_rl [episodios]  # default: 20,000
 │   │  └─ ε -= reduction  ← Menos exploración
 │   └─ Guardar reward promedio cada 10k episodios
 │
-├─ 4. Guardar Q → inputs/q.npy  (31×11×10×11)
+├─ 4. Guardar Q → inputs/q.npy  (31×11×11×11)
 ├─ 5. Guardar rewards → inputs/rewards.npy  (100,)
 └─ 6. Generar gráficas de aprendizaje
 

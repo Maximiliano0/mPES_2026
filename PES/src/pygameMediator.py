@@ -1,24 +1,25 @@
-"""RL Agent Game Display Mediator and Response Handler.
+"""RL-Agent Response Mediator.
 
-This module bridges the Pygame game interface with the trained RL agent (Q-Learning model),
-handling agent decision-making, response timing, and confidence calculations. It manages
-the communication between the game display and the RL agent by processing game states
-and generating appropriately timed and confident responses.
+Bridges the experiment loop (__main__.py) with the trained Q-Learning model.
+Loads the Q-table from disk, maps game state to Q-values, and generates
+responses with entropy-based meta-cognitive confidence and simulated
+reaction times.
 
-Key Functions:
-    - rl_agent_meta_cognitive: Meta-cognitive decision making with entropy-based confidence
-    - provide_rl_agent_response: Main interface returning agent response and timing
+Key Functions
+-------------
+- rl_agent_meta_cognitive : Entropy-based confidence and response-time estimation.
+- provide_rl_agent_response : Full pipeline — loads Q-table, looks up state,
+  calls meta-cognitive function, returns (confidence, response, rt_hold, rt_release).
 
-Module Dependencies:
-    External: numpy, tensorflow, os
-    Internal: log_utils, convert_globalseq_to_seqs, CONFIG constants
+Module-global Variables (must be set by caller before use)
+----------------------------------------------------------
+- first_severity : ndarray — flat array of initial severities for all trials.
+- number_of_trials : ndarray — block × sequence matrix of trial counts.
 
-Global Variables:
-    first_severity: Initial severity array loaded by caller
-    number_of_trials: Total trial count for experiment
-
-Author: PES Development Team
-Version: 1.0
+Dependencies
+------------
+numpy, tensorflow (for TF Variable conversion), os
+Internal: log_utils, ext.tools.convert_globalseq_to_seqs, CONFIG constants.
 """
 
 ##########################

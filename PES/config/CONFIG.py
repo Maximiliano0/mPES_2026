@@ -1,21 +1,34 @@
 """
-Configuration file for the PES experiment
+Configuration file for the PES experiment.
 
-Experiment Structure:
+Centralises all tunable experiment parameters in one place.
+Values are imported by PES/__init__.py and re-exported at package level.
+
+Sections
+--------
+- Resource Allocation Settings  (budget, initial cities)
+- Data Files & Initialization   (CSV paths, random flags)
+- Decision Aggregation           (mean / median / mode selector)
+- Value Ranges & Limits          (severity, allocation bounds)
+- Experiment Structure           (blocks, sequences, trials)
+- Player & Agent Settings        (RL_AGENT selection)
+- Pandemic Dynamics              (α / β multipliers)
+- UI & Interaction               (trust scale, fixed sequences)
+- Runtime & Persistence          (verbose, save flags)
+
+Experiment Structure
+--------------------
+::
+
     Experimento (1)
     ├─ Bloque (8)
     │    ├─ Secuencia / Mapa (8)
     │    │    ├─ Trial / Ciudad (3~10)
-    │    │    │    └─ Decision de Recursos (0-10)
+    │    │    │    └─ Decisión de Recursos (0-10)
 
-Summary:
-    - Total: 1 Experimento
-    - 8 Bloques
-    - 8 Secuencias por Bloque
-    - Entre 3 y 10 Trials por Secuencia
-
-Note:
-    Las configuraciones de cada Experimento se definen en este archivo.
+Note
+----
+All constants here are imported via ``from .config import CONFIG`` in ``__init__.py``.
 """
 
 # ==================== RESOURCE ALLOCATION SETTINGS ====================

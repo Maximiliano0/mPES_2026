@@ -1,10 +1,33 @@
 '''
-PES - Pandemic Experiment Scenario
+PES - Pandemic Experiment Scenario: RL-Agent Training Pipeline
 
-This script can be used to train a Reinforcement Learning Agent that will try to optimize its own performance on the pandemic scenario.
-It takes the parameters of the experiment directly from CONFIG.py 
+Trains a Q-Learning agent on the Pandemic environment and evaluates it
+against a random-player baseline.
 
-The trained Q-Table and the log of the obtained rewards are stored into the INPUTS_PATH directory.  They can be used later to use the trained agent.
+Pipeline stages
+---------------
+1. Load training data (initial_severity.csv, sequence_lengths.csv)
+2. Run random-player baseline and save performance plots
+3. Train Q-Learning agent (configurable episodes via CLI or default 20 000)
+4. Save Q-table, rewards history, and training config to a dated directory
+5. Evaluate trained agent on the same sequences and generate
+   performance/confidence visualisations
+
+Outputs (saved to ``inputs/<date>_RL_TRAIN/``)
+----------------------------------------------
+- q_<date>.npy              — Trained Q-table  (resources × trials × severity × actions)
+- rewards_<date>.npy        — Average rewards every 10 000 episodes
+- training_config_<date>.txt — Hyperparameters and training metadata
+- \*.png                     — 8 plots (random baseline, agent performance, confidences)
+- confsrl_<date>.npy        — Raw confidence scores from evaluation
+
+Usage
+-----
+::
+
+    python3 -m PES.ext.train_rl [num_episodes]
+
+Parameters are read from config/CONFIG.py via the package ``__init__``.
 '''
 
 ##########################

@@ -1,13 +1,20 @@
 """
-Package initialization module for the mPES project.
+Package initialization module for the PES (Pandemic Experiment Scenario) project.
 
 Handles package setup including:
-- Configuration loading from config.py
-- Path definitions for documentation, outputs, and inputs
-- ANSI color codes for terminal output
-- Virtual environment validation
-- Numpy and TensorFlow configuration
-- Package exports via __all__
+- Configuration loading from config/CONFIG.py
+- Path definitions for documentation, outputs, and inputs directories
+- ANSI color class for styled terminal output (BOLD, RED, GREEN, etc.)
+- Virtual environment validation with user prompt
+- NumPy print/error configuration and TensorFlow log suppression
+- Pandemic dynamic parameters (RESPONSE_MULTIPLIER α, SEVERITY_MULTIPLIER β)
+- Package exports via __all__ (37 symbols)
+
+Usage
+-----
+All configuration constants are re-exported at package level::
+
+    from PES import AVAILABLE_RESOURCES_PER_SEQUENCE, PLAYER_TYPE, INPUTS_PATH
 """
 ######################
 ## External Imports ##

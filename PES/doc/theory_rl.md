@@ -326,7 +326,7 @@ Con suficientes actualizaciones, la tabla Q **converge** a $Q^*$.
 
 La convergencia es **lenta** en espacios grandes:
 - Con $n$ estados y $m$ acciones: $O(nm)$ complejidad
-- En PES: 31 × 11 × 10 × 11 = 37,620 entradas en Q
+- En PES: 31 × 11 × 11 × 11 = 41,261 entradas en Q
 - Un número suficiente de episodios es necesario para garantizar convergencia
   (configurable vía CLI: `python3 -m PES.ext.train_rl [episodios]`, default: 20,000)
 
@@ -606,7 +606,7 @@ Ejemplo: Estado de 10 variables continuas, 100 valores cada una
 2. Function approximation (Red neuronal)
 3. Dimensionalidad reducida
 
-PES mitiga con discretización (31 × 11 × 10 = pequeño).
+PES mitiga con discretización (31 × 11 × 11 = pequeño).
 
 ### 14.2 Non-Stationary Environments
 
@@ -674,7 +674,7 @@ Combinar policy gradient + value function:
 ├──────────────────────────────────────────────────────┤
 │ 1. Espacio de Estados (S)                            │
 │    - [recursos disponibles, trial actual, severidad] │
-│    - Tamaño: 31 × 11 × 10 = 3,410                   │
+│    - Tamaño: 31 × 11 × 11 = 3,751                   │
 │                                                      │
 │ 2. Espacio de Acciones (A)                           │
 │    - Recursos a asignar: 0-10                        │

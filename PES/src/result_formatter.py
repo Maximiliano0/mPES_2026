@@ -33,15 +33,23 @@ def generate_results_report(subject_id, outputs_path, performances, all_performa
     """
     Generate JSON and PNG report files for experiment results.
     
-    Args:
-        subject_id (str): Subject identifier (e.g., "001_TEST")
-        outputs_path (str): Path to outputs directory
-        performances (list): List of performance metrics per sequence
-        all_performances (list): 2D array of performances per block/session
-        resources_data (dict, optional): Additional resource allocation data
+    Parameters
+    ----------
+    subject_id : str
+        Unique session identifier (e.g. ``'2026-02-20_RL_AGENT'``)
+    outputs_path : str
+        Directory path where report files will be created
+    performances : list of float
+        Performance metric (0-1) for each sequence
+    all_performances : list of list of float
+        Performances grouped by block — one inner list per block
+    resources_data : dict, optional
+        Extra metadata (agent_type, num_blocks, num_sequences, etc.)
     
-    Returns:
-        tuple: (json_filepath, png_filepath)
+    Returns
+    -------
+    tuple of (str, str)
+        (json_filepath, png_filepath) — absolute paths to the generated files
     """
     
     # Calculate statistics

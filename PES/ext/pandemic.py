@@ -1,13 +1,22 @@
 '''
-PES - Pandemic Experiment Scenario
+PES - Pandemic Experiment Scenario: Gym Environment and RL Algorithms
 
-This is the Pandemic Scenario represented as a custom scenario of OpenAI's Gym environment.
+Provides the core simulation components:
 
-Pandemic Class:
-    This can be used to perform simulations on the game given the current parameters that it may have now.  
-    It relies on 
-        'calculate_normalised_final_severity_performance_metric' from exp_utils 
-        'get_updated_severity' from exp_utils.
+- **Pandemic** (gym.Env):  OpenAI Gym environment that models a pandemic
+  resource-allocation problem.  State = (resources_left, trial_no, severity);
+  action = resources to allocate (0-10).
+- **rl_agent_meta_cognitive**:  Entropy-based meta-cognitive function that
+  computes confidence and simulated response times from Q-table values.
+- **run_experiment**:  Runs multiple sequences through the environment using
+  any action-selection function and collects performance metrics.
+- **QLearning**:  Tabular Q-Learning training loop with epsilon-greedy
+  exploration and linear epsilon decay.
+
+Dependencies
+------------
+- exp_utils.get_updated_severity, calculate_normalised_final_severity_performance_metric
+- tools.entropy_from_pdf
 '''
 
 ##########################
