@@ -1,4 +1,4 @@
-PES_QLv2 — Pandemic Emergency Scenario (Q-Learning v2)
+PES_QLv2 — Pandemic Experiment Scenario (Q-Learning v2)
 
 Variant of the PES experiment with an enhanced Q-Learning algorithm featuring
 three improvements over the baseline: Double Q-Learning, exponential ε-decay
@@ -89,5 +89,5 @@ Flexible configuration via config/CONFIG.py with parameters for:
 - Output preferences and verbosity levels
 
 **Version**: PES_QLv2 v2.0
-**Last Updated**: 20 de febrero de 2026
+**Last Updated**: 26 de febrero de 2026
 **Status**: Production-ready — all three improvements implemented and integrated

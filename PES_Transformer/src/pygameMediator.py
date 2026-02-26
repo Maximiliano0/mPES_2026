@@ -33,16 +33,13 @@ Global Variables:
 ##########################
 import numpy
 import os
-import tensorflow as tf
 
 ##########################
 ##  Imports internos    ##
 ##########################
-from .. import *
-from .. ext.tools import convert_globalseq_to_seqs 
+from .. import ANSI, INPUTS_PATH, NUM_SEQUENCES, SEQ_LENGTHS_FILE, VERBOSE
 from . import log_utils
-
-##########################################################
+from ..ext.tools import convert_globalseq_to_seqs
 ## Variables requiring initialisation before module use ##
 ##########################################################
 first_severity        = None
@@ -137,9 +134,7 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
   # Options are the available choices from the Q Table
     log_utils.tee( 'Options:', options )
 
-    entrp1 = entropy_from_pdf(options)
-
-    o = [i for i in range(len(options))]
+    o = list(range(len(options)))
     o = numpy.asarray(o, dtype=numpy.float32)
 
     options[o>resources_left] = 0.00001
@@ -154,11 +149,12 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     confidence = (1./(m_entropy-M_entropy)) * (dec_entropy - M_entropy)
 
     response = numpy.argmax(options)
-    
+
     # Ensure response never exceeds available resources
     response = int(numpy.clip(response, 0, int(resources_left)))
 
-    map_to_response_time = lambda x: x * (-2) + 1
+    def map_to_response_time(x):
+        return x * (-2) + 1
 
     mu, sigma = int(map_to_response_time(confidence) * 10), 3
 
@@ -172,7 +168,7 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
 
 
 def provide_rl_agent_response(
-                         resources,
+                         _resources,
                          resources_left,
                          session_no,
                          sequence_no,
@@ -254,7 +250,7 @@ def provide_rl_agent_response(
                 f"\nFATAL ERROR: Failed to load Transformer model!\n"
                 f"Error: {str(e)}\n"
                 f"Please retrain by running: python3 -m PES_Transformer.ext.train_transformer\n"
-            )
+            ) from e
 
     # ── trajectory management ────────────────────────────────────
     abs_seq = session_no * NUM_SEQUENCES + sequence_no
@@ -279,7 +275,7 @@ def provide_rl_agent_response(
     import tensorflow as tf_local
     states = tf_local.constant([_trajectory_buffer], dtype=tf_local.float32)
 
-    action, probs, value, _ = _transformer_model.get_action_and_value(
+    _, probs, _, _ = _transformer_model.get_action_and_value(
         states, greedy=True, resources_left=resources_idx,
     )
 

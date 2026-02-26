@@ -1,4 +1,4 @@
-PES_Transformer — Pandemic Emergency Scenario (Transformer)
+PES_Transformer — Pandemic Experiment Scenario (Transformer)
 
 Variant of the PES experiment that replaces tabular Q-Learning with a causal
 Transformer encoder and actor-critic output heads.  The model processes the
@@ -33,8 +33,8 @@ multi-head causal self-attention.
 - **Optimizer**: Adam, lr = 3×10⁻⁴, gradient clipping at 0.5
 - **Batch size**: 64 episodes per batch
 - **Default training**: 1500 batches × 64 episodes = 96,000 episodes
-- **GAE**: λ = 0.95, γ = 0.99
-- **Evaluation**: every 50 batches on 64 fixed sequences (same benchmark as Q-Learning)
+- **GAE**: λ = 0.95, γ = 0.98
+- **Evaluation**: every 100 batches on 64 fixed sequences (same benchmark as Q-Learning)
 - **Saving**: best model by evaluation performance, plus final model
 
 ## Comparison — Q-Learning vs Transformer:
@@ -60,7 +60,7 @@ multi-head causal self-attention.
 - **PES_Transformer/ext/transformer_model.py**: Transformer architecture (CausalSelfAttention, TransformerBlock, PandemicTransformer, TransformerAgent)
 - **PES_Transformer/ext/train_transformer.py**: REINFORCE+GAE training pipeline
 - **PES_Transformer/ext/pandemic.py**: Gym environment and evaluation (shared)
-- **PES_Transformer/ext/train_rl.py**: Q-Learning baseline training (from PES_QLv2)
+- **PES_Transformer/ext/optimize_tr.py**: Q-Learning baseline Bayesian optimisation (from PES_QLv2)
 - **PES_Transformer/src/pygameMediator.py**: Transformer inference with trajectory buffer
 - **PES_Transformer/src/exp_utils.py**: Severity calculations and aggregation
 - **PES_Transformer/src/log_utils.py**: Dual-stream logging (console + file)
@@ -83,7 +83,6 @@ multi-head causal self-attention.
 ## Usage:
 - Execute experiment:         python3 -m PES_Transformer
 - Train Transformer agent:    python3 -m PES_Transformer.ext.train_transformer [n_batches]
-- Train Q-Learning baseline:  python3 -m PES_Transformer.ext.train_rl
 
 ## Documentation:
 - **sugerencias.md**: Analysis of Transformer viability vs Q-Learning at current scale
@@ -97,5 +96,5 @@ Flexible configuration via config/CONFIG.py with parameters for:
 - Output preferences and verbosity levels
 
 **Version**: PES_Transformer v1.0
-**Last Updated**: 2026
+**Last Updated**: 26 de febrero de 2026
 **Status**: Experimental — Transformer architecture implemented for evaluation

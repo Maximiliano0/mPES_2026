@@ -436,11 +436,11 @@ python3 -m PES_Bayesian.ext.optimize_rl 100 --resume 2026-02-12
 ✓ Optimisation finished in 2934.2s (48.9 min)
 
 ── Best Hyperparameters Found ──
-  ● learning_rate             = 0.07234
-  ● discount_factor           = 0.9412
-  ● epsilon_initial           = 0.872
-  ● epsilon_min               = 0.0321
-  ● num_episodes              = 25000
+  ● learning_rate             = 0.3597
+  ● discount_factor           = 0.8651
+  ● epsilon_initial           = 0.6791
+  ● epsilon_min               = 0.0848
+  ● num_episodes              = 900000
 ℹ Mean normalised performance: 0.848200
 ```
 

@@ -20,9 +20,7 @@ Main Functions
 • get_updated_severity: Calculate new severity given resource allocations
 • get_confidence_weighted_mean: Aggregate decisions using confidence-weighted mean
 • get_confidence_weighted_median: Aggregate decisions using confidence-weighted median
-• get_percent_deviation: Measure deviation from optimal outcomes
 • random_severity_generator: Generate random initial conditions
-• chain_ops: Pipe operations through sequential functions
 • exit_experiment_gracefully: Clean shutdown with resource cleanup
 """
 
@@ -37,9 +35,24 @@ from statsmodels.stats.weightstats import DescrStatsW as WeightedStats
 ##########################
 ##  Imports internos    ##
 ##########################
-from .. import *
+from .. import (INPUTS_PATH, MAX_ALLOCATABLE_RESOURCES, MIN_ALLOCATABLE_RESOURCES,
+                RESPONSE_MULTIPLIER, SEQ_LENGTHS_FILE, SEVERITY_MULTIPLIER)
 
 def get_sequence_severity_from_allocations( Allocations, InitialSeverities ):
+    """Compute the total severity of a sequence given resource allocations.
+
+    Parameters
+    ----------
+    Allocations : array-like
+        Resource allocation amounts for each trial in the sequence.
+    InitialSeverities : array-like
+        Initial severity values for each trial.
+
+    Returns
+    -------
+    float
+        Sum of final severity values across all trials.
+    """
     return numpy.sum( get_array_of_sequence_severities_from_allocations( Allocations, InitialSeverities ) )
 
 
@@ -173,7 +186,7 @@ def get_array_of_sequence_severities_from_allocations( Allocations, InitialSever
     return severities.copy()
 
 
-def exit_experiment_gracefully( Message, Filehandles, MovementData, LogUtils, PygameMediator ):
+def exit_experiment_gracefully( Message, Filehandles, MovementData, LogUtils, _PygameMediator ):
     """
     Clean shutdown of experiment, closing all resources and logging final information.
     
@@ -436,7 +449,7 @@ def sampler( samples, sum_to, range_list, rn = 100 ):
     return new_arr
 
 
-def get_confidence_weighted_mean( all_messages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount ):
+def get_confidence_weighted_mean( all_messages, first_severity, _AbsoluteSequenceIndex, AbsoluteTrialCount ):
     """
     Aggregate decisions from multiple participants using confidence-weighted mean.
     
@@ -519,7 +532,7 @@ def get_confidence_weighted_mode():
     raise NotImplementedError
 
 
-def get_confidence_weighted_median( all_messages, first_severity,  AbsoluteSequenceIndex, AbsoluteTrialCount ):
+def get_confidence_weighted_median( all_messages, first_severity,  _AbsoluteSequenceIndex, AbsoluteTrialCount ):
     """
     Aggregate decisions from multiple participants using confidence-weighted median.
     

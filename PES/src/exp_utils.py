@@ -41,23 +41,24 @@ from statsmodels.stats.weightstats import DescrStatsW as WeightedStats
 from .. import *
 
 def get_sequence_severity_from_allocations( Allocations, InitialSeverities ):
+    """Return the total severity for a sequence given allocations and initial severities."""
     return numpy.sum( get_array_of_sequence_severities_from_allocations( Allocations, InitialSeverities ) )
 
 
 def calculate_normalised_final_severity_performance_metric( SeveritiesFromSequence, InitialSequenceSeverities ):
     """
     Calculate normalized performance metric comparing actual severity outcome to best/worst case scenarios.
-    
+
     The metric ranges from 0 (worst case performance) to 1 (best case performance), representing
     how well the participant/agent performed relative to the theoretical bounds.
-    
+
     Parameters
     ----------
     SeveritiesFromSequence : array-like
         Final severity values achieved for each trial in the sequence
     InitialSequenceSeverities : array-like
         Initial severity values for each trial in the sequence
-    
+
     Returns
     -------
     tuple
@@ -79,57 +80,57 @@ def calculate_normalised_final_severity_performance_metric( SeveritiesFromSequen
 def get_array_of_sequence_severities_from_allocations( Allocations, InitialSeverities ):
     """
     Calculate severity progression through a sequence given resource allocations.
-    
+
     Simulates the pandemic scenario where severity evolves over time as resources
     are sequentially allocated to trials. Each trial's final severity depends on
     initial severity, resource allocation, and the combined effect of previous allocations.
-    
+
     The severity update formula for each trial is:
         new_severity = max(0, SEVERITY_MULTIPLIER * initial - RESPONSE_MULTIPLIER * allocated)
-    
+
     Parameters
     ----------
     Allocations : array-like
         Resource allocation amounts for each trial in sequence (0-10)
     InitialSeverities : array-like
         Initial severity value for each trial
-    
+
     Returns
     -------
     list[float]
         Final severity values for each trial after resource allocation effects
-    
+
     Examples
     --------
     City damage progression (Pandemic damage model):
-    
+
     Initial severities: [3, 4, 8]
     Allocations: [5, 6, 4]
-    
+
     This example shows how city damage is performed by sequentially applying
     resources. The formula at each step is:
         new_severity = max(0, SEVERITY_MULTIPLIER * severity - RESPONSE_MULTIPLIER * allocation)
-    
+
     Severity evolution across trials:
-    
+
     City 1          City 2          City 3
     ------          ------          ------
     3               
     2.6 (alloc=5)   4               
     2.12 (alloc=5)  3.6 (alloc=6)   8               
     1.54 (alloc=5)  3.12 (alloc=6)  8.8 (alloc=4)   [Final result]
-    
+
     Step-by-step explanation:
     • After Trial 0: City 1 evolves from 3 → 2.6 (allocation applied)
     • After Trial 1: City 1 continues 2.6 → 2.12; City 2 starts 4 → 3.6
     • After Trial 2: All cities update; City 3 enters 8 → 8.8
-    
+
     Final result: [1.54, 3.12, 8.8]
-    
+
     Note: This example uses SEVERITY_MULTIPLIER=1.2 and RESPONSE_MULTIPLIER=0.2
     for illustration. Actual values depend on PANDEMIC_PARAMETER configuration
     (typically 0.4, giving multipliers 1.4 and 0.4)
-    
+
     Notes
     -----
     • Severities are clipped to minimum of 0
@@ -177,11 +178,11 @@ def get_array_of_sequence_severities_from_allocations( Allocations, InitialSever
 def exit_experiment_gracefully( Message, Filehandles, MovementData, LogUtils, PygameMediator ):
     """
     Clean shutdown of experiment, closing all resources and logging final information.
-    
+
     Gracefully terminates the experiment by closing files, pygame window, and
     performing final logging operations. Avoids circular import issues by
     accepting LogUtils and PygameMediator as arguments.
-    
+
     Parameters
     ----------
     Message : str
@@ -211,11 +212,11 @@ def exit_experiment_gracefully( Message, Filehandles, MovementData, LogUtils, Py
 def get_updated_severity( no_of_cities, resource_allocated, initial_severity ) -> list[float]:
     """
     Update severity for existing cities given allocated resources.
-    
+
     Updates the severity of each city based on the resources allocated to it,
     using the pandemic damage formula. This reflects how resource allocation
     reduces the growth/intensity of the pandemic in each location.
-    
+
     Parameters
     ----------
     no_of_cities : int
@@ -224,12 +225,12 @@ def get_updated_severity( no_of_cities, resource_allocated, initial_severity ) -
         Resources allocated to each city (0 to MAX_ALLOCATABLE_RESOURCES)
     initial_severity : array-like
         Current severity values for each city
-    
+
     Returns
     -------
     list[float]
         Updated severity values, clipped to minimum of 0
-    
+
     Notes
     -----
     Uses the formula: new_severity = max(0, SEVERITY_MULTIPLIER * initial - RESPONSE_MULTIPLIER * resources)
@@ -258,11 +259,11 @@ def get_updated_severity( no_of_cities, resource_allocated, initial_severity ) -
 def random_severity_generator( number_of_runs, lower_limit, upper_limit ):
     """
     Generate random initial severity values following a custom probability distribution.
-    
+
     Creates a distribution of severity values that can be used to randomly sample
     initial conditions for trials. Uses a normal distribution to weight the
     probability of selecting different severity levels.
-    
+
     Parameters
     ----------
     number_of_runs : int
@@ -271,7 +272,7 @@ def random_severity_generator( number_of_runs, lower_limit, upper_limit ):
         Minimum severity value to consider
     upper_limit : int
         Maximum severity value to consider
-    
+
     Returns
     -------
     ndarray
@@ -294,14 +295,14 @@ def random_severity_generator( number_of_runs, lower_limit, upper_limit ):
 def next_seq_length(index, seq_per_block):
     """
     Retrieve sequence lengths for the next block of sequences.
-    
+
     Parameters
     ----------
     index : int
         Global sequence index to start from
     seq_per_block : int
         Number of sequences to retrieve
-    
+
     Returns
     -------
     ndarray
@@ -316,12 +317,12 @@ def next_seq_length(index, seq_per_block):
 def sampler( samples, sum_to, range_list, rn = 100 ):
     """
     Distribute trials across sequences in a block with randomized sampling.
-    
+
     Generates a random distribution of trial counts across multiple sequences
     such that the total number of trials in a block sums to a target value.
     This ensures that each sequence has a reasonable number of trials within
     specified bounds, with the overall block size remaining constant.
-    
+
     Parameters
     ----------
     samples : int
@@ -334,18 +335,18 @@ def sampler( samples, sum_to, range_list, rn = 100 ):
     rn : int, optional
         Random seed for reproducibility. Default is 100.
         In practice, this is often set to the block number.
-    
+
     Returns
     -------
     ndarray
         Array of trial counts for each sequence, summing to `sum_to`
-    
+
     Raises
     ------
     ValueError
         If the specified range constraints make it impossible to reach `sum_to`
         (e.g., samples * max_trials < sum_to or samples * min_trials > sum_to)
-    
+
     Examples
     --------
     >>> # Distribute 45 trials across 8 sequences with 3-10 trials each
@@ -440,11 +441,11 @@ def sampler( samples, sum_to, range_list, rn = 100 ):
 def get_confidence_weighted_mean( all_messages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount ):
     """
     Aggregate decisions from multiple participants using confidence-weighted mean.
-    
+
     Combines resource allocation decisions from multiple participants, weighting
     each decision by the confidence reported by that participant. Handles missing
     or invalid responses (-1) gracefully.
-    
+
     Parameters
     ----------
     all_messages : array-like
@@ -456,7 +457,7 @@ def get_confidence_weighted_mean( all_messages, first_severity, AbsoluteSequence
         Index of the current sequence (used for tracking)
     AbsoluteTrialCount : int
         Total number of trials completed so far
-    
+
     Returns
     -------
     tuple
@@ -507,11 +508,11 @@ def get_confidence_weighted_mean( all_messages, first_severity, AbsoluteSequence
 def get_confidence_weighted_mode():
     """
     Aggregate decisions using confidence-weighted mode (NOT IMPLEMENTED).
-    
+
     This function is a placeholder for future implementation of confidence-weighted
     mode aggregation, which would select the most common allocation value, weighted
     by participant confidence.
-    
+
     Raises
     ------
     NotImplementedError
@@ -523,11 +524,11 @@ def get_confidence_weighted_mode():
 def get_confidence_weighted_median( all_messages, first_severity,  AbsoluteSequenceIndex, AbsoluteTrialCount ):
     """
     Aggregate decisions from multiple participants using confidence-weighted median.
-    
+
     Combines resource allocation decisions from multiple participants using weighted
     median, which is more robust to outliers than the mean. Weighting by confidence
     emphasizes decisions from more confident participants.
-    
+
     Parameters
     ----------
     all_messages : array-like
@@ -539,7 +540,7 @@ def get_confidence_weighted_median( all_messages, first_severity,  AbsoluteSeque
         Index of the current sequence (used for tracking)
     AbsoluteTrialCount : int
         Total number of trials completed so far
-    
+
     Returns
     -------
     tuple

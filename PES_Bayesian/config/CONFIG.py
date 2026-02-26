@@ -11,11 +11,12 @@ Sections
 - Decision Aggregation           (mean / median / mode selector)
 - Value Ranges & Limits          (severity, allocation bounds)
 - Experiment Structure           (blocks, sequences, trials)
+- Output & Logging               (file prefixes)
 - Player & Agent Settings        (RL_AGENT selection)
 - Pandemic Dynamics              (α / β multipliers)
 - UI & Interaction               (trust scale, fixed sequences)
-- Runtime & Persistence          (verbose, save flags)
 - Reproducibility                (SEED = 42 for Q-Learning training)
+- Runtime & Persistence          (verbose, save flags)
 
 Key differences from PES/config/CONFIG.py
 -----------------------------------------
@@ -53,45 +54,45 @@ SAVE_INITIAL_SEVERITY_TO_FILE = False           # Save generated severities to C
 
 # ==================== DECISION AGGREGATION ====================
 # Method for combining resource allocation decisions from multiple participants
-AGGREGATION_METHOD = {  1: 'confidence_weighted_median',    # Robust to outliers
-                        2: 'confidence_weighted_mean',      # Standard weighted average
-                        3: 'confidence_weighted_mode'       # Most common value (experimental)
-                     }[ 2 ]    # <-- SELECT: Change index (1/2/3) to choose method
+AGGREGATION_METHOD = {1: 'confidence_weighted_median',    # Robust to outliers
+                      2: 'confidence_weighted_mean',      # Standard weighted average
+                      3: 'confidence_weighted_mode'       # Most common value (experimental)
+                      }[2]    # <-- SELECT: Change index (1/2/3) to choose method
 
 # ==================== VALUE RANGES & LIMITS ====================
 MAX_ALLOCATABLE_RESOURCES = 10  # Maximum resources allocatable per trial (Suggested: 10)
 MAX_SEVERITY = 9                # Maximum possible severity value for cities (Suggested: 9)
 MIN_ALLOCATABLE_RESOURCES = 0   # Minimum resources allocatable per trial (Suggested: 0)
-MAX_INIT_SEVERITY  = 5          # Maximum initial city severity (Suggested: 5)
-MIN_INIT_SEVERITY  = 2          # Minimum initial city severity (Suggested: 2)
+MAX_INIT_SEVERITY = 5          # Maximum initial city severity (Suggested: 5)
+MIN_INIT_SEVERITY = 2          # Minimum initial city severity (Suggested: 2)
 MAX_INIT_RESOURCES = 6          # Maximum initial resource allocation (Suggested: 6)
-MIN_INIT_RESOURCES = 3          # Minimum initial resource allocation (Suggested: 3)       
+MIN_INIT_RESOURCES = 3          # Minimum initial resource allocation (Suggested: 3)
 
 # ==================== EXPERIMENT STRUCTURE ====================
 NUM_BLOCKS = 8                  # Number of experimental blocks (Suggested: 8, Range: 6-8)
 NUM_SEQUENCES = 8               # Number of sequences (maps) per block (Suggested: 8, Range: 8-12)
 NUM_MIN_TRIALS = 3              # Minimum trials per sequence (Suggested: 3)
 NUM_MAX_TRIALS = 10             # Maximum trials per sequence (Suggested: 10)
-TOTAL_NUM_TRIALS_IN_BLOCK  = 45 # Exact sum of trials across all sequences in a block
-                                 # Ensures consistent block duration and break scheduling
+TOTAL_NUM_TRIALS_IN_BLOCK = 45  # Exact sum of trials across all sequences in a block
+# Ensures consistent block duration and break scheduling
 NUM_ATTEMPTS_TO_ASSIGN_SEQ = 8  # Retry attempts when assigning sequences to satisfy constraints
 
 # ==================== OUTPUT & LOGGING ====================
 OUTPUT_FILE_PREFIX = 'PES_'    # Prefix for all output filenames
 
 # ==================== PLAYER & AGENT SETTINGS ====================
-PLAYER_TYPE = { # Decision maker type - SELECT ONE
+PLAYER_TYPE = {  # Decision maker type - SELECT ONE
     1: 'RL_AGENT'  # Q-Learning Reinforcement Learning agent
-    }[1]
+}[1]
 
 STARTING_BLOCK_INDEX = 0   # Resume from block index (0 = start from beginning)
-STARTING_SEQ_INDEX   = 0   # Resume from sequence index (0 = start from beginning)
+STARTING_SEQ_INDEX = 0   # Resume from sequence index (0 = start from beginning)
 
 # ==================== PANDEMIC DYNAMICS ====================
 PANDEMIC_PARAMETER = 0.4   # Alpha (α) parameter controlling disease dynamics
-                           # α = RESPONSE_MULTIPLIER (resource effectiveness)
-                           # β = SEVERITY_MULTIPLIER = 1 + α (disease propagation)
-                           # Formula: new_severity = β*initial - α*resources
+# α = RESPONSE_MULTIPLIER (resource effectiveness)
+# β = SEVERITY_MULTIPLIER = 1 + α (disease propagation)
+# Formula: new_severity = β*initial - α*resources
 
 # ==================== UI & INTERACTION ====================
 TRUST_MAX = 100            # Maximum scale value for confidence slider (upgraded from 4 to 100)

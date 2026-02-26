@@ -19,15 +19,17 @@ Key Differences vs PES (baseline):
     - AVAILABLE_RESOURCES_PER_SEQUENCE = 39 (PES uses 49)
 
 Sections:
-    - Resource allocation settings
-    - Data files & initialisation
-    - Decision aggregation
-    - Value ranges & limits
-    - Severity dynamics
-    - Experiment structure (blocks, sequences, trials)
-    - Player type configuration
-    - Reproducibility (SEED)
-    - Output preferences
+    - Resource Allocation Settings  (budget, initial cities)
+    - Data Files & Initialization   (CSV paths, random flags)
+    - Decision Aggregation           (mean / median / mode selector)
+    - Value Ranges & Limits          (severity, allocation bounds)
+    - Experiment Structure           (blocks, sequences, trials)
+    - Output & Logging               (file prefixes)
+    - Player & Agent Settings        (RL_AGENT selection)
+    - Pandemic Dynamics              (α / β multipliers)
+    - UI & Interaction               (trust scale, fixed sequences)
+    - Reproducibility                (SEED = 42)
+    - Runtime & Persistence          (verbose, save flags)
 """
 
 # ==================== RESOURCE ALLOCATION SETTINGS ====================
@@ -55,7 +57,7 @@ MIN_ALLOCATABLE_RESOURCES = 0   # Minimum resources allocatable per trial (Sugge
 MAX_INIT_SEVERITY  = 5          # Maximum initial city severity (Suggested: 5)
 MIN_INIT_SEVERITY  = 2          # Minimum initial city severity (Suggested: 2)
 MAX_INIT_RESOURCES = 6          # Maximum initial resource allocation (Suggested: 6)
-MIN_INIT_RESOURCES = 3          # Minimum initial resource allocation (Suggested: 3)       
+MIN_INIT_RESOURCES = 3          # Minimum initial resource allocation (Suggested: 3)
 
 # ==================== EXPERIMENT STRUCTURE ====================
 NUM_BLOCKS = 8                  # Number of experimental blocks (Suggested: 8, Range: 6-8)

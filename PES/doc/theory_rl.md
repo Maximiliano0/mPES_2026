@@ -391,7 +391,7 @@ La exploración es más importante **al inicio**:
    
 3. **Hiperbólico**: $\varepsilon_t = \frac{\varepsilon_0}{1 + \lambda t}$
 
-**Análisis en PES** (ejemplo con 200,000 episodios):
+**Análisis en PES** (ejemplo con 20,000 episodios):
 ```
 ε_0 = 0.8, ε_min = 0.0, T = configurable (default 20,000)
 reduction = (ε_0 - ε_min) / T por episodio

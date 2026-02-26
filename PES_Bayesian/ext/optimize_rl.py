@@ -41,7 +41,16 @@ Note:
 '''
 
 ##########################
-##  External imports    ##
+##  Imports internos    ##
+##########################
+from .pandemic import Pandemic, run_experiment, QLearning
+from ..src.terminal_utils import header, section, success, info, list_item
+from .tools import convert_globalseq_to_seqs
+from ..config.CONFIG import SEED
+from .. import INPUTS_PATH
+
+##########################
+##  Imports externos    ##
 ##########################
 import os
 import sys
@@ -62,12 +71,7 @@ warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 ##########################
 ##  Internal imports    ##
 ##########################
-from .. import INPUTS_PATH
-from ..config.CONFIG import SEED
 
-from .tools import convert_globalseq_to_seqs
-from ..src.terminal_utils import header, section, success, info, list_item
-from .pandemic import Pandemic, run_experiment, QLearning
 
 try:
     from utils.notify import notify
@@ -119,16 +123,16 @@ def objective(trial: optuna.Trial) -> float:
     evaluate on the fixed 64 sequences, and return mean normalised performance.
     """
     # --- Sample hyperparameters ---
-    learning_rate    = trial.suggest_float('learning_rate',    0.10,  0.4,  log=True)
-    discount_factor  = trial.suggest_float('discount_factor',  0.80,  0.99)
-    epsilon_initial  = trial.suggest_float('epsilon_initial',  0.40,   1.0)
-    epsilon_min      = trial.suggest_float('epsilon_min',      0.05,   0.10)
-    num_episodes     = trial.suggest_int('num_episodes',       800000, 1000000, step=100000)
+    learning_rate = trial.suggest_float('learning_rate', 0.10, 0.4, log=True)
+    discount_factor = trial.suggest_float('discount_factor', 0.80, 0.99)
+    epsilon_initial = trial.suggest_float('epsilon_initial', 0.40, 1.0)
+    epsilon_min = trial.suggest_float('epsilon_min', 0.05, 0.10)
+    num_episodes = trial.suggest_int('num_episodes', 800000, 1000000, step=100000)
 
     # --- Train ---
     env = Pandemic()
-    env.number_cities_prob = _number_cities_prob
-    env.severity_prob = _severity_prob
+    env.number_cities_prob = _number_cities_prob  # type: ignore[assignment]
+    env.severity_prob = _severity_prob  # type: ignore[assignment]
     env.verbose = False
 
     rewards, Q, _ = QLearning(
@@ -141,7 +145,7 @@ def objective(trial: optuna.Trial) -> float:
     env_eval = Pandemic()
     env_eval.verbose = False
 
-    def qf(env, state, seqid):
+    def qf(_env, state, _seqid):
         s0 = min(int(state[0]), Q.shape[0] - 1)
         s1 = min(int(state[1]), Q.shape[1] - 1)
         s2 = min(int(state[2]), Q.shape[2] - 1)
@@ -208,7 +212,15 @@ def _save_report(study, opt_dir, opt_date, best_Q, best_rewards):
 
         f.write("ALL TRIALS\n")
         f.write("-" * 80 + "\n")
-        f.write(f"{'#':>4s}  {'mean_perf':>10s}  {'lr':>10s}  {'gamma':>8s}  {'eps0':>6s}  {'eps_min':>7s}  {'episodes':>8s}\n")
+        f.write(
+            f"{
+                '#':>4s}  {
+                'mean_perf':>10s}  {
+                'lr':>10s}  {
+                    'gamma':>8s}  {
+                        'eps0':>6s}  {
+                            'eps_min':>7s}  {
+                                'episodes':>8s}\n")
         f.write("-" * 80 + "\n")
         for t in sorted(study.trials, key=lambda t: t.value if t.value is not None else -1, reverse=True):
             if t.value is None:
@@ -231,7 +243,7 @@ def _save_report(study, opt_dir, opt_date, best_Q, best_rewards):
 
     fig, ax = plt.subplots(figsize=(12, 6))
     trial_numbers = [t.number + 1 for t in study.trials if t.value is not None]
-    trial_values  = [t.value  for t in study.trials if t.value is not None]
+    trial_values = [t.value for t in study.trials if t.value is not None]
 
     # Running best
     running_best = []
@@ -257,7 +269,7 @@ def _save_report(study, opt_dir, opt_date, best_Q, best_rewards):
     # --- Hyperparameter importance ---
     try:
         importances = optuna.importance.get_param_importances(study)
-        names  = list(importances.keys())
+        names = list(importances.keys())
         values = list(importances.values())
 
         fig, ax = plt.subplots(figsize=(10, 5))
@@ -283,6 +295,7 @@ def _save_report(study, opt_dir, opt_date, best_Q, best_rewards):
 ##             Main              ##
 ###################################
 def main():
+    """Run Bayesian optimisation of Q-Learning hyperparameters using Optuna."""
 
     header("BAYESIAN OPTIMISATION — Q-LEARNING HYPERPARAMETERS", width=80)
 
@@ -303,7 +316,7 @@ def main():
                 pass
             i += 1
 
-    opt_dir  = os.path.join(INPUTS_PATH, f'{opt_date}_BAYESIAN_OPT')
+    opt_dir = os.path.join(INPUTS_PATH, f'{opt_date}_BAYESIAN_OPT')
     os.makedirs(opt_dir, exist_ok=True)
 
     info(f"Output directory: {opt_dir}")
@@ -313,6 +326,8 @@ def main():
     # --- Load data ---
     section("Loading Evaluation Data", width=80)
     _load_evaluation_data()
+    assert _trials_per_sequence is not None and _sevs is not None
+    assert _number_cities_prob is not None and _severity_prob is not None
     list_item(f"Sequence lengths shape: {_trials_per_sequence.shape}")
     list_item(f"Sequences loaded: {len(_sevs)}")
     print()
@@ -370,7 +385,7 @@ def main():
                 f"Se completaron {done} de {n_trials} trials.\n"
                 f"Mejor valor hasta ahora: {best_val:.6f}\n"
                 f"Último trial: value={trial.value:.4f}\n"
-                f"Tiempo transcurrido: {elapsed:.0f}s ({elapsed/60:.1f} min)",
+                f"Tiempo transcurrido: {elapsed:.0f}s ({elapsed / 60:.1f} min)",
                 tags="chart_with_upwards_trend"
             )
 
@@ -389,7 +404,7 @@ def main():
     elapsed_total = time.time() - t_start
     total_completed = len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
     print()
-    success(f"Optimisation finished in {elapsed_total:.1f}s ({elapsed_total/60:.1f} min)")
+    success(f"Optimisation finished in {elapsed_total:.1f}s ({elapsed_total / 60:.1f} min)")
     info(f"Total completed trials: {total_completed}")
     print()
 
@@ -412,8 +427,8 @@ def main():
         info("Retraining with best hyperparameters (resumed study, original Q-table not in memory)...")
         bp = best.params
         env_final = Pandemic()
-        env_final.number_cities_prob = _number_cities_prob
-        env_final.severity_prob = _severity_prob
+        env_final.number_cities_prob = _number_cities_prob  # type: ignore[assignment]
+        env_final.severity_prob = _severity_prob  # type: ignore[assignment]
         env_final.verbose = False
 
         best_rewards, best_Q, _ = QLearning(

@@ -11,6 +11,7 @@ Sections
 - Decision Aggregation           (mean / median / mode selector)
 - Value Ranges & Limits          (severity, allocation bounds)
 - Experiment Structure           (blocks, sequences, trials)
+- Output & Logging               (file prefixes)
 - Player & Agent Settings        (RL_AGENT selection)
 - Pandemic Dynamics              (α / β multipliers)
 - UI & Interaction               (trust scale, fixed sequences)

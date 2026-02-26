@@ -8,7 +8,7 @@ Handles package setup including:
 - Virtual environment validation with user prompt
 - NumPy print/error configuration and TensorFlow log suppression
 - Pandemic dynamic parameters (RESPONSE_MULTIPLIER α, SEVERITY_MULTIPLIER β)
-- Package exports via __all__ (37 symbols)
+- Package exports via __all__ (36 symbols)
 
 Usage
 -----
@@ -20,6 +20,7 @@ All configuration constants are re-exported at package level::
 ## External Imports ##
 ######################
 import os
+import sys
 import warnings
 import numpy
 from .config import CONFIG
@@ -36,10 +37,12 @@ DOCUMENTATION_PATH = os.path.join( PKG_ROOT, 'doc' )
 OUTPUTS_PATH      = os.path.join( PKG_ROOT, 'outputs' )
 INPUTS_PATH       = os.path.join( PKG_ROOT, 'inputs' )
 
-############################
-## ANSI Color Scape Codes ##
-############################
+#############################
+## ANSI Color Escape Codes ##
+#############################
 class ANSI:
+    """ANSI escape-code constants for styled terminal output."""
+
     BOLD   = '\033[1m'
     RED    = '\033[91m'
     GREEN  = '\033[92m'
@@ -65,7 +68,7 @@ requirements.txt file.
 Press ENTER if you'd like to continue regardless (or Ctrl-C to abort).
 {ANSI.RESET}""" )
     try                     : input()   # i.e. press Enter
-    except KeyboardInterrupt: print( '\n\nExiting...' ); exit()
+    except KeyboardInterrupt: print( '\n\nExiting...' ); sys.exit()
 
 #######################################
 ### Process selected CONFIG.py file ###
@@ -74,7 +77,7 @@ Press ENTER if you'd like to continue regardless (or Ctrl-C to abort).
 AVAILABLE_RESOURCES_PER_SEQUENCE            = CONFIG.AVAILABLE_RESOURCES_PER_SEQUENCE
 INIT_NO_OF_CITIES                           = CONFIG.INIT_NO_OF_CITIES
 INITIAL_SEVERITY_FILE                       = CONFIG.INITIAL_SEVERITY_FILE
-SEQ_LENGTHS_FILE                            = CONFIG.SEQ_LENGTHS_FILE    
+SEQ_LENGTHS_FILE                            = CONFIG.SEQ_LENGTHS_FILE
 MAX_ALLOCATABLE_RESOURCES                   = CONFIG.MAX_ALLOCATABLE_RESOURCES
 MAX_INIT_RESOURCES                          = CONFIG.MAX_INIT_RESOURCES
 MAX_INIT_SEVERITY                           = CONFIG.MAX_INIT_SEVERITY
@@ -120,7 +123,7 @@ os.environ[ 'TF_CPP_MIN_LOG_LEVEL' ] ="3"
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 
 # Set some nice numpy printing defaults and error handling
-numpy.set_printoptions( threshold = numpy.inf, precision = 3, suppress = True,
+numpy.set_printoptions( threshold = sys.maxsize, precision = 3, suppress = True,
                         linewidth = 80, nanstr = "--", infstr = "∞"  )
 numpy.seterr( all = 'raise' )
 

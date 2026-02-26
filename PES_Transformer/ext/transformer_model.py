@@ -44,7 +44,6 @@ Schulman, J. et al. (2017). "Proximal Policy Optimization Algorithms."
 # ─────────────────────────────────────────────────────────────────
 import json
 import os
-import numpy as np
 import tensorflow as tf
 import keras
 
@@ -91,6 +90,7 @@ class CausalSelfAttention(keras.layers.Layer):
     # ── forward ──────────────────────────────────────────────────
 
     def call(self, x, padding_mask=None, training=False):
+        """Forward pass applying causal multi-head self-attention."""
         batch_size = tf.shape(x)[0]
         seq_len = tf.shape(x)[1]
 
@@ -156,6 +156,7 @@ class TransformerBlock(keras.layers.Layer):
         self.drop2 = keras.layers.Dropout(dropout_rate)
 
     def call(self, x, padding_mask=None, training=False):
+        """Forward pass: pre-norm attention + FFN with residual connections."""
         h = self.attn(self.ln1(x), padding_mask=padding_mask, training=training)
         x = x + self.drop1(h, training=training)
         h = self.ffn(self.ln2(x))
@@ -455,7 +456,7 @@ class TransformerAgent:
         )
         return action, probs, value, log_prob
 
-    def action_function(self, env, state, seqid):
+    def action_function(self, _env, state, _seqid):
         """Interface compatible with ``pandemic.run_experiment()``.
 
         Resets trajectory when ``trial_no == 0`` (start of new sequence).

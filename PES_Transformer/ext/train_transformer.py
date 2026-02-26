@@ -57,7 +57,7 @@ generalized advantage estimation." ICLR 2016.
 # ─────────────────────────────────────────────────────────────────
 import os
 import sys
-import numpy as np
+import numpy
 import warnings
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -69,11 +69,10 @@ import tensorflow as tf
 from .. import INPUTS_PATH
 from ..config.CONFIG import SEED
 
-from .tools import plot_confidences, convert_globalseq_to_seqs
+from .tools import plot_confidences
 from ..src.terminal_utils import header, section, success, info, list_item
 from .pandemic import (
     Pandemic, rl_agent_meta_cognitive, run_experiment,
-    calculate_normalised_final_severity_performance_metric,
 )
 from PES_Transformer.ext.transformer_model import PandemicTransformer, TransformerAgent
 
@@ -102,13 +101,13 @@ def collect_batch(env, model, batch_size, max_seq_len=10):
 
     Returns
     -------
-    states : np.ndarray, shape (batch, max_seq_len, 3)
-    actions : np.ndarray, shape (batch, max_seq_len)
-    rewards : np.ndarray, shape (batch, max_seq_len)
-    masks : np.ndarray, shape (batch, max_seq_len)
+    states : numpy.ndarray, shape (batch, max_seq_len, 3)
+    actions : numpy.ndarray, shape (batch, max_seq_len)
+    rewards : numpy.ndarray, shape (batch, max_seq_len)
+    masks : numpy.ndarray, shape (batch, max_seq_len)
         1.0 for real timesteps, 0.0 for padding.
-    log_probs : np.ndarray, shape (batch, max_seq_len)
-    values : np.ndarray, shape (batch, max_seq_len)
+    log_probs : numpy.ndarray, shape (batch, max_seq_len)
+    values : numpy.ndarray, shape (batch, max_seq_len)
     """
     all_s, all_a, all_r, all_m, all_lp, all_v = [], [], [], [], [], []
 
@@ -122,7 +121,7 @@ def collect_batch(env, model, batch_size, max_seq_len=10):
         ep_s, ep_a, ep_r, ep_lp, ep_v = [], [], [], [], []
         done = False
         while not done:
-            action, probs, value, log_prob = agent.act(state)
+            action, _probs, value, log_prob = agent.act(state)
             # Clamp action to available resources
             action = min(action, int(state[0]))
             state2, reward, done, _ = env.step(action)
@@ -152,12 +151,12 @@ def collect_batch(env, model, batch_size, max_seq_len=10):
         all_v.append(ep_v)
 
     return (
-        np.array(all_s, dtype=np.float32),
-        np.array(all_a, dtype=np.int32),
-        np.array(all_r, dtype=np.float32),
-        np.array(all_m, dtype=np.float32),
-        np.array(all_lp, dtype=np.float32),
-        np.array(all_v, dtype=np.float32),
+        numpy.array(all_s, dtype=numpy.float32),
+        numpy.array(all_a, dtype=numpy.int32),
+        numpy.array(all_r, dtype=numpy.float32),
+        numpy.array(all_m, dtype=numpy.float32),
+        numpy.array(all_lp, dtype=numpy.float32),
+        numpy.array(all_v, dtype=numpy.float32),
     )
 
 
@@ -170,16 +169,16 @@ def compute_returns(rewards, masks, gamma):
 
     Parameters
     ----------
-    rewards : np.ndarray, shape (batch, seq_len)
-    masks : np.ndarray, shape (batch, seq_len)
+    rewards : numpy.ndarray, shape (batch, seq_len)
+    masks : numpy.ndarray, shape (batch, seq_len)
     gamma : float
 
     Returns
     -------
-    returns : np.ndarray, shape (batch, seq_len)
+    returns : numpy.ndarray, shape (batch, seq_len)
     """
     B, T = rewards.shape
-    returns = np.zeros_like(rewards)
+    returns = numpy.zeros_like(rewards)
     for b in range(B):
         R = 0.0
         for t in reversed(range(T)):
@@ -195,20 +194,20 @@ def compute_gae(rewards, values, masks, gamma, lam=0.95):
 
     Parameters
     ----------
-    rewards : np.ndarray, shape (batch, seq_len)
-    values : np.ndarray, shape (batch, seq_len)
-    masks : np.ndarray, shape (batch, seq_len)
+    rewards : numpy.ndarray, shape (batch, seq_len)
+    values : numpy.ndarray, shape (batch, seq_len)
+    masks : numpy.ndarray, shape (batch, seq_len)
     gamma : float
     lam : float
 
     Returns
     -------
-    advantages : np.ndarray, shape (batch, seq_len)
-    returns : np.ndarray, shape (batch, seq_len)
+    advantages : numpy.ndarray, shape (batch, seq_len)
+    returns : numpy.ndarray, shape (batch, seq_len)
     """
     B, T = rewards.shape
-    advantages = np.zeros_like(rewards)
-    returns = np.zeros_like(rewards)
+    advantages = numpy.zeros_like(rewards)
+    returns = numpy.zeros_like(rewards)
 
     for b in range(B):
         gae = 0.0
@@ -289,7 +288,7 @@ def evaluate_model(env, model, trials_per_sequence, initial_severities):
     ----------
     env : Pandemic
     model : PandemicTransformer
-    trials_per_sequence : np.ndarray, shape (64,)
+    trials_per_sequence : numpy.ndarray, shape (64,)
     initial_severities : list of lists
 
     Returns
@@ -304,10 +303,10 @@ def evaluate_model(env, model, trials_per_sequence, initial_severities):
     agent = TransformerAgent(model, greedy=True)
     confs = []
 
-    def action_fn(env_inner, state, seqid):
+    def action_fn(_env_inner, state, _seqid):
         if state[1] == 0:
             agent.reset()
-        action, probs, value, _ = agent.act(state, resources_left=state[0])
+        action, probs, _value, _ = agent.act(state, resources_left=state[0])
         # Compute entropy-based confidence
         _, conf, _, _ = rl_agent_meta_cognitive(probs, state[0], 10000)
         confs.append(conf)
@@ -320,7 +319,7 @@ def evaluate_model(env, model, trials_per_sequence, initial_severities):
         NumberOfIterations=64,
     )
 
-    return float(np.mean(perfs)), perfs, confs
+    return float(numpy.mean(perfs)), perfs, confs
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -375,7 +374,7 @@ def main():
 
     # ── reproducibility ──────────────────────────────────────────
     tf.random.set_seed(SEED)
-    np.random.seed(SEED)
+    numpy.random.seed(SEED)
 
     # ── environment ──────────────────────────────────────────────
     env = Pandemic()
@@ -385,8 +384,8 @@ def main():
     SequenceLengthsCsv = os.path.join(INPUTS_PATH, 'sequence_lengths.csv')
     InitialSeverityCsv = os.path.join(INPUTS_PATH, 'initial_severity.csv')
 
-    trials_per_seq = np.loadtxt(SequenceLengthsCsv, delimiter=',').astype(int)
-    all_severities = np.loadtxt(InitialSeverityCsv, delimiter=',')
+    trials_per_seq = numpy.loadtxt(SequenceLengthsCsv, delimiter=',').astype(int)
+    all_severities = numpy.loadtxt(InitialSeverityCsv, delimiter=',')
 
     # Build list-of-lists for evaluation
     sevs_eval = []
@@ -419,7 +418,7 @@ def main():
 
     for batch_idx in range(1, n_batches + 1):
         # Collect
-        states, actions, rewards, masks, log_probs, values = collect_batch(
+        states, actions, rewards, masks, _log_probs, values = collect_batch(
             env, model, batch_size, max_seq_len,
         )
 
@@ -451,7 +450,7 @@ def main():
 
         # ── logging ─────────────────────────────────────────────
         if batch_idx % 50 == 0 or batch_idx == 1:
-            mean_rew = float(np.mean(ep_rewards))
+            mean_rew = float(numpy.mean(ep_rewards))
             info(
                 f"Batch {batch_idx:>5}/{n_batches}  |  "
                 f"loss={float(total_loss):.4f}  "
@@ -465,13 +464,13 @@ def main():
         if batch_idx % eval_every == 0 or batch_idx == n_batches:
             env_eval = Pandemic()
             env_eval.verbose = False
-            mean_perf, perfs, confs = evaluate_model(
+            mean_perf, perfs, _confs = evaluate_model(
                 env_eval, model, trials_per_seq, sevs_eval,
             )
             success(
                 f"Eval @ batch {batch_idx}: "
                 f"mean_perf = {mean_perf:.4f}  "
-                f"std = {np.std(perfs):.4f}"
+                f"std = {numpy.std(perfs):.4f}"
             )
             if mean_perf > best_perf:
                 best_perf = mean_perf
@@ -490,7 +489,7 @@ def main():
     final_perf, final_perfs, final_confs = evaluate_model(
         env_eval, model, trials_per_seq, sevs_eval,
     )
-    success(f"Final performance: mean = {final_perf:.4f}, std = {np.std(final_perfs):.4f}")
+    success(f"Final performance: mean = {final_perf:.4f}, std = {numpy.std(final_perfs):.4f}")
 
     # ── save artefacts ───────────────────────────────────────────
     section("Saving Artefacts")
@@ -509,19 +508,19 @@ def main():
 
     # Save reward history
     rewards_path = os.path.join(save_dir, f'rewards_{today_str}.npy')
-    np.save(rewards_path, np.array(reward_history))
+    numpy.save(rewards_path, numpy.array(reward_history))
 
     # Also save as rewards.npy in INPUTS_PATH for compatibility
-    np.save(os.path.join(INPUTS_PATH, 'rewards.npy'), np.array(reward_history))
+    numpy.save(os.path.join(INPUTS_PATH, 'rewards.npy'), numpy.array(reward_history))
     success("Reward history saved")
 
     # ── plots ────────────────────────────────────────────────────
     # Reward curve (smoothed)
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    _fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
     window = max(1, len(reward_history) // 100)
-    smoothed = np.convolve(reward_history,
-                           np.ones(window) / window, mode='valid')
+    smoothed = numpy.convolve(reward_history,
+                           numpy.ones(window) / window, mode='valid')
     axes[0].plot(smoothed, linewidth=0.8)
     axes[0].set_title('Training Reward (smoothed)')
     axes[0].set_xlabel('Episode')
@@ -547,7 +546,9 @@ def main():
     # Confidence plot (reuse existing utility)
     if len(final_confs) > 0:
         try:
-            plot_confidences(final_confs, final_perfs, save_dir)
+            plot_confidences(final_confs, "Transformer Confidence Distribution", Show=False)
+            plt.savefig(os.path.join(save_dir, "transformer_confidence_distribution.png"), dpi=150)
+            plt.close()
             success("Confidence plots saved")
         except Exception as e:
             info(f"Confidence plot skipped: {e}")
@@ -578,9 +579,9 @@ def main():
         f"Results:",
         f"  best_perf = {best_perf:.4f}",
         f"  final_mean_perf = {final_perf:.4f}",
-        f"  final_std_perf = {np.std(final_perfs):.4f}",
-        f"  final_min_perf = {np.min(final_perfs):.4f}",
-        f"  final_max_perf = {np.max(final_perfs):.4f}",
+        f"  final_std_perf = {numpy.std(final_perfs):.4f}",
+        f"  final_min_perf = {numpy.min(final_perfs):.4f}",
+        f"  final_max_perf = {numpy.max(final_perfs):.4f}",
     ]
 
     report_path = os.path.join(save_dir, f'training_report_{today_str}.txt')

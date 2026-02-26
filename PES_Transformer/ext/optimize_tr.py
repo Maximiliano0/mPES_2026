@@ -16,7 +16,7 @@ in __main__.py.  The best Q-table found during the search is preserved in memory
 and saved directly, avoiding a lossy re-training step.
 
 Usage:
-    python3 -m PES_Transformer.ext.optimize_rl [n_trials] [--resume YYYY-MM-DD]
+    python3 -m PES_Transformer.ext.optimize_tr [n_trials] [--resume YYYY-MM-DD]
 
     n_trials : int, optional
         Number of Bayesian optimization trials (default: 50).
@@ -137,6 +137,7 @@ def objective(trial: optuna.Trial) -> float:
 
     # --- Train ---
     env = Pandemic()
+    assert _number_cities_prob is not None and _severity_prob is not None
     env.number_cities_prob = _number_cities_prob
     env.severity_prob = _severity_prob
     env.verbose = False
@@ -153,7 +154,7 @@ def objective(trial: optuna.Trial) -> float:
     env_eval = Pandemic()
     env_eval.verbose = False
 
-    def qf(env, state, seqid):
+    def qf(_env, state, _seqid):
         s0 = min(int(state[0]), Q.shape[0] - 1)
         s1 = min(int(state[1]), Q.shape[1] - 1)
         s2 = min(int(state[2]), Q.shape[2] - 1)
@@ -298,6 +299,7 @@ def _save_report(study, opt_dir, opt_date, best_Q, best_rewards):
 ##             Main              ##
 ###################################
 def main():
+    """Run Bayesian optimisation of Q-Learning hyperparameters."""
 
     header("BAYESIAN OPTIMISATION — Q-LEARNING HYPERPARAMETERS", width=80)
 
@@ -328,6 +330,8 @@ def main():
     # --- Load data ---
     section("Loading Evaluation Data", width=80)
     _load_evaluation_data()
+    assert _trials_per_sequence is not None, "_trials_per_sequence not loaded"
+    assert _sevs is not None, "_sevs not loaded"
     list_item(f"Sequence lengths shape: {_trials_per_sequence.shape}")
     list_item(f"Sequences loaded: {len(_sevs)}")
     print()
@@ -430,6 +434,7 @@ def main():
         info("Retraining with best hyperparameters (resumed study, original Q-table not in memory)...")
         bp = best.params
         env_final = Pandemic()
+        assert _number_cities_prob is not None and _severity_prob is not None
         env_final.number_cities_prob = _number_cities_prob
         env_final.severity_prob = _severity_prob
         env_final.verbose = False

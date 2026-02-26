@@ -16,10 +16,6 @@ Provides helper functions shared by the training and evaluation pipelines:
 import numpy
 import matplotlib.pyplot as plt
 
-from statsmodels.distributions.empirical_distribution import ECDF
-from scipy.stats import beta 
-from scipy.stats import uniform
-
 ##########################
 ##  Imports internos    ##
 ##########################
@@ -103,9 +99,9 @@ def plot_confidences(ConfidencesPerSubject, title, Show=True, ExcludeUnanswered=
         confidences[confidences == -1.0] = 0.0
 
     val_confidences = numpy.arange(10.0 + 2.0, dtype=numpy.float32) / 10.0 - 0.05
-    conf_hist = numpy.histogram(confidences, bins=val_confidences)
+    _conf_hist = numpy.histogram(confidences, bins=val_confidences.tolist())
 
-    plt.hist(confidences, bins=val_confidences)
+    plt.hist(confidences, bins=val_confidences.tolist())
     plt.title(title)
     if Show:
         plt.show()

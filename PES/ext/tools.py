@@ -17,7 +17,7 @@ import os
 import matplotlib.pyplot as plt
 
 from statsmodels.distributions.empirical_distribution import ECDF
-from scipy.stats import beta 
+from scipy.stats import beta
 from scipy.stats import uniform
 
 ##########################
@@ -28,12 +28,12 @@ from scipy.stats import uniform
 def entropy_from_pdf(pdf):
     '''
     Return the entropy of the provided pdf (which can be a histogram).
-    
+
     Parameters
     ----------
     pdf : array-like
         Probability distribution function values (can be a histogram)
-    
+
     Returns
     -------
     float
@@ -52,14 +52,14 @@ def entropy_from_pdf(pdf):
 def convert_globalseq_to_seqs(sequence_map, seqin360):
     '''
     Convert a flat array of global sequence values into a nested list grouped by sequence.
-    
+
     Parameters
     ----------
     sequence_map : array-like
         Array containing the length of each sequence
     seqin360 : array-like
         Flat array containing all values from all sequences
-    
+
     Returns
     -------
     list of lists
@@ -76,7 +76,7 @@ def convert_globalseq_to_seqs(sequence_map, seqin360):
 def plot_confidences(ConfidencesPerSubject, title, Show=True, ExcludeUnanswered=True):
     '''
     Plot a histogram of confidence values.
-    
+
     Parameters
     ----------
     ConfidencesPerSubject : array-like
@@ -87,7 +87,7 @@ def plot_confidences(ConfidencesPerSubject, title, Show=True, ExcludeUnanswered=
         Whether to display the plot. Default: True
     ExcludeUnanswered : bool, optional
         If True, exclude values of -1.0 (unanswered). Default: True
-    
+
     Returns
     -------
     ndarray
@@ -103,9 +103,9 @@ def plot_confidences(ConfidencesPerSubject, title, Show=True, ExcludeUnanswered=
         confidences[confidences == -1.0] = 0.0
 
     val_confidences = numpy.arange(10.0 + 2.0, dtype=numpy.float32) / 10.0 - 0.05
-    conf_hist = numpy.histogram(confidences, bins=val_confidences)
+    _conf_hist = numpy.histogram(confidences, bins=val_confidences.tolist())
 
-    plt.hist(confidences, bins=val_confidences)
+    plt.hist(confidences, bins=val_confidences.tolist())
     plt.title(title)
     if Show:
         plt.show()

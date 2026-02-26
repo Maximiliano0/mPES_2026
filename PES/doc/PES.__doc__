@@ -1,4 +1,4 @@
-The PES Pandemic Emergency Scenario (v2.0) is an experimental paradigm for 
+The PES Pandemic Experiment Scenario (v2.0) is an experimental paradigm for 
 investigating resource allocation decision-making under stress in pandemic contexts.
 
 In this version (v2.0), the system is powered by a pre-trained Reinforcement Learning 
@@ -37,9 +37,9 @@ training pipeline (default: 20,000 episodes, adjustable via CLI).
 - Available resources per sequence: 39 (AVAILABLE_RESOURCES_PER_SEQUENCE)
 
 ## Core Modules:
-- **PES/__init__.py**: Package init — config loading, path definitions, ANSI class, 37 exports
+- **PES/__init__.py**: Package init — config loading, path definitions, ANSI class, 36 exports
 - **PES/__main__.py**: Main entry point — experiment lifecycle orchestration (1 function)
-- **PES/config/CONFIG.py**: All experiment parameters, organised in 9 sections
+- **PES/config/CONFIG.py**: All experiment parameters, organised in 10 sections
 - **PES/ext/pandemic.py**: Pandemic Gym environment (13 methods), rl_agent_meta_cognitive, run_experiment, QLearning (16 total)
 - **PES/ext/tools.py**: entropy_from_pdf, convert_globalseq_to_seqs, plot_confidences (3 functions)
 - **PES/ext/train_rl.py**: RL training pipeline — baseline, Q-Learning, evaluation, plots (1 + 2 nested)
@@ -56,7 +56,7 @@ training pipeline (default: 20,000 episodes, adjustable via CLI).
 ### Training outputs (inputs/<date>_RL_TRAIN/):
 - q_<date>.npy: Trained Q-Table (31×11×11×11)
 - rewards_<date>.npy: Average rewards per 10k-episode windows
-- training_config_<date>.txt: Hyperparameters and seed
+- training_config_<date>.txt: Hyperparameters and training metadata
 - confsrl_<date>.npy: Raw confidence scores from evaluation
 - *.png: 8 plots (random baseline, agent performance, confidences)
 
@@ -93,5 +93,5 @@ The system supports flexible configuration via config/CONFIG.py with parameters 
 - Performance metric: (worst - actual) / (worst - best), range [0, 1]
 
 **Version**: PES v2.0
-**Last Updated**: 25 de febrero de 2026
+**Last Updated**: 26 de febrero de 2026
 **Status**: Production-ready — 2 classes, 59 function definitions, NumPy-style docstrings

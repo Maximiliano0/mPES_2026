@@ -1,11 +1,19 @@
-# Virtual Environment
+# ═══════════════════════════════════════════════════════════════════════════════
+#  mPES — .gitignore
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Last updated: 2026-02-26
+#
+#  Packages: PES · PES_Bayesian · PES_QLv2 · PES_Transformer · utils
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Virtual environments ────────────────────────────────────────────────────
 linux_mpes_env/
 win_mpes_env/
 .venv/
 venv/
 env/
 
-# Python
+# ── Python bytecode / build artefacts ───────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -30,36 +38,33 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# IDEs
+# ── IDEs / editors ─────────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
 
-# Test and Coverage
+# ── Testing & coverage ─────────────────────────────────────────────────────
 .pytest_cache/
 .coverage
 htmlcov/
 
-# Jupyter
+# ── Jupyter ─────────────────────────────────────────────────────────────────
 .ipynb_checkpoints/
 *.ipynb
 
-# Data / Binary outputs (tracked via dated folders, not loose)
+# ── Data / binary outputs (generated per run, not tracked) ─────────────────
 *.npy
 *.db
+*.sqlite3
 *.png
 *.log
 
-# Experiment inputs/outputs (large data, generated per run)
+# ── Experiment inputs/outputs (large data, regenerated per run) ────────────
 */inputs/
 */outputs/
 
-# OS
+# ── OS metadata ────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
-
-# Runtime logs
-watch_and_push.log

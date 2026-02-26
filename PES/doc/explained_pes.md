@@ -11,7 +11,7 @@ Entrenar y ejecutar un agente inteligente que tome decisiones estratégicas sobr
 
 ## 2. Estructura Jerárquica del Experimento
 
-El experimento sigue una estructura anidada estricta definida en `__main__.py` (líneas 84-636):
+El experimento sigue una estructura anidada estricta definida en `__main__.py`:
 
 ```
 1 EXPERIMENTO
@@ -28,7 +28,7 @@ El experimento sigue una estructura anidada estricta definida en `__main__.py` (
 - **Trials totales**: ~360 (64 secuencias × 5.6 trials promedio)
 - **Total de decisiones**: ~360
 
-### Configuración en `CONFIG.py` (líneas 62-72)
+### Configuración en `CONFIG.py`
 ```python
 NUM_BLOCKS = 8                      # Número de bloques experimentales
 NUM_SEQUENCES = 8                   # Secuencias por bloque
@@ -43,7 +43,7 @@ TOTAL_NUM_TRIALS_IN_BLOCK = 45      # Suma exacta de trials en un bloque
 
 ### 3.1 La Fórmula de Progresión de Severidad
 
-Implementada en `exp_utils.py` (`get_updated_severity()`, líneas 211-256):
+Implementada en `exp_utils.py` (`get_updated_severity()`):
 
 ```python
 new_severity = max(0, SEVERITY_MULTIPLIER × initial_severity - RESPONSE_MULTIPLIER × allocated_resources)
@@ -72,7 +72,7 @@ La severidad evoluciona a través de los trials, acumulando efecto de recursos.
 
 ### 3.3 Evolución Temporal en una Secuencia
 
-En `get_array_of_sequence_severities_from_allocations()` (líneas 79-130):
+En `get_array_of_sequence_severities_from_allocations()`:
 - Se itera sobre cada trial de la secuencia
 - Para cada trial se aplica la fórmula
 - El vector de severidades se actualiza secuencialmente
@@ -82,7 +82,7 @@ En `get_array_of_sequence_severities_from_allocations()` (líneas 79-130):
 
 ## 4. Flujo Principal del Experimento
 
-### 4.1 Inicialización (`__main__.py`, líneas 84-130)
+### 4.1 Inicialización (`__main__.py`)
 
 **Código relevante:**
 ```python
@@ -104,11 +104,11 @@ def main():
 3. Carga ambos archivos en memoria
 4. Si alguno falta, sugiere ejecutar `python3 -m PES.ext.train_rl`
 
-### 4.2 Creación de Sesión (`__main__.py`, líneas 135-200)
+### 4.2 Creación de Sesión (`__main__.py`)
 
 **Identificación del experimento:**
 ```python
-MySubjectId = f"{datetime.datetime.now().strftime('%Y-%m-%d')}_{PLAYER_TYPE}"
+MySubjectId = f"{datetime.date.today().strftime('%Y-%m-%d')}_{PLAYER_TYPE}"
 # Resultado: "2026-02-09_RL_AGENT"
 
 session_outputs_path = os.path.join(OUTPUTS_PATH, MySubjectId)
@@ -117,11 +117,11 @@ os.makedirs(session_outputs_path, exist_ok=True)
 
 **Logging inicializado:**
 ```python
-Responses_filehandle = log_utils.create_ConsoleLog_filehandle_singleton(MySubjectId)
+log_utils.create_ConsoleLog_filehandle_singleton(MySubjectId)
 # Crea: outputs/PES_log_2026-02-09_RL_AGENT.txt
 ```
 
-### 4.3 Asignación de Mapas y Secuencias (`__main__.py`, líneas 215-280)
+### 4.3 Asignación de Mapas y Secuencias (`__main__.py`)
 
 **Estructura de datos:**
 ```python
@@ -162,7 +162,7 @@ else:
     )
 ```
 
-### 4.4 Ejecución de Bloques y Secuencias (`__main__.py`, líneas 242-560)
+### 4.4 Ejecución de Bloques y Secuencias (`__main__.py`)
 
 **Loop principal:**
 ```python
@@ -213,7 +213,7 @@ for trial in range(num_trials):
 
 ### 5.1 Severidad Final por Secuencia
 
-Implementado en `get_sequence_severity_from_allocations()` (líneas 43-46):
+Implementado en `get_sequence_severity_from_allocations()`:
 ```python
 FinalSequenceSeverity = numpy.sum(final_severities_array)
 ```
@@ -222,7 +222,7 @@ Suma todas las severidades finales de todos los trials en la secuencia.
 
 ### 5.2 Métrica de Performance Normalizado
 
-Implementada en `calculate_normalised_final_severity_performance_metric()` (líneas 47-78):
+Implementada en `calculate_normalised_final_severity_performance_metric()`:
 
 ```python
 # Best case: máximo recursosasignados (10 cada trial)
@@ -294,8 +294,10 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     # Mapear confianza a tiempos de reacción
     # Alta confianza → tiempos rápidos
     # Baja confianza → tiempos lentos
-    rt_hold = numpy.random.normal(mu=confidence*10, sigma=3)
-    rt_release = rt_hold + numpy.random.normal(mu=confidence*10)
+    map_to_response_time = lambda x: x * (-2) + 1
+    mu = int(map_to_response_time(confidence) * 10)
+    rt_hold = numpy.random.normal(mu, 3, 1)[0]
+    rt_release = rt_hold + numpy.random.normal(mu, 1, 1)[0]
     
     # Clipear a rango válido [0, response_timeout]
     rt_hold = numpy.clip(rt_hold, 0, response_timeout/1000.0)
@@ -314,11 +316,11 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
 
 ## 7. Agregación de Decisiones (Multi-participante)
 
-Implementado en `exp_utils.py` (líneas 440-530):
+Implementado en `exp_utils.py`:
 
 ### 7.1 Métodos Disponibles
 
-En CONFIG.py (línea 19):
+En `CONFIG.py`:
 ```python
 AGGREGATION_METHOD = {
     1: 'confidence_weighted_median',    # Robusto a outliers
@@ -335,7 +337,7 @@ AGGREGATION_METHOD = {
 > con escenarios multi-jugador.
 
 ```python
-def get_confidence_weighted_mean(decisions, confidences):
+def get_confidence_weighted_mean(all_messages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount):
     """
     Promedio ponderado por confianza
     
@@ -355,7 +357,7 @@ def get_confidence_weighted_mean(decisions, confidences):
 ### 7.3 `get_confidence_weighted_median()`
 
 ```python
-def get_confidence_weighted_median(decisions, confidences):
+def get_confidence_weighted_median(all_messages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount):
     """
     Mediana robusta que ordena por confianza
     - Descarta opiniones con baja confianza
@@ -382,7 +384,7 @@ def get_confidence_weighted_median(decisions, confidences):
 Implementado en `result_formatter.py`:
 
 ```python
-def generate_results_report(subject_id, outputs_path, performances, all_performances):
+def generate_results_report(subject_id, outputs_path, performances, all_performances, resources_data=None):
     """
     Genera dos tipos de reportes:
     1. JSON: Estadísticas numéricas
@@ -452,7 +454,7 @@ Ejemplo:
   ...
   (≈360 valores)
 
-Cargado en: pygameMediator.py, línea ~50
+Cargado en: __main__.py (vía numpy.loadtxt)
 ```
 
 ```
@@ -466,7 +468,7 @@ Ejemplo:
   4, 6, 5, 6, 4, 7, 5, 8  (bloque 2)
   ...
 
-Cargado en: __main__.py, línea ~260
+Cargado en: exp_utils.py (next_seq_length(), llamado desde __main__.py)
 ```
 
 ### 9.2 Archivos de Modelo Entrenado
@@ -480,7 +482,7 @@ Shape: (31, 11, 11, 11)
   - 11: severidad actual (0-10)
   - 11: valores de acción (0-10 recursos posibles)
 
-Tpye: float64
+Type: float64
 Contenido: Q-values para cada (estado, acción)
 
 rewards.npy
@@ -494,21 +496,21 @@ Uso: Para visualización de curva de aprendizaje
 
 ## 10. Tabla de Referencia: Código y Experimento
 
-| Componente | Archivo | Líneas | Funcionalidad |
-|-----------|---------|--------|---------------|
-| **Inicialización** | `__main__.py` | 84-130 | Validación Q-table |
-| **Creación sesión** | `__main__.py` | 135-200 | ID único, logging |
-| **Asignación mapas** | `__main__.py` | 215-260 | Seeds reproducibles |
-| **Asignación trials** | `__main__.py` | 260-280 | Constraint 45/bloque |
-| **Loop bloques** | `__main__.py` | 242-280 | Iteración 8 bloques |
-| **Loop secuencias** | `__main__.py` | 245-278 | Iteración 8 secuencias |
-| **Loop trials** | `__main__.py` | 441-559 | Iteración 3-10 trials |
-| **Consulta Q-table** | `pygameMediator.py` | 161-319 | Obtener acción + confianza |
-| **Update severidad** | `exp_utils.py` | 211-256 | Aplicar fórmula |
-| **Calc performance** | `exp_utils.py` | 47-78 | Normalizar [0,1] |
-| **Confianza** | `pygameMediator.py` | 52-109 | Entropía meta-cognitiva |
-| **Reportes** | `result_formatter.py` | 32-386 | JSON + PNG |
-| **Logging** | `log_utils.py` | 43-156 | Dual terminal+archivo |
+| Componente | Archivo | Función / Sección | Funcionalidad |
+|-----------|---------|-------------------|---------------|
+| **Inicialización** | `__main__.py` | `main()` inicio | Validación Q-table |
+| **Creación sesión** | `__main__.py` | `main()` sesión | ID único, logging |
+| **Asignación mapas** | `__main__.py` | `main()` asignación | Seeds reproducibles |
+| **Asignación trials** | `__main__.py` | `main()` asignación | Constraint 45/bloque |
+| **Loop bloques** | `__main__.py` | `main()` loop principal | Iteración 8 bloques |
+| **Loop secuencias** | `__main__.py` | `main()` loop interno | Iteración 8 secuencias |
+| **Loop trials** | `__main__.py` | `main()` loop trials | Iteración 3-10 trials |
+| **Consulta Q-table** | `pygameMediator.py` | `provide_rl_agent_response()` | Obtener acción + confianza |
+| **Update severidad** | `exp_utils.py` | `get_updated_severity()` | Aplicar fórmula |
+| **Calc performance** | `exp_utils.py` | `calculate_normalised_...()` | Normalizar [0,1] |
+| **Confianza** | `pygameMediator.py` | `rl_agent_meta_cognitive()` | Entropía meta-cognitiva |
+| **Reportes** | `result_formatter.py` | `generate_results_report()` | JSON + PNG |
+| **Logging** | `log_utils.py` | `create_ConsoleLog_...()` | Dual terminal+archivo |
 
 ---
 
@@ -572,7 +574,7 @@ Fin
 ### 12.1 Seeds Reproducibles
 
 ```python
-# En asignación de mapas (__main__.py, línea ~224)
+# En asignación de mapas (__main__.py)
 numpy.random.seed(100 + blk)
 
 # Resultado: mismo bloque siempre genera mismos mapas

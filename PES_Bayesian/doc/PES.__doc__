@@ -1,4 +1,4 @@
-PES_Bayesian — Pandemic Emergency Scenario with Bayesian Optimisation
+PES_Bayesian — Pandemic Experiment Scenario with Bayesian Optimisation
 
 Variant of the PES experiment that adds Bayesian hyperparameter optimisation
 (Optuna / TPE) on top of Q-Learning.  A pre-trained RL-Agent allocates limited
@@ -86,5 +86,5 @@ Flexible configuration via config/CONFIG.py with parameters for:
 - Output preferences and verbosity levels
 
 **Version**: PES_Bayesian v2.0
-**Last Updated**: 20 de febrero de 2026
+**Last Updated**: 26 de febrero de 2026
 **Status**: Production-ready

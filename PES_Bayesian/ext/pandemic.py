@@ -23,7 +23,6 @@ Q-Table shape: (31, 11, 10, 11) = 37 510 cells
 ##########################
 import numpy
 import random
-import matplotlib.pyplot as plt
 from gym import Env, spaces
 
 ##########################
@@ -34,18 +33,19 @@ from .. import MAX_SEVERITY
 from .. import MAX_ALLOCATABLE_RESOURCES
 from .. import NUM_MAX_TRIALS
 
-from .tools import entropy_from_pdf 
+from .tools import entropy_from_pdf
 from ..src.exp_utils import get_updated_severity
 from ..src.exp_utils import calculate_normalised_final_severity_performance_metric
+
 
 class Pandemic(Env):
     """
     Pandemic environment implementing OpenAI Gym's Env interface.
-    
+
     The Pandemic environment simulates a pandemic response scenario where an agent
     must allocate limited resources across multiple cities to minimize final severity.
     Each episode consists of multiple sequences, and each sequence contains multiple trials.
-    
+
     Attributes
     ----------
     max_resources : int
@@ -67,46 +67,47 @@ class Pandemic(Env):
     action_space : spaces.Discrete
         Discrete action space representing resource allocations (0 to max_allocation)
     """
+
     def __init__(self):
         """
         Initialize the Pandemic environment.
-        
+
         Sets up the state and action spaces, initializes internal variables,
         and configures the environment for simulation.
         """
         # Construct the parent class
         super(Pandemic, self).__init__()
-        
+
         # Number of available resources at the beginning (9 are preassigned)
-        self.max_resources  =   AVAILABLE_RESOURCES_PER_SEQUENCE - 9 
+        self.max_resources = AVAILABLE_RESOURCES_PER_SEQUENCE - 9
         self.available_resources_states = self.max_resources + 1
-       
+
         # Ten trials per sequence, from 3 to 10
-        self.max_seq_length =   NUM_MAX_TRIALS 
+        self.max_seq_length = NUM_MAX_TRIALS
         self.trial_no_states = self.max_seq_length + 1
 
         # Ten severities, from 0 to 10
-        self.max_severity   =   MAX_SEVERITY
+        self.max_severity = MAX_SEVERITY
         self.severity_states = self.max_severity + 1
 
         # Ten is the max alloc, Eleven choices, from 0 to 10
-        self.max_allocation =   MAX_ALLOCATABLE_RESOURCES
+        self.max_allocation = MAX_ALLOCATABLE_RESOURCES
 
         # Define a 3-D observation space
         self.observation_shape = (self.available_resources_states,
-                                  self.trial_no_states, 
+                                  self.trial_no_states,
                                   self.severity_states)
-        
-        self.observation_space = spaces.Box(low = numpy.zeros(self.observation_shape), 
-                                            high = numpy.ones(self.observation_shape),
-                                            dtype = numpy.float16)
-    
-        # Define an action space 
-        self.action_space = spaces.Discrete(self.max_allocation+1,)
-                        
-        # Create a canvas to render the environment images upon 
+
+        self.observation_space = spaces.Box(low=numpy.zeros(self.observation_shape),
+                                            high=numpy.ones(self.observation_shape),
+                                            dtype=numpy.float16)
+
+        # Define an action space
+        self.action_space = spaces.Discrete(self.max_allocation + 1,)
+
+        # Create a canvas to render the environment images upon
         self.canvas = numpy.ones(self.observation_shape)
-        
+
         # Define elements present inside the environment
         self.elements = []
         self.verbose = True
@@ -116,11 +117,11 @@ class Pandemic(Env):
     def random_sequence(self):
         """
         Generate a random sequence with severities and allocations.
-        
+
         Generates a sequence for simulation with random trial count, severities,
         and allocations. Uses uniform random values if no probability distributions
         are set, otherwise samples from the configured distributions.
-        
+
         Sets
         ----
         self.seq_length : int
@@ -135,17 +136,18 @@ class Pandemic(Env):
             self.allocations = [self.action_space.sample() for s in range(self.seq_length)]
             self.initial_severities = [random.randrange(int(0), int(self.max_severity)) for s in range(self.seq_length)]
         else:
-            self.seq_length = int(numpy.random.choice(self.number_cities_prob[:,0], p=(self.number_cities_prob[:,1])))
-            self.initial_severities = numpy.random.choice(self.severity_prob[:,0], size=(self.seq_length,), p=self.severity_prob[:,1])
+            self.seq_length = int(numpy.random.choice(self.number_cities_prob[:, 0], p=(self.number_cities_prob[:, 1])))
+            self.initial_severities = numpy.random.choice(
+                self.severity_prob[:, 0], size=(self.seq_length,), p=self.severity_prob[:, 1])
 
     def set_fixed_sequence(self, length, init_severities, allocs=None):
         """
         Set a fixed sequence with specified parameters.
-        
+
         Configures the environment with a predefined sequence length, initial
         severities, and optionally allocations. If allocations are not provided,
         they are randomly generated.
-        
+
         Parameters
         ----------
         length : int
@@ -163,22 +165,22 @@ class Pandemic(Env):
             self.allocations = [self.action_space.sample() for s in range(self.seq_length)]
         else:
             self.set_fixed_allocations(allocs)
-            
+
     def set_fixed_allocations(self, allocs):
         """
         Set fixed resource allocations for the current sequence.
-        
+
         Parameters
         ----------
         allocs : array-like
             Resource allocations for each trial in the sequence
         """
-        self.allocations = allocs 
+        self.allocations = allocs
 
     def set_initial_severities(self, init_severities):
         """
         Set the initial severity values for the current sequence.
-        
+
         Parameters
         ----------
         init_severities : array-like
@@ -189,7 +191,7 @@ class Pandemic(Env):
     def new_city(self):
         """
         Get the initial severity for the next city/trial.
-        
+
         Returns
         -------
         float
@@ -200,7 +202,7 @@ class Pandemic(Env):
     def sample(self):
         """
         Get the allocated resources for the current trial.
-        
+
         Returns
         -------
         int
@@ -208,13 +210,20 @@ class Pandemic(Env):
         """
         return self.allocations[self.iteration]
 
-    def reset(self):
+    def reset(self, seed=None, options=None):  # type: ignore[override]
         """
         Reset the environment to an initial state.
-        
+
         Resets all tracking variables, initializes resources and severities,
         and returns an initial observation of the new sequence.
-        
+
+        Parameters
+        ----------
+        seed : int or None, optional
+            Random seed (unused, kept for Gym API compatibility).
+        options : dict or None, optional
+            Extra reset options (unused, kept for Gym API compatibility).
+
         Returns
         -------
         list
@@ -224,7 +233,7 @@ class Pandemic(Env):
         self.available_resources = self.max_resources
 
         # Reset the reward
-        self.ep_return  = 0
+        self.ep_return = 0
 
         # City number
         self.iteration = 0
@@ -232,59 +241,60 @@ class Pandemic(Env):
         self.severities = []
         self.resources = []
 
-        self.severity_evolution = numpy.zeros((len(self.initial_severities)+1, len(self.initial_severities)))
+        self.severity_evolution = numpy.zeros((len(self.initial_severities) + 1, len(self.initial_severities)))
         self.severity_city_counter = 0
 
         self.done = False
 
         # Get a new city with its own severity, and keep going....
         new_severity = self.new_city()
-        self.severities.append( new_severity )
+        self.severities.append(new_severity)
 
         # return the observation
-        return [self.available_resources, self.iteration, int(new_severity)] 
+        return [self.available_resources, self.iteration, int(new_severity)]
 
     def render(self):
         """
         Render the current state of the environment.
-        
+
         Prints human-readable information about the current episode state,
         including trial number, severities, and actions taken.
-        
+
         Returns
         -------
         ndarray
             The canvas/observation array
         """
         if (self.done):
-            print("--".format(self.iteration+1) , ':' , ":".join([" {:5.2f}".format(sev) for sev in self.severities]), '->', ' Done!')
-        elif (len(self.resources)>0):
-            print("{:02d}".format(self.iteration+1) , ':' , ":".join(["{:5.2f}".format(sev) for sev in self.severities]), '->', self.resources[-1])
+            print("--".format(self.iteration + 1), ':',
+                  ":".join([" {:5.2f}".format(sev) for sev in self.severities]), '->', ' Done!')
+        elif (len(self.resources) > 0):
+            print("{:02d}".format(self.iteration + 1), ':',
+                  ":".join(["{:5.2f}".format(sev) for sev in self.severities]), '->', self.resources[-1])
         return self.canvas
-        
+
     def close(self):
         """
         Close the environment and clean up resources.
-        
+
         Placeholder method for environment cleanup (currently does nothing).
         """
-        pass
 
     def get_action_meanings(self):
         """
         Get the mapping between action indices and their meanings.
-        
+
         Returns
         -------
         dict
             Dictionary mapping action indices (0-10) to resource allocation amounts
         """
-        return {0: "0", 1:"1", 2:"2", 3:"3", 4:"4",5:"5", 6:"6", 7:"7",8:"8",9:"9", 10:"10"}
+        return {0: "0", 1: "1", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "10"}
 
     def damage(self):
         """
         Calculate the updated severity based on current allocations.
-        
+
         Returns
         -------
         ndarray
@@ -295,15 +305,15 @@ class Pandemic(Env):
     def step(self, action):
         """
         Execute one step of the environment.
-        
+
         Applies the specified action, updates the environment state, calculates
         rewards, and determines if the episode is complete.
-        
+
         Parameters
         ----------
         action : int
             The action to take (resource allocation amount, 0-10)
-        
+
         Returns
         -------
         tuple
@@ -314,20 +324,21 @@ class Pandemic(Env):
         """
         # Flag that marks the termination of an episode
         done = False
-    
-        # Assert that it is a valid action 
-        assert self.action_space.contains(action), f'Invalid Action {action}'
-        
-        # Reward for executing a step.
-        reward = 0  
 
-        if ( (self.available_resources-action)<= 0):
+        # Assert that it is a valid action
+        assert self.action_space.contains(action), f'Invalid Action {action}'
+
+        # Reward for executing a step.
+        reward = 0
+
+        if ((self.available_resources - action) <= 0):
             action = self.available_resources
 
         self.available_resources -= action
-        self.resources.append( action )
+        self.resources.append(action)
 
-        if (self.verbose): self.render()
+        if (self.verbose):
+            self.render()
 
         self.severity_evolution[self.severity_city_counter][:len(self.severities)] = self.severities
 
@@ -341,11 +352,11 @@ class Pandemic(Env):
         # if self.verbose:
         #     print(f"[DEBUG]   Severities after update:  {['%.2f' % s for s in self.severities]}")
 
-        self.severity_city_counter=self.severity_city_counter+1
+        self.severity_city_counter = self.severity_city_counter + 1
 
         # Increment the episodic return
         self.ep_return += 1
-        self.iteration += 1 
+        self.iteration += 1
 
         # Get a new city with its own severity, and keep going....
         reward = (-1) * numpy.sum(self.severities)
@@ -354,31 +365,32 @@ class Pandemic(Env):
         if (self.iteration) == self.seq_length:
             done = True
             new_severity = 0
-            
+
             # Update the evolution of the severity one more time for the final severity of all the cities.
-            self.severity_evolution[self.severity_city_counter][:len(self.severities)] = self.severities 
+            self.severity_evolution[self.severity_city_counter][:len(self.severities)] = self.severities
         else:
             new_severity = self.new_city()
-            self.severities.append( new_severity )
+            self.severities.append(new_severity)
 
-        return [self.available_resources, self.iteration, int(new_severity)], reward, done, []
+        return [self.available_resources, self.iteration, int(new_severity)], reward, done, False, {}  # type: ignore[override]
+
 
 def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     """
     Computes meta-cognitive confidence and response time estimates from Q-learning options.
-    
+
     This function evaluates the entropy of action options to determine agent confidence
     and maps that confidence to human-like response times (reaction hold and release times).
-    
+
     Parameters:
     -----------
     options : array-like
         Q-values for available actions (from Q-table). Shape: (n_actions,)
     resources_left : int
-        Number of resources remaining 
+        Number of resources remaining
     response_timeout : float
         Maximum response time allowed in milliseconds
-    
+
     Returns:
     --------
     response : int
@@ -390,7 +402,7 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
         Response time for button hold phase (in milliseconds)
     rt_release : float
         Response time for button release phase (in milliseconds)
-    
+
     Notes:
     ------
     - Confidence is calculated as: (entropy - min_entropy) / (max_entropy - min_entropy)
@@ -400,20 +412,20 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
 
     # Min entropy from a univalue distribution (0)
     m_entropy = numpy.zeros((len(options),),)
-    m_entropy[0] = 1 
+    m_entropy[0] = 1
 
     # Max entropy from a uniform distribution (3.55....)
     M_entropy = numpy.ones((len(options),),)
 
     # Calculate the entropy of the options distribution
-    entrp1 = entropy_from_pdf(options)
+    _entrp1 = entropy_from_pdf(options)
 
     o = [i for i in range(len(options))]
     o = numpy.asarray(o, dtype=numpy.float32)
 
     # Set options that are not feasible (greater than resources left)
     # to a very small value to avoid them being selected
-    options[o>resources_left] = 0.00001
+    options[o > resources_left] = 0.00001
 
     # available resources, trial, severity
     dec_entropy = entropy_from_pdf(options)
@@ -421,34 +433,35 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     m_entropy = entropy_from_pdf(m_entropy)
 
     # Calculate confidence as a normalized inverse of entropy
-    confidence = (1./(m_entropy-M_entropy)) * (dec_entropy - M_entropy)
+    confidence = (1. / (m_entropy - M_entropy)) * (dec_entropy - M_entropy)
 
     # Select the action with the highest Q-value as the response
     response = numpy.argmax(options)
 
     # Map confidence to response times using a linear transformation
-    map_to_response_time = lambda x: x * (-2) + 1
+    def map_to_response_time(x): return x * (-2) + 1
     mu, sigma = int(map_to_response_time(confidence) * 10), 3
 
     rt_hold = numpy.random.normal(mu, sigma, 1)[0]
     rt_release = rt_hold + numpy.random.normal(mu, 1, 1)[0]
 
-    rt_hold = numpy.clip( rt_hold, 0, response_timeout/1000.0)
-    rt_release = numpy.clip( rt_release, 0, response_timeout/1000.0)
+    rt_hold = numpy.clip(rt_hold, 0, response_timeout / 1000.0)
+    rt_release = numpy.clip(rt_release, 0, response_timeout / 1000.0)
 
     return response, confidence, rt_hold, rt_release
 
-def run_experiment(env, actionfunction, RandomSequences=True, 
-                   trials_per_sequence=None, sevs=None, 
-                   AssignumpyreAllocations=False, allocs=None, 
+
+def run_experiment(env, actionfunction, RandomSequences=True,
+                   trials_per_sequence=None, sevs=None,
+                   AssignumpyreAllocations=False, allocs=None,
                    NumberOfIterations=64):
     """
     Executes a pandemic simulation experiment over multiple sequences.
-    
+
     Runs an experiment in the Pandemic environment, executing a specified action function
     at each step and collecting performance metrics across multiple sequences. Supports both
     random and fixed sequence generation with optional pre-defined severities and allocations.
-    
+
     Parameters
     ----------
     env : Pandemic
@@ -459,20 +472,20 @@ def run_experiment(env, actionfunction, RandomSequences=True,
         If True, generates random sequences. If False, uses fixed sequences from parameters.
         Default: True
     trials_per_sequence : array-like, optional
-        Number of trials in each sequence. Required if RandomSequences=False or 
+        Number of trials in each sequence. Required if RandomSequences=False or
         AssignumpyreAllocations=False. Shape: (NumberOfIterations,)
     sevs : array-like, optional
-        Initial severity values for each trial in each sequence. Required if 
+        Initial severity values for each trial in each sequence. Required if
         RandomSequences=False. Shape: (NumberOfIterations, variable_length)
     AssignumpyreAllocations : bool, optional
         If True, uses pre-defined allocations from the 'allocs' parameter.
         Default: False
     allocs : array-like, optional
-        Pre-defined resource allocations for each trial. Required if 
+        Pre-defined resource allocations for each trial. Required if
         AssignumpyreAllocations=True. Shape: (NumberOfIterations, variable_length)
     NumberOfIterations : int, optional
         Number of sequences to simulate. Default: 64
-    
+
     Returns
     -------
     seqs : list
@@ -481,9 +494,9 @@ def run_experiment(env, actionfunction, RandomSequences=True,
         Normalized performance metric (final severity / initial severity) for each sequence.
         Shape: (NumberOfIterations,)
     seq_ev : list
-        Severity evolution over time for each sequence. Each element contains the 
+        Severity evolution over time for each sequence. Each element contains the
         evolution matrix for that sequence.
-    
+
     Notes
     ------
     - Each sequence runs until completion (iteration reaches seq_length).
@@ -495,54 +508,59 @@ def run_experiment(env, actionfunction, RandomSequences=True,
     seqid = 0
     if (RandomSequences):
         env.random_sequence()
-    elif (AssignumpyreAllocations):    
-        env.set_fixed_sequence(trials_per_sequence[seqid],sevs[seqid], allocs[seqid])
-    else:                   
-        env.set_fixed_sequence(trials_per_sequence[seqid],sevs[seqid])
-    state   = env.reset()
-    seqs    = []
-    perfs   = []
-    seq_ev  = []
+    elif (AssignumpyreAllocations):
+        assert trials_per_sequence is not None and sevs is not None and allocs is not None
+        env.set_fixed_sequence(trials_per_sequence[seqid], sevs[seqid], allocs[seqid])
+    else:
+        assert trials_per_sequence is not None and sevs is not None
+        env.set_fixed_sequence(trials_per_sequence[seqid], sevs[seqid])
+    state = env.reset()
+    seqs = []
+    perfs = []
+    seq_ev = []
     ITERATIONS = NumberOfIterations
-    while seqid<ITERATIONS:
+    while seqid < ITERATIONS:
         print(f'State: {state}')
-        action = actionfunction(env,state, seqid) 
-        state2, reward, done, info = env.step(action)
+        action = actionfunction(env, state, seqid)
+        state2, _reward, done, _truncated, _info = env.step(action)
 
-        if done==True:
+        if done == True:
             env.done = True
             env.render()
-            seqs.append(  numpy.sum(env.severities) )
-            perf = calculate_normalised_final_severity_performance_metric( env.severities,
+            seqs.append(numpy.sum(env.severities))
+            perf = calculate_normalised_final_severity_performance_metric(env.severities,
                                                                           env.initial_severities)
-            perfs.append( perf[0] )
-            seq_ev.append( env.severity_evolution )
+            perfs.append(perf[0])
+            seq_ev.append(env.severity_evolution)
             seqid = seqid + 1
-            
-            if seqid<ITERATIONS: 
+
+            if seqid < ITERATIONS:
                 if (RandomSequences):
                     env.random_sequence()
-                elif (AssignumpyreAllocations): 
-                    env.set_fixed_sequence(trials_per_sequence[seqid],sevs[seqid], allocs[seqid])
-                else:               
-                    env.set_fixed_sequence(trials_per_sequence[seqid],sevs[seqid])
+                elif (AssignumpyreAllocations):
+                    assert trials_per_sequence is not None and sevs is not None and allocs is not None
+                    env.set_fixed_sequence(trials_per_sequence[seqid], sevs[seqid], allocs[seqid])
+                else:
+                    assert trials_per_sequence is not None and sevs is not None
+                    env.set_fixed_sequence(trials_per_sequence[seqid], sevs[seqid])
             state2 = env.reset()
-            
+
         state = state2
 
-    print( seqs )
+    print(seqs)
     env.close()
 
     return seqs, perfs, seq_ev
 
+
 def QLearning(env, learning, discount, epsilon, min_eps, episodes, UsePreloadedReward=False, R=None, seed=None):
     """
     Implements the Q-Learning algorithm to train an agent in the Pandemic environment.
-    
+
     Q-Learning is a model-free reinforcement learning algorithm that learns the value of taking
-    actions in states. The agent learns by exploring the environment randomly (epsilon-greedy) 
+    actions in states. The agent learns by exploring the environment randomly (epsilon-greedy)
     and updating a Q-table based on observed rewards and future state values.
-    
+
     Parameters
     ----------
     env : Pandemic
@@ -571,7 +589,7 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes, UsePreloadedR
         Random seed for reproducibility.  When set, both ``numpy.random`` and
         ``random`` are seeded before Q-table initialisation so that identical
         hyperparameters produce identical training runs.  Default: None (non-deterministic).
-    
+
     Returns
     -------
     ave_reward_list : list
@@ -580,20 +598,20 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes, UsePreloadedR
         Trained Q-table with shape (available_resources, trials, severities, actions).
         Contains the learned action values for each state.
     conf_list : list
-        Confidence values (meta-cognitive scores) calculated by rl_agent_meta_cognitive 
+        Confidence values (meta-cognitive scores) calculated by rl_agent_meta_cognitive
         for each step across all episodes.
-    
+
     Algorithm Details
     -----------------
     For each episode:
     1. Initialize environment with random sequence
-    2. Use epsilon-greedy policy: random action with probability epsilon, 
+    2. Use epsilon-greedy policy: random action with probability epsilon,
        otherwise take best action (argmax Q)
     3. Execute action and observe next state + reward
     4. Update Q-value using: Q[s,a] += α * (r + γ * max(Q[s',a']) - Q[s,a])
     5. Move to next state
     6. Decay epsilon after each episode: ε -= (ε_initial - ε_min) / episodes
-    
+
     Notes
     ------
     - Epsilon decay is linear across episodes
@@ -617,87 +635,86 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes, UsePreloadedR
     #                   disponibles, estoy en el trial 't' y la severidad es 's'?"
     # Valores aleatorios (no ceros) para que argmax no sea determinista al inicio
     # y favorezca la exploración antes de que los Q-values reales se aprendan.
-    Q = numpy.random.uniform(low = -1, high = 1, 
-                        size = (  env.available_resources_states, 
-                                    env.trial_no_states, 
-                                    env.severity_states,
-                                    env.action_space.n))
-    
+    Q = numpy.random.uniform(low=-1, high=1,
+                             size=(env.available_resources_states,
+                                   env.trial_no_states,
+                                   env.severity_states,
+                                   env.action_space.n))
+
     # Initialize variables to track rewards
     reward_list = []
     ave_reward_list = []
     conf_list = []
 
     # Calculate episodic reduction in epsilon
-    reduction = (epsilon - min_eps)/episodes
-    
+    reduction = (epsilon - min_eps) / episodes
+
     # Run Q learning algorithm
     for i in range(episodes):
         # Initialize parameters
         done = False
-        tot_reward, reward = 0,0
+        tot_reward, reward = 0, 0
         env.random_sequence()
         state = env.reset()
-    
-        while done != True:   
-                
+
+        while done != True:
+
             # Clip state indices to ensure they stay within Q-table bounds
             state_idx = [min(int(state[0]), env.available_resources_states - 1),
-                        min(int(state[1]), env.trial_no_states - 1),
-                        min(int(state[2]), env.severity_states - 1)]
-            
+                         min(int(state[1]), env.trial_no_states - 1),
+                         min(int(state[2]), env.severity_states - 1)]
+
             # Determine next action - epsilon greedy strategy
             if numpy.random.random() < 1 - epsilon and state[0] is not None:
-                action = numpy.argmax(Q[state_idx[0], state_idx[1], state_idx[2]]) 
+                action = numpy.argmax(Q[state_idx[0], state_idx[1], state_idx[2]])
             else:
                 action = numpy.random.randint(0, env.action_space.n)
 
-            _, confidence, _,_ = rl_agent_meta_cognitive( Q[state_idx[0], state_idx[1], state_idx[2]], state[0], 10000)
-            conf_list.append( confidence )
+            _, confidence, _, _ = rl_agent_meta_cognitive(Q[state_idx[0], state_idx[1], state_idx[2]], state[0], 10000)
+            conf_list.append(confidence)
 
             # Get next state and reward
-            state2, reward, done, info = env.step(action) 
+            state2, reward, done, _truncated, _info = env.step(action)
 
             if (UsePreloadedReward):
+                assert R is not None
                 reward = R[state[0], state[1], state[2], action]
-            
+
             # Clip next state indices as well
             state2_idx = [min(int(state2[0]), env.available_resources_states - 1),
-                         min(int(state2[1]), env.trial_no_states - 1),
-                         min(int(state2[2]), env.severity_states - 1)]
-            
-            #Allow for terminal states
+                          min(int(state2[1]), env.trial_no_states - 1),
+                          min(int(state2[2]), env.severity_states - 1)]
+
+            # Allow for terminal states
             if done:
                 Q[state_idx[0], state_idx[1], state_idx[2], action] = reward
-                
+
             # Adjust Q value for current state
             else:
-                delta = learning*(reward + 
-                                discount*numpy.max(Q[state2_idx[0], 
-                                                state2_idx[1],
-                                                state2_idx[2]]) - 
-                                Q[state_idx[0], state_idx[1], state_idx[2], action])
+                delta = learning * (reward +
+                                    discount * numpy.max(Q[state2_idx[0],
+                                                           state2_idx[1],
+                                                           state2_idx[2]]) -
+                                    Q[state_idx[0], state_idx[1], state_idx[2], action])
                 Q[state_idx[0], state_idx[1], state_idx[2], action] += delta
-                                    
+
             # Update variables
             tot_reward += reward
             state = state2
-        
+
         # Decay epsilon
         if epsilon > min_eps:
             epsilon -= reduction
-        
+
         # Track rewards
         reward_list.append(tot_reward)
-        
-        if (i+1) % 10000 == 0:
+
+        if (i + 1) % 10000 == 0:
             ave_reward = numpy.mean(reward_list)
             ave_reward_list.append(ave_reward)
             reward_list = []
-            
-        if (i+1) % 10000 == 0:    
-            print('Episode {} Average Reward: {}'.format(i+1, ave_reward))
-            
+            print('Episode {} Average Reward: {}'.format(i + 1, ave_reward))
+
     env.close()
-    
+
     return ave_reward_list, Q, conf_list

@@ -111,8 +111,9 @@ $\mathcal{U}(-1, 1)$. La independencia es esencial: si ambas tablas empezaran
 con los mismos valores, las primeras actualizaciones serían idénticas y el
 desacoplamiento se perdería.
 
-Cada tabla ocupa $31 \times 11 \times 10 \times 11 \times 8$ bytes $= 37{,}510$
-bytes $\approx 37$ KB. El total durante entrenamiento es $\approx 74$ KB
+Cada tabla ocupa $31 \times 11 \times 10 \times 11 = 37{,}510$ celdas
+($\times 8$ bytes float64 $= 300{,}080$ bytes $\approx 293$ KB).
+El total durante entrenamiento es $\approx 586$ KB
 (trivial para cualquier máquina).
 
 #### Selección de acciones (ε-greedy)
@@ -438,7 +439,7 @@ diferencia de potenciales se amplifica en cada step:
 |---|---|---|---|
 | 0 | 8.0 | 18.2 | $0.1 \cdot (8.0 - 0.9 \cdot 18.2) = -0.84$ |
 | 1 | 18.2 | 32.5 | $0.1 \cdot (18.2 - 0.9 \cdot 32.5) = -1.11$ |
-| 2 | 32.5 | 52.5 | $0.1 \cdot (32.5 - 0.9 \cdot 52.5) = -1.50$ |
+| 2 | 32.5 | 52.5 | $0.1 \cdot (32.5 - 0.9 \cdot 52.5) = -1.48$ |
 
 Las penalizaciones crecientes crean un **gradiente temporal** que incentiva la
 intervención temprana: cuanto antes actúe el agente, menor es la penalización
@@ -466,7 +467,7 @@ ciudades activas **antes** de ejecutar la acción.
 
 ```python
 # pandemic.py — QLearning() — Step del entorno
-state2, reward, done, info = env.step(action)
+state2, reward, done, _truncated, _info = env.step(action)
 ```
 
 El step se ejecuta sin modificaciones. El entorno retorna la recompensa
@@ -592,9 +593,9 @@ señales de shaping más ricas.
 | $\varepsilon_0$ | `epsilon_initial` | float | $[0.4, 1.0]$ | Original |
 | $\varepsilon_{\min}$ | `epsilon_min` | float | $[0.05, 0.1]$ | Original |
 | $N$ | `num_episodes` | int | $[800k, 1.2M]$ | Original |
-| $w$ | `warmup_ratio` | float | $[0.01, 0.10]$ | Nuevo — Mejora 3 |
-| $f$ | `target_ratio` | float | $[0.50, 0.80]$ | Nuevo — Mejora 3 |
-| $\beta$ | `penalty_coeff` | float | $[0.001, 0.5]$ | Nuevo — Mejora 4 |
+| $w$ | `warmup_ratio` | float | $[0.01, 0.10]$ | Nuevo — Mejora 2 |
+| $f$ | `target_ratio` | float | $[0.50, 0.80]$ | Nuevo — Mejora 2 |
+| $\beta$ | `penalty_coeff` | float | $[0.001, 0.5]$ | Nuevo — Mejora 3 |
 
 Los hiperparámetros $\lambda$ y $W$ no aparecen como parámetros independientes:
 $\lambda$ se calcula automáticamente de $\varepsilon_0$, $\varepsilon_{\min}$, $w$, $f$ y $N$;
