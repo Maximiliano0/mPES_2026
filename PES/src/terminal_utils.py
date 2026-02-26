@@ -267,7 +267,7 @@ def banner(text, width=80, char="="):
     None
         Prints to stdout
     """
-    padding = (width - len(text) - 2) // 2
+    _padding = (width - len(text) - 2) // 2
     print(f"{char*width}")
     print(f"{char} {text.center(width-4)} {char}")
     print(f"{char*width}\n")
@@ -301,7 +301,7 @@ def box(text, width=80):
         print(f"│ {line}{' '*padding} │")
     print(f"└{'─'*(box_width-2)}┘\n")
 
-def highlight(text, width=80):
+def highlight(text, _width=80):
     """
     Print text with a highlight prefix arrow.
 

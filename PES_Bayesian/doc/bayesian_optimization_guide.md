@@ -6,6 +6,9 @@
 cd /home/mecatronica/Documentos/maximiliano/mPES
 source linux_mpes_env/bin/activate
 
+# Lanzar con 50 trials (valor por defecto)
+python3 -m PES_Bayesian.ext.optimize_rl
+
 # Lanzar con N trials en segundo plano (ejemplo: 100)
 nohup python3 -m PES_Bayesian.ext.optimize_rl 100 \
   > PES_Bayesian/inputs/bayesian_opt.log 2>&1 &
@@ -119,3 +122,60 @@ tail -5 PES_Bayesian/inputs/bayesian_opt.log
 - 200 trials puede tomar un día completo
 
 Usar el script `utils/run_bayesian_opt.sh` para lanzar con inhibición de suspensión automática.
+
+---
+
+## 5. Notificaciones push
+
+El script envía **notificaciones push** automáticas a través de `utils.notify`
+(si el módulo está disponible):
+
+| Evento | Contenido |
+|--------|-----------|
+| Cada 10 trials completados | Trials completados/total, mejor valor, tiempo transcurrido |
+| Error durante la optimización | Traceback completo (prioridad urgente) |
+
+Si `utils.notify` no está instalado o no es accesible, las notificaciones se
+omiten silenciosamente sin afectar la ejecución.
+
+---
+
+## 6. Flujo de trabajo completo
+
+La optimización es el primer paso de un flujo de tres etapas:
+
+### Paso 1 — Optimizar hiperparámetros
+
+```bash
+python3 -m PES_Bayesian.ext.optimize_rl 100
+```
+
+Genera la Q-table óptima y un reporte en `inputs/<fecha>_BAYESIAN_OPT/`.
+Anotar los mejores hiperparámetros del reporte
+(`optimization_results_<fecha>.txt`).
+
+### Paso 2 — Entrenar con hiperparámetros óptimos
+
+Copiar los mejores hiperparámetros a `ext/train_rl.py` (variables
+`learning_rate`, `discount_factor`, `epsilon_initial`, `epsilon_min`,
+`num_episodes`) y ejecutar:
+
+```bash
+python3 -m PES_Bayesian.ext.train_rl
+```
+
+Guarda Q-table, rewards y gráficos en `inputs/<fecha>_RL_TRAIN/`.
+
+### Paso 3 — Copiar Q-table y ejecutar el experimento
+
+```bash
+# Copiar artefactos entrenados a la raíz de inputs/
+cp PES_Bayesian/inputs/<fecha>_RL_TRAIN/q_<fecha>.npy   PES_Bayesian/inputs/q.npy
+cp PES_Bayesian/inputs/<fecha>_RL_TRAIN/rewards_<fecha>.npy PES_Bayesian/inputs/rewards.npy
+
+# Ejecutar el experimento
+python3 -m PES_Bayesian
+```
+
+`__main__.py` valida la existencia de `q.npy` y `rewards.npy` antes de iniciar;
+si no los encuentra, indica que se debe ejecutar `train_rl.py` primero.

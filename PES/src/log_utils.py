@@ -31,7 +31,7 @@ import datetime
 ##########################
 ##  Imports internos    ##
 ##########################
-from .. import *
+from .. import ANSI, OUTPUT_FILE_PREFIX, OUTPUTS_PATH, VERBOSE
 
 
 ##################################################

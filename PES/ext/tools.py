@@ -13,12 +13,7 @@ Small collection of helper functions used across PES modules:
 ##  Imports externos    ##
 ##########################
 import numpy
-import os
 import matplotlib.pyplot as plt
-
-from statsmodels.distributions.empirical_distribution import ECDF
-from scipy.stats import beta
-from scipy.stats import uniform
 
 ##########################
 ##  Imports internos    ##

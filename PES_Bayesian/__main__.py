@@ -262,23 +262,25 @@ def main():
         # Block (blk) into the Experiment (MySubjectId)
         for blk in range(NUM_BLOCKS):
 
+            numpy.random.seed(100 + blk)
+
             # Sequence (seq) into the Block (blk)
             for seq in range(NUM_SEQUENCES):
 
-                # XXX: Assign a map index to this block-sequence pair
                 counter_seq = NUM_ATTEMPTS_TO_ASSIGN_SEQ
-                numpy.random.seed(100 + blk)
 
+                # Assign a random map index to this block-sequence pair,
+                # ensuring it is not repeated within the same block
                 while counter_seq > 0:
 
                     b = numpy.random.randint(0, 9)
 
                     if b not in MapIndices__blocks_x_sequences__2darray[blk, :]:
                         MapIndices__blocks_x_sequences__2darray[blk, seq] = b
+                        break
 
                     counter_seq -= 1
 
-                # XXX: Assign a number of trials (i.e. cities) to this block-sequence pair
                 if (USE_FIXED_BLOCK_SEQUENCES):
                     NumTrials__blocks_x_sequences__2darray[blk, :] = exp_utils.next_seq_length(
                         blk * NUM_SEQUENCES,

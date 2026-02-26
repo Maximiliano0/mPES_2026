@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapeo Teoría RL ↔ Implementación en PES</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+  <script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {delimiters:[
+          {left:'$$',right:'$$',display:true},
+          {left:'$',right:'$',display:false}
+        ]})"></script>
+  <style>
+    :root { --bg:#ffffff; --fg:#1a1a2e; --accent:#0f3460; --code-bg:#f4f4f8;
+             --border:#ddd; --link:#1565c0; --table-stripe:#f9f9fc; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#1a1a2e; --fg:#e0e0e0; --accent:#64b5f6; --code-bg:#16213e;
+               --border:#333; --link:#90caf9; --table-stripe:#1e2a45; }
+    }
+    *,*::before,*::after { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+           line-height:1.7; color:var(--fg); background:var(--bg);
+           max-width:52em; margin:2em auto; padding:0 1.5em; }
+    h1 { border-bottom:3px solid var(--accent); padding-bottom:.3em; }
+    h2 { border-bottom:1px solid var(--border); padding-bottom:.2em; margin-top:2em; }
+    h3,h4 { margin-top:1.6em; }
+    a { color:var(--link); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    code { font-family:"JetBrains Mono","Fira Code",Consolas,monospace;
+           font-size:.92em; background:var(--code-bg); padding:.15em .35em;
+           border-radius:4px; }
+    pre { background:var(--code-bg); padding:1em 1.2em; border-radius:8px;
+          overflow-x:auto; border:1px solid var(--border); }
+    pre code { background:none; padding:0; font-size:.88em; }
+    table { border-collapse:collapse; width:100%; margin:1em 0; }
+    th,td { border:1px solid var(--border); padding:.55em .9em; text-align:left; }
+    th { background:var(--accent); color:#fff; }
+    tr:nth-child(even) { background:var(--table-stripe); }
+    blockquote { border-left:4px solid var(--accent); margin-left:0;
+                 padding:.4em 1em; color:#666; background:var(--code-bg);
+                 border-radius:0 6px 6px 0; }
+    .katex-display { overflow-x:auto; overflow-y:hidden; padding:.5em 0; }
+  </style>
+</head>
+<body>
+  <h1 id="mapeo-teoria-rl-implementacion-en-pes">Mapeo Teoría RL ↔ Implementación en PES</h1>
+<h2 id="1-introduccion">1. Introducción</h2>
+<p>Este documento conecta la <strong>teoría de Reinforcement Learning (RL)</strong> con su
+<strong>implementación concreta</strong> en el paquete PES. Para cada concepto teórico se
+indica la variable, función o línea de código correspondiente.</p>
+<p>Para la teoría pura, consultar <code>theory_rl.md</code>.
+Para la descripción funcional del experimento, consultar <code>explained_pes.md</code>.</p>
+<hr />
+<h2 id="2-componentes-del-mdp-markov-decision-process">2. Componentes del MDP (Markov Decision Process)</h2>
+<h3 id="21-definicion-formal">2.1 Definición Formal</h3>
+<p>Un MDP se define como la tupla $(S, A, P, R, \gamma)$:</p>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Símbolo</th>
+<th>Implementación PES</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Estados</td>
+<td>$S$</td>
+<td><code>(resources_left, trial_no, severity)</code> — 3 dimensiones discretas</td>
+</tr>
+<tr>
+<td>Acciones</td>
+<td>$A$</td>
+<td><code>{0, 1, 2, ..., 10}</code> — recursos a asignar</td>
+</tr>
+<tr>
+<td>Transiciones</td>
+<td>$P(s' \mid s, a)$</td>
+<td>Determinísticas: <code>env.step(action)</code> en <code>pandemic.py</code></td>
+</tr>
+<tr>
+<td>Recompensas</td>
+<td>$R(s, a)$</td>
+<td>$-\sum_{i} \text{severities}_i$ — negativo de suma de severidades</td>
+</tr>
+<tr>
+<td>Factor de descuento</td>
+<td>$\gamma$</td>
+<td><code>discount_factor = 0.9</code> en <code>train_rl.py</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-espacio-de-estados">2.2 Espacio de Estados</h3>
+<p>Implementado en <code>ext/pandemic.py</code> → <code>Pandemic.__init__()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Recursos disponibles: 0 a 30 (39 total - 9 pre-asignados)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">max_resources</span> <span class="o">=</span> <span class="n">AVAILABLE_RESOURCES_PER_SEQUENCE</span> <span class="o">-</span> <span class="mi">9</span>   <span class="c1"># = 30</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">available_resources_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_resources</span> <span class="o">+</span> <span class="mi">1</span>     <span class="c1"># = 31</span>
+
+<span class="c1"># Número de trial: 0 a 10</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">max_seq_length</span> <span class="o">=</span> <span class="n">NUM_MAX_TRIALS</span>                         <span class="c1"># = 10</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">trial_no_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_seq_length</span> <span class="o">+</span> <span class="mi">1</span>               <span class="c1"># = 11</span>
+
+<span class="c1"># Severidad: 0 a 10</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">max_severity</span> <span class="o">=</span> <span class="n">MAX_SEVERITY</span>                             <span class="c1"># = 10</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">severity_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_severity</span> <span class="o">+</span> <span class="mi">1</span>                 <span class="c1"># = 11</span>
+</code></pre></div>
+
+<p><strong>Cardinalidad del espacio de estados</strong>:</p>
+<p>$$|S| = 31 \times 11 \times 11 = 3{,}751 \text{ estados}$$</p>
+<p><strong>Significado de cada dimensión</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Dimensión</th>
+<th>Rango</th>
+<th>Interpretación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>resources_left</code></td>
+<td>0–30</td>
+<td>Recursos restantes en la secuencia actual</td>
+</tr>
+<tr>
+<td><code>trial_no</code></td>
+<td>0–10</td>
+<td>Índice del trial actual dentro de la secuencia</td>
+</tr>
+<tr>
+<td><code>severity</code></td>
+<td>0–10</td>
+<td>Severidad inicial de la ciudad entrante (entera)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-espacio-de-acciones">2.3 Espacio de Acciones</h3>
+<div class="highlight"><pre><span></span><code><span class="bp">self</span><span class="o">.</span><span class="n">action_space</span> <span class="o">=</span> <span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_allocation</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># Discrete(11)</span>
+</code></pre></div>
+
+<p>Cada acción $a \in {0, 1, ..., 10}$ representa la cantidad de recursos a
+asignar a la ciudad actual. Si <code>a &gt; resources_left</code>, se clampea:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># En Pandemic.step():</span>
+<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_resources</span> <span class="o">-</span> <span class="n">action</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">available_resources</span>
+</code></pre></div>
+
+<h3 id="24-funcion-de-transicion">2.4 Función de Transición</h3>
+<p>La transición es <strong>determinística</strong> (dado el estado y la acción, el siguiente
+estado es único):</p>
+<p>$$s_{t+1} = f(s_t, a_t)$$</p>
+<p>Implementada en <code>Pandemic.step()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="bp">self</span><span class="o">.</span><span class="n">available_resources</span> <span class="o">-=</span> <span class="n">action</span>               <span class="c1"># Reducir recursos</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>                    <span class="c1"># Registrar acción</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">severities</span> <span class="o">=</span> <span class="n">get_updated_severity</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>      <span class="c1"># Actualizar severidades</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>                              <span class="c1"># Avanzar trial</span>
+
+<span class="c1"># Nuevo estado</span>
+<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iteration</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_length</span><span class="p">:</span>
+    <span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">new_severity</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">new_severity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_city</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">severities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_severity</span><span class="p">)</span>
+
+<span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">available_resources</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iteration</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">new_severity</span><span class="p">)],</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="o">...</span>
+</code></pre></div>
+
+<h3 id="25-funcion-de-recompensa">2.5 Función de Recompensa</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># En Pandemic.step():</span>
+<span class="n">reward</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">severities</span><span class="p">)</span>
+</code></pre></div>
+
+<p>La recompensa es el <strong>negativo de la suma de las severidades</strong> de todas las
+ciudades visibles en el estado actual, después de aplicar la actualización. Esto
+incentiva al agente a minimizar la severidad total.</p>
+<p><strong>Caso terminal</strong>: Cuando <code>done == True</code>, la recompensa es la severidad final
+total (negativa) de toda la secuencia.</p>
+<p><strong>Caso no-terminal</strong>: La recompensa intermedia refleja el costo acumulado de
+severidad en cada paso, guiando al agente paso a paso.</p>
+<hr />
+<h2 id="3-q-learning-teoria-e-implementacion">3. Q-Learning: Teoría e Implementación</h2>
+<h3 id="31-ecuacion-de-actualizacion">3.1 Ecuación de Actualización</h3>
+<p><strong>Fórmula teórica (Bellman temporal-difference)</strong>:</p>
+<p>$$Q(s, a) \leftarrow Q(s, a) + \alpha \left[ r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right]$$</p>
+<p><strong>Implementación</strong> en <code>ext/pandemic.py</code> → <code>QLearning()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Estado no-terminal:</span>
+<span class="n">delta</span> <span class="o">=</span> <span class="n">learning</span> <span class="o">*</span> <span class="p">(</span><span class="n">reward</span> <span class="o">+</span>
+                    <span class="n">discount</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="n">state2_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                           <span class="n">state2_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                           <span class="n">state2_idx</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span> <span class="o">-</span>
+                    <span class="n">Q</span><span class="p">[</span><span class="n">state_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">state_idx</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">action</span><span class="p">])</span>
+<span class="n">Q</span><span class="p">[</span><span class="n">state_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">state_idx</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="n">delta</span>
+
+<span class="c1"># Estado terminal (done == True):</span>
+<span class="n">Q</span><span class="p">[</span><span class="n">state_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">state_idx</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">action</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward</span>
+</code></pre></div>
+
+<blockquote>
+<p><strong>Nota</strong>: En el estado terminal, el Q-value se asigna directamente como la
+recompensa (sin término $\gamma \max Q(s')$), ya que no hay estado futuro.</p>
+</blockquote>
+<h3 id="32-hiperparametros">3.2 Hiperparámetros</h3>
+<p>Definidos en <code>ext/train_rl.py</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Símbolo</th>
+<th>Nombre</th>
+<th>Valor</th>
+<th>Variable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$\alpha$</td>
+<td>Learning rate</td>
+<td>0.2</td>
+<td><code>learning_rate</code></td>
+</tr>
+<tr>
+<td>$\gamma$</td>
+<td>Discount factor</td>
+<td>0.9</td>
+<td><code>discount_factor</code></td>
+</tr>
+<tr>
+<td>$\varepsilon_0$</td>
+<td>Epsilon inicial</td>
+<td>0.8</td>
+<td><code>epsilon_initial</code></td>
+</tr>
+<tr>
+<td>$\varepsilon_{\min}$</td>
+<td>Epsilon mínimo</td>
+<td>0.0</td>
+<td><code>epsilon_min</code></td>
+</tr>
+<tr>
+<td>$N$</td>
+<td>Episodios</td>
+<td>1,000,000</td>
+<td><code>num_episodes</code></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">discount_factor</span> <span class="o">=</span> <span class="mf">0.9</span>
+<span class="n">epsilon_initial</span> <span class="o">=</span> <span class="mf">0.8</span>
+<span class="n">epsilon_min</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">num_episodes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1000000</span>
+</code></pre></div>
+
+<blockquote>
+<p><strong>Nota</strong>: El número de episodios por defecto es <strong>1,000,000</strong> (un millón).
+Se puede sobreescribir pasando un argumento por línea de comandos:
+<code>python3 -m PES.ext.train_rl 500000</code>.</p>
+</blockquote>
+<h3 id="33-inicializacion-de-la-q-table">3.3 Inicialización de la Q-Table</h3>
+<div class="highlight"><pre><span></span><code><span class="n">Q</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                          <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">available_resources_states</span><span class="p">,</span>   <span class="c1"># 31</span>
+                                <span class="n">env</span><span class="o">.</span><span class="n">trial_no_states</span><span class="p">,</span>              <span class="c1"># 11</span>
+                                <span class="n">env</span><span class="o">.</span><span class="n">severity_states</span><span class="p">,</span>              <span class="c1"># 11</span>
+                                <span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="o">.</span><span class="n">n</span><span class="p">))</span>              <span class="c1"># 11</span>
+</code></pre></div>
+
+<ul>
+<li><strong>Shape</strong>: <code>(31, 11, 11, 11)</code> = <strong>41,261 entradas</strong></li>
+<li><strong>Inicialización</strong>: Valores aleatorios uniformes en $[-1, 1]$</li>
+<li><strong>Tipo</strong>: <code>float64</code></li>
+</ul>
+<p>La inicialización aleatoria promueve exploración inicial al dar Q-values
+optimistas o pesimistas para diferentes pares estado-acción.</p>
+<h3 id="34-clipping-de-indices">3.4 Clipping de Índices</h3>
+<p>El estado observado por el agente se clampea a los límites de la Q-table para
+evitar errores de índice:</p>
+<div class="highlight"><pre><span></span><code><span class="n">state_idx</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">env</span><span class="o">.</span><span class="n">available_resources_states</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+             <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">env</span><span class="o">.</span><span class="n">trial_no_states</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+             <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">env</span><span class="o">.</span><span class="n">severity_states</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+</code></pre></div>
+
+<p>Esto es necesario porque las severidades y recursos podrían exceder los
+rangos discretos en casos extremos.</p>
+<hr />
+<h2 id="4-exploracion-vs-explotacion">4. Exploración vs. Explotación</h2>
+<h3 id="41-politica-greedy">4.1 Política ε-Greedy</h3>
+<p><strong>Fórmula</strong>:</p>
+<p>$$
+\pi(a|s) = \begin{cases}
+\arg\max_a Q(s, a) &amp; \text{con probabilidad } 1 - \varepsilon \
+a \sim \text{Uniform}(0, 10) &amp; \text{con probabilidad } \varepsilon
+\end{cases}
+$$</p>
+<p><strong>Implementación</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span> <span class="ow">and</span> <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">action</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="n">state_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">state_idx</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">action</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="42-decaimiento-lineal-de">4.2 Decaimiento Lineal de ε</h3>
+<div class="highlight"><pre><span></span><code><span class="n">reduction</span> <span class="o">=</span> <span class="p">(</span><span class="n">epsilon</span> <span class="o">-</span> <span class="n">min_eps</span><span class="p">)</span> <span class="o">/</span> <span class="n">episodes</span>
+<span class="c1"># = (0.8 - 0.0) / 1,000,000 = 0.0000008 por episodio</span>
+
+<span class="c1"># Al final de cada episodio:</span>
+<span class="k">if</span> <span class="n">epsilon</span> <span class="o">&gt;</span> <span class="n">min_eps</span><span class="p">:</span>
+    <span class="n">epsilon</span> <span class="o">-=</span> <span class="n">reduction</span>
+</code></pre></div>
+
+<p><strong>Tabla de exploración durante el entrenamiento</strong> (1,000,000 episodios):</p>
+<table>
+<thead>
+<tr>
+<th>Episodio</th>
+<th>ε</th>
+<th>Comportamiento</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0.800</td>
+<td>80 % exploración</td>
+</tr>
+<tr>
+<td>100,000</td>
+<td>0.720</td>
+<td>72 % exploración</td>
+</tr>
+<tr>
+<td>250,000</td>
+<td>0.600</td>
+<td>60 % exploración</td>
+</tr>
+<tr>
+<td>500,000</td>
+<td>0.400</td>
+<td>40 % exploración</td>
+</tr>
+<tr>
+<td>750,000</td>
+<td>0.200</td>
+<td>20 % exploración</td>
+</tr>
+<tr>
+<td>1,000,000</td>
+<td>0.000</td>
+<td>100 % explotación</td>
+</tr>
+</tbody>
+</table>
+<p>El decaimiento es lento y lineal. La transición de exploración a explotación es
+gradual, permitiendo que el agente explore ampliamente durante la primera mitad
+del entrenamiento y explote progresivamente en la segunda mitad.</p>
+<hr />
+<h2 id="5-estructura-de-un-episodio-de-entrenamiento">5. Estructura de un Episodio de Entrenamiento</h2>
+<h3 id="51-flujo-de-un-episodio">5.1 Flujo de un Episodio</h3>
+<div class="highlight"><pre><span></span><code><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">episodes</span><span class="p">):</span>            <span class="c1"># 1,000,000 episodios</span>
+    <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">tot_reward</span><span class="p">,</span> <span class="n">reward</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">random_sequence</span><span class="p">()</span>             <span class="c1"># Generar secuencia aleatoria</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>               <span class="c1"># → [max_resources, 0, severity_0]</span>
+
+    <span class="k">while</span> <span class="n">done</span> <span class="o">!=</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># 1. Selección de acción (ε-greedy)</span>
+        <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">:</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="n">s0</span><span class="p">,</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span>
+
+        <span class="c1"># 2. Ejecutar acción</span>
+        <span class="n">state2</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+        <span class="c1"># 3. Actualizar Q-table</span>
+        <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
+            <span class="n">Q</span><span class="p">[</span><span class="n">s0</span><span class="p">,</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Q</span><span class="p">[</span><span class="n">s0</span><span class="p">,</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">action</span><span class="p">]</span> <span class="o">+=</span> <span class="n">α</span> <span class="o">*</span> <span class="p">(</span><span class="n">r</span> <span class="o">+</span> <span class="n">γ</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="n">s</span><span class="s1">&#39;0, s&#39;</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="s1">&#39;2]) - Q[s0, s1, s2, action])</span>
+
+        <span class="c1"># 4. Avanzar estado</span>
+        <span class="n">tot_reward</span> <span class="o">+=</span> <span class="n">reward</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">state2</span>
+
+    <span class="c1"># 5. Decaer epsilon</span>
+    <span class="n">epsilon</span> <span class="o">-=</span> <span class="n">reduction</span>
+</code></pre></div>
+
+<h3 id="52-generacion-de-secuencias-aleatorias">5.2 Generación de Secuencias Aleatorias</h3>
+<p>Durante el entrenamiento, las secuencias se generan aleatoriamente usando las
+distribuciones de probabilidad aprendidas de los datos:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># En Pandemic.random_sequence():</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">seq_length</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+    <span class="n">number_cities_prob</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">p</span><span class="o">=</span><span class="n">number_cities_prob</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="p">)</span>  <span class="c1"># Muestrea longitud de secuencia (3–10 trials)</span>
+
+<span class="bp">self</span><span class="o">.</span><span class="n">initial_severities</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+    <span class="n">severity_prob</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq_length</span><span class="p">,),</span>
+    <span class="n">p</span><span class="o">=</span><span class="n">severity_prob</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="p">)</span>  <span class="c1"># Muestrea severidades iniciales</span>
+</code></pre></div>
+
+<p>Estas distribuciones se calculan a partir de los datos reales en
+<code>initial_severity.csv</code> y <code>sequence_lengths.csv</code>, asegurando que el
+entrenamiento refleje la distribución del experimento.</p>
+<h3 id="53-tracking-de-progreso">5.3 Tracking de Progreso</h3>
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">10000</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">ave_reward</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">reward_list</span><span class="p">)</span>
+    <span class="n">ave_reward_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ave_reward</span><span class="p">)</span>
+    <span class="n">reward_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Episode </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s1"> Average Reward: </span><span class="si">{</span><span class="n">ave_reward</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>El reward promedio se calcula cada 10,000 episodios y se almacena en
+<code>ave_reward_list</code>, que luego se guarda como <code>rewards_&lt;fecha&gt;.npy</code>.</p>
+<hr />
+<h2 id="6-pipeline-completo-de-entrenamiento-train_rlpy">6. Pipeline Completo de Entrenamiento (<code>train_rl.py</code>)</h2>
+<h3 id="61-etapas-del-pipeline">6.1 Etapas del Pipeline</h3>
+<div class="highlight"><pre><span></span><code>python3 -m PES.ext.train_rl [num_episodes]
+</code></pre></div>
+
+<table>
+<thead>
+<tr>
+<th>Etapa</th>
+<th>Descripción</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Carga datos</td>
+<td>Lee CSV de severidades y longitudes</td>
+<td>Arrays numpy</td>
+</tr>
+<tr>
+<td>2. Baseline aleatorio</td>
+<td>Ejecuta 64 secuencias con política random</td>
+<td>2 PNGs</td>
+</tr>
+<tr>
+<td>3. Entrenamiento Q-Learning</td>
+<td>1,000,000 episodios (defecto)</td>
+<td>Q-table, rewards</td>
+</tr>
+<tr>
+<td>4. Guardar artefactos</td>
+<td>Q-table, rewards, config en directorio fechado</td>
+<td>3 archivos</td>
+</tr>
+<tr>
+<td>5. Evaluación</td>
+<td>Ejecuta 64 secuencias con política entrenada</td>
+<td>seqs, perfs, confs</td>
+</tr>
+<tr>
+<td>6. Visualización</td>
+<td>6 plots de performance, severidad y confianza</td>
+<td>6 PNGs</td>
+</tr>
+</tbody>
+</table>
+<h3 id="62-baseline-aleatorio">6.2 Baseline Aleatorio</h3>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">random_qf</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">seqid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a uniformly random action (baseline policy).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">env</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+
+<span class="n">seqs1</span><span class="p">,</span> <span class="n">perfs1</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">run_experiment</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">random_qf</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">trials_per_sequence</span><span class="p">,</span> <span class="n">sevs</span><span class="p">)</span>
+</code></pre></div>
+
+<p>El baseline utiliza las asignaciones pre-definidas del CSV (no acciones
+verdaderamente aleatorias en evaluación), proporcionando un punto de comparación.</p>
+<h3 id="63-evaluacion-post-entrenamiento">6.3 Evaluación Post-Entrenamiento</h3>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">eval_qf</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">seqid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Select an action from the trained Q-table with confidence tracking.&quot;&quot;&quot;</span>
+    <span class="n">response</span><span class="p">,</span> <span class="n">confidence</span><span class="p">,</span> <span class="n">rt_hold</span><span class="p">,</span> <span class="n">rt_release</span> <span class="o">=</span> <span class="n">rl_agent_meta_cognitive</span><span class="p">(</span>
+        <span class="n">Q</span><span class="p">[</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">])],</span> <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">10000</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">confidence</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>    <span class="c1"># Sin recursos → confidence inválida</span>
+    <span class="n">confsrl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">confidence</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span>
+
+<span class="n">seqs</span><span class="p">,</span> <span class="n">perfs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">run_experiment</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">eval_qf</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">trials_per_sequence</span><span class="p">,</span> <span class="n">sevs</span><span class="p">)</span>
+</code></pre></div>
+
+<p>La evaluación usa <code>rl_agent_meta_cognitive()</code> para obtener tanto la acción
+(greedy, sin exploración) como la confianza del agente.</p>
+<h3 id="64-archivos-de-salida">6.4 Archivos de Salida</h3>
+<p>Directorio: <code>inputs/&lt;fecha&gt;_RL_TRAIN/</code></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Contenido</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q_&lt;fecha&gt;.npy</code></td>
+<td>Q-table <code>(31, 11, 11, 11)</code> float64</td>
+</tr>
+<tr>
+<td><code>rewards_&lt;fecha&gt;.npy</code></td>
+<td>Rewards promedio cada 10k episodios</td>
+</tr>
+<tr>
+<td><code>training_config_&lt;fecha&gt;.txt</code></td>
+<td>Hiperparámetros, shapes, metadatos</td>
+</tr>
+<tr>
+<td><code>confsrl_&lt;fecha&gt;.npy</code></td>
+<td>Confianzas durante evaluación</td>
+</tr>
+<tr>
+<td><code>random_player_sequence_performance_&lt;fecha&gt;.png</code></td>
+<td>Severidad por secuencia (baseline)</td>
+</tr>
+<tr>
+<td><code>random_player_normalised_performance_&lt;fecha&gt;.png</code></td>
+<td>Performance normalizado (baseline)</td>
+</tr>
+<tr>
+<td><code>rl_agent_rewards_vs_episodes_&lt;fecha&gt;.png</code></td>
+<td>Curva de aprendizaje</td>
+</tr>
+<tr>
+<td><code>rl_agent_sequence_performance_&lt;fecha&gt;.png</code></td>
+<td>Severidad por secuencia (agente)</td>
+</tr>
+<tr>
+<td><code>rl_agent_normalised_performance_&lt;fecha&gt;.png</code></td>
+<td>Performance normalizado (agente)</td>
+</tr>
+<tr>
+<td><code>rl_agent_cumulative_performance_&lt;fecha&gt;.png</code></td>
+<td>Performance acumulativo</td>
+</tr>
+<tr>
+<td><code>rl_agent_confidences_&lt;fecha&gt;.png</code></td>
+<td>Confianza raw del agente</td>
+</tr>
+<tr>
+<td><code>rl_agent_remapped_confidences_&lt;fecha&gt;.png</code></td>
+<td>Confianza renormalizada [0, 1]</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-funcion-de-evaluacion-run_experiment">7. Función de Evaluación: <code>run_experiment()</code></h2>
+<h3 id="71-firma">7.1 Firma</h3>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run_experiment</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">actionfunction</span><span class="p">,</span> <span class="n">RandomSequences</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                   <span class="n">trials_per_sequence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sevs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">AssignumpyreAllocations</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">allocs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">NumberOfIterations</span><span class="o">=</span><span class="mi">64</span><span class="p">):</span>
+</code></pre></div>
+
+<h3 id="72-flujo">7.2 Flujo</h3>
+<div class="highlight"><pre><span></span><code>Para cada secuencia (0 a NumberOfIterations-1):
+│
+├─ Configurar secuencia (random o fija desde CSV)
+├─ Reset environment → state₀
+│
+├─ While not done:
+│   ├─ action = actionfunction(env, state, seqid)
+│   ├─ state&#39;, reward, done = env.step(action)
+│   └─ state = state&#39;
+│
+├─ Al terminar secuencia:
+│   ├─ seqs.append(sum(severities))
+│   ├─ perfs.append(normalised_performance)
+│   └─ seq_ev.append(severity_evolution)
+│
+└─ Retornar (seqs, perfs, seq_ev)
+</code></pre></div>
+
+<h3 id="73-metricas-colectadas">7.3 Métricas Colectadas</h3>
+<ul>
+<li><strong><code>seqs</code></strong>: Suma de severidades finales por secuencia (menor = mejor).</li>
+<li><strong><code>perfs</code></strong>: Performance normalizado $\in [0, 1]$ (mayor = mejor).</li>
+<li><strong><code>seq_ev</code></strong>: Matriz de evolución temporal de severidades por ciudad.</li>
+</ul>
+<hr />
+<h2 id="8-conexion-q-table-experimento">8. Conexión Q-Table → Experimento</h2>
+<h3 id="81-workflow-de-deployment">8.1 Workflow de Deployment</h3>
+<div class="highlight"><pre><span></span><code>Entrenamiento                         Experimento
+─────────────                         ───────────
+train_rl.py                           __main__.py
+    │                                     │
+    ├─ QLearning() → Q                   ├─ Cargar inputs/q.npy
+    ├─ numpy.save(                       ├─ Cargar inputs/rewards.npy
+    │   &#39;inputs/&lt;fecha&gt;_RL_TRAIN/        │
+    │    q_&lt;fecha&gt;.npy&#39;, Q)              ├─ pygameMediator
+    │                                    │   .provide_rl_agent_response()
+    └─ (copiar manualmente)  ─────→      │      └─ numpy.load(&#39;inputs/q.npy&#39;)
+       q_&lt;fecha&gt;.npy → q.npy            │      └─ Q[res, trial, sev, :] → argmax
+                                         │
+                                         └─ result_formatter
+                                              .generate_results_report()
+</code></pre></div>
+
+<blockquote>
+<p><strong>Paso manual requerido</strong>: Después de entrenar, copiar los archivos:
+<code>bash
+cp inputs/&lt;fecha&gt;_RL_TRAIN/q_&lt;fecha&gt;.npy inputs/q.npy
+cp inputs/&lt;fecha&gt;_RL_TRAIN/rewards_&lt;fecha&gt;.npy inputs/rewards.npy</code></p>
+</blockquote>
+<h3 id="82-indexacion-de-la-q-table-en-ejecucion">8.2 Indexación de la Q-Table en Ejecución</h3>
+<p>En <code>src/pygameMediator.py</code> → <code>provide_rl_agent_response()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">Q</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">INPUTS_PATH</span><span class="p">,</span> <span class="s1">&#39;q.npy&#39;</span><span class="p">))</span>
+
+<span class="c1"># state = [resources_left, trial_no, severity]</span>
+<span class="n">options</span> <span class="o">=</span> <span class="n">Q</span><span class="p">[</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">:]</span>    <span class="c1"># Vector de 11 Q-values</span>
+
+<span class="n">response</span><span class="p">,</span> <span class="n">confidence</span><span class="p">,</span> <span class="n">rt_hold</span><span class="p">,</span> <span class="n">rt_release</span> <span class="o">=</span> <span class="n">rl_agent_meta_cognitive</span><span class="p">(</span>
+    <span class="n">options</span><span class="p">,</span> <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">RESPONSE_TIMEOUT</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p>La Q-table se indexa con las 3 primeras dimensiones del estado para obtener
+un vector de 11 Q-values (uno por acción posible). La acción es <code>argmax</code>.</p>
+<hr />
+<h2 id="9-reproducibilidad-del-entrenamiento">9. Reproducibilidad del Entrenamiento</h2>
+<blockquote>
+<p><strong>Advertencia</strong>: El pipeline de entrenamiento <strong>no fija ninguna semilla</strong>
+(<code>seed</code>) de números aleatorios. La Q-table se inicializa con
+<code>numpy.random.uniform</code> sin semilla, la exploración ε-greedy usa
+<code>numpy.random.random()</code> sin semilla, y las secuencias de entrenamiento se
+generan con <code>numpy.random.choice</code> / <code>random.randrange</code> sin semilla.</p>
+<p>Esto significa que <strong>cada ejecución de <code>python3 -m PES.ext.train_rl</code>
+produce una Q-table diferente</strong>, y el resultado no es reproducible.</p>
+<p>Para obtener resultados reproducibles sería necesario añadir llamadas
+explícitas a <code>numpy.random.seed(N)</code> y <code>random.seed(N)</code> al inicio de
+<code>QLearning()</code> o de <code>train_rl.main()</code>. Mientras tanto, la única forma de
+preservar un resultado concreto es conservar los archivos <code>.npy</code>
+generados por el entrenamiento.</p>
+</blockquote>
+<hr />
+<h2 id="10-convergencia-y-aprendizaje">10. Convergencia y Aprendizaje</h2>
+<h3 id="101-indicadores-de-convergencia">10.1 Indicadores de Convergencia</h3>
+<ol>
+<li><strong>Reward promedio estabilizado</strong>: La curva <code>rewards_&lt;fecha&gt;.npy</code> debe
+   aplanarse en los últimos episodios.</li>
+<li><strong>Performance en evaluación</strong>: <code>perfs</code> cercano a 1.0 en la mayoría de
+   secuencias indica política bien aprendida.</li>
+<li><strong>Confianza alta</strong>: Distribución de <code>confsrl</code> concentrada cerca de 1.0
+   indica Q-values bien diferenciados.</li>
+</ol>
+<h3 id="102-factores-que-afectan-la-convergencia">10.2 Factores que Afectan la Convergencia</h3>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Efecto positivo</th>
+<th>Efecto negativo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Más episodios (1M)</td>
+<td>Mejor convergencia</td>
+<td>Mayor tiempo computacional</td>
+</tr>
+<tr>
+<td>α = 0.2 (moderado)</td>
+<td>Balanceo estabilidad/velocidad</td>
+<td>—</td>
+</tr>
+<tr>
+<td>γ = 0.9</td>
+<td>Considera futuro</td>
+<td>Puede propagar errores</td>
+</tr>
+<tr>
+<td>ε decay lento (lineal 1M)</td>
+<td>Exploración exhaustiva</td>
+<td>Convergencia lenta</td>
+</tr>
+<tr>
+<td>Estado discreto</td>
+<td>Tabla exacta</td>
+<td>Pierde granularidad en severidad</td>
+</tr>
+</tbody>
+</table>
+<h3 id="103-garantias-teoricas">10.3 Garantías Teóricas</h3>
+<p>Q-Learning tabular converge a la política óptima $Q^*$ bajo las condiciones:</p>
+<ol>
+<li><strong>Visitas infinitas</strong>: Todos los pares $(s, a)$ se visitan infinitamente.
+   Con 1M episodios y ε-greedy decayendo lentamente, la cobertura es amplia.</li>
+<li><strong>Condiciones de Robbins-Monro</strong>: $\sum \alpha_t = \infty$ y
+   $\sum \alpha_t^2 &lt; \infty$. Con α constante = 0.2, esta condición no se
+   cumple estrictamente, pero en la práctica la convergencia es suficiente.</li>
+<li><strong>MDP estacionario</strong>: El entorno no cambia entre episodios (cumplido: las
+   distribuciones de probabilidad de severidad y longitud son fijas).</li>
+</ol>
+<hr />
+<h2 id="11-resumen-de-correspondencias">11. Resumen de Correspondencias</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto Teórico</th>
+<th>Implementación PES</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Estado $s$</td>
+<td><code>[resources_left, trial_no, severity]</code></td>
+</tr>
+<tr>
+<td>Acción $a$</td>
+<td><code>action ∈ {0, ..., 10}</code></td>
+</tr>
+<tr>
+<td>Recompensa $r$</td>
+<td><code>-numpy.sum(env.severities)</code></td>
+</tr>
+<tr>
+<td>Q-table $Q(s,a)$</td>
+<td><code>numpy.ndarray</code> shape <code>(31, 11, 11, 11)</code></td>
+</tr>
+<tr>
+<td>Actualización TD</td>
+<td><code>Q[s,a] += α(r + γ max Q[s'] - Q[s,a])</code></td>
+</tr>
+<tr>
+<td>Política ε-greedy</td>
+<td><code>random &lt; 1-ε → argmax Q ; else random</code></td>
+</tr>
+<tr>
+<td>Episodio</td>
+<td>Una secuencia completa (3–10 trials)</td>
+</tr>
+<tr>
+<td>Ambiente</td>
+<td><code>Pandemic(gym.Env)</code></td>
+</tr>
+<tr>
+<td>Paso</td>
+<td><code>env.step(action)</code> → sev update</td>
+</tr>
+<tr>
+<td>Terminal</td>
+<td><code>iteration == seq_length</code></td>
+</tr>
+<tr>
+<td>Inicialización Q</td>
+<td><code>uniform(-1, 1)</code></td>
+</tr>
+<tr>
+<td>Decaimiento ε</td>
+<td>Lineal: <code>ε -= (ε₀-ε_min)/N</code></td>
+</tr>
+<tr>
+<td>Tracking</td>
+<td>Reward promedio cada 10,000 episodios</td>
+</tr>
+<tr>
+<td>Evaluación</td>
+<td><code>run_experiment(env, eval_qf, ...)</code> 64 secuencias</td>
+</tr>
+<tr>
+<td>Confianza</td>
+<td>Entropía de Shannon normalizada sobre Q-values</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="12-ejecucion-practica">12. Ejecución Práctica</h2>
+<h3 id="121-entrenamiento">12.1 Entrenamiento</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Con episodios por defecto (1,000,000):</span>
+<span class="nb">source</span> linux_mpes_env/bin/activate
+python3 -m PES.ext.train_rl
+
+<span class="c1"># Con episodios personalizados:</span>
+python3 -m PES.ext.train_rl <span class="m">500000</span>
+</code></pre></div>
+
+<h3 id="122-deployment">12.2 Deployment</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Copiar modelo entrenado</span>
+cp PES/inputs/&lt;fecha&gt;_RL_TRAIN/q_&lt;fecha&gt;.npy PES/inputs/q.npy
+cp PES/inputs/&lt;fecha&gt;_RL_TRAIN/rewards_&lt;fecha&gt;.npy PES/inputs/rewards.npy
+</code></pre></div>
+
+<h3 id="123-ejecucion-del-experimento">12.3 Ejecución del Experimento</h3>
+<div class="highlight"><pre><span></span><code>python3 -m PES
+</code></pre></div>
+
+<h3 id="124-verificacion">12.4 Verificación</h3>
+<ul>
+<li>Revisar <code>outputs/PES_log_&lt;fecha&gt;_RL_AGENT.txt</code> para el log completo.</li>
+<li>Revisar <code>outputs/&lt;fecha&gt;_RL_AGENT/PES_results_&lt;id&gt;.json</code> para estadísticas.</li>
+<li>Revisar <code>outputs/&lt;fecha&gt;_RL_AGENT/PES_results_&lt;id&gt;.png</code> para visualizaciones.</li>
+</ul>
+</body>
+</html>

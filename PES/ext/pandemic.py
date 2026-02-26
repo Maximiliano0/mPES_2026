@@ -24,7 +24,6 @@ Dependencies
 ##########################
 import numpy
 import random
-import matplotlib.pyplot as plt
 from gym import Env, spaces
 
 ##########################
@@ -276,7 +275,6 @@ class Pandemic(Env):
 
         Placeholder method for environment cleanup (currently does nothing).
         """
-        pass
 
     def get_action_meanings(self):
         """
@@ -414,7 +412,7 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     M_entropy = numpy.ones((len(options),),)
 
     # Calculate the entropy of the options distribution
-    entrp1 = entropy_from_pdf(options)
+    _entrp1 = entropy_from_pdf(options)
 
     o = [i for i in range(len(options))]
     o = numpy.asarray(o, dtype=numpy.float32)

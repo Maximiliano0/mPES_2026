@@ -62,8 +62,11 @@ htmlcov/
 *.log
 
 # ── Experiment inputs/outputs (large data, regenerated per run) ────────────
-*/inputs/
-*/outputs/
+*/inputs/*
+!*/inputs/*.csv
+!*/inputs/.gitkeep
+*/outputs/*
+!*/outputs/.gitkeep
 
 # ── OS metadata ────────────────────────────────────────────────────────────
 .DS_Store

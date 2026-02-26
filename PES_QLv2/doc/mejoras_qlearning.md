@@ -230,8 +230,8 @@ El criterio de cobertura mínima es:
 $$W \geq \frac{|S|}{E[\text{estados por episodio}]}$$
 
 Con $|S| = 3{,}410$ y ~6.5 estados/episodio: $W_{\min} \approx 525$ episodios.
-Usando $W = 5\% \cdot N$ con $N = 1{,}000{,}000$, el warm-up dura 50,000
-episodios ($\approx 95 \times W_{\min}$), garantizando cobertura amplia.
+Con los hiperparámetros optimizados, $W = 2.4\% \cdot 860{,}000 = 20{,}640$
+episodios ($\approx 39 \times W_{\min}$), garantizando cobertura amplia.
 
 #### Calibración automática de λ
 
@@ -249,21 +249,22 @@ exploración/explotación.
 
 #### Ejemplo numérico
 
-Con $\varepsilon_0 = 0.4915$, $\varepsilon_{\min} = 0.0710$, $N = 1{,}000{,}000$,
-$w = 0.05$, $f = 0.66$:
+Con los hiperparámetros optimizados por Bayesian Optimization
+($\varepsilon_0 = 0.8392$, $\varepsilon_{\min} = 0.0799$, $N = 860{,}000$,
+$w = 0.0240$, $f = 0.5174$):
 
-$$\lambda = \left(\frac{0.0710}{0.4915}\right)^{\frac{1}{(0.66 - 0.05) \cdot 1{,}000{,}000}} = 0.1444^{1/610{,}000} \approx 0.9999968$$
+$$\lambda = \left(\frac{0.0799}{0.8392}\right)^{\frac{1}{(0.5174 - 0.0240) \cdot 860{,}000}} = 0.09521^{1/424{,}324} \approx 0.9999944$$
 
 | Episodio | Fracción de N | ε exponencial | ε lineal |
 |---|---|---|---|
-| 0 – 50,000 | 0 – 5% | 0.4915 (warm-up) | 0.4705 |
-| 250,000 | 25% | 0.2608 | 0.3865 |
-| 500,000 | 50% | 0.1264 | 0.2813 |
-| 660,000 | 66% | **0.0710** (ε_min) | 0.2136 |
-| 1,000,000 | 100% | 0.0710 | 0.0710 |
+| 0 – 20,640 | 0 – 2.4% | 0.8392 (warm-up) | 0.8210 |
+| 215,000 | 25% | 0.2860 | 0.6494 |
+| 430,000 | 50% | 0.0868 | 0.4595 |
+| 444,964 | 51.7% | **0.0799** (ε_min) | 0.4463 |
+| 860,000 | 100% | 0.0799 | 0.0799 |
 
-El exponencial alcanza $\varepsilon_{\min}$ al 66% de N, dejando 340,000 episodios
-(34%) de explotación pura. El lineal no tiene zona de explotación pura — sigue
+El exponencial alcanza $\varepsilon_{\min}$ al 51.7% de N, dejando 415,036 episodios
+(48.3%) de explotación pura. El lineal no tiene zona de explotación pura — sigue
 explorando hasta el último episodio.
 
 ### 3.2 Implementación en código
@@ -273,13 +274,19 @@ explorando hasta el último episodio.
 ```python
 # pandemic.py — QLearning() — Configuración del decay
 use_exponential_decay = (decay_rate != 'linear')
+resolved_decay_rate: float = 0.0
 
 if use_exponential_decay:
     if decay_rate is None:
-        decay_rate = (min_eps / epsilon) ** (1.0 / ((target_ratio - warmup_ratio) * episodes))
+        resolved_decay_rate = (min_eps / epsilon) ** (1.0 / ((target_ratio - warmup_ratio) * episodes))
+    else:
+        resolved_decay_rate = float(decay_rate)
     warmup_episodes = int(warmup_ratio * episodes)
     target_episodes = int(target_ratio * episodes)
 ```
+
+La variable `resolved_decay_rate` es siempre `float`, eliminando la
+ambigüedad de `decay_rate` (que puede ser `None`, `'linear'` o `float`).
 
 Correspondencia con la teoría:
 
@@ -290,7 +297,8 @@ Correspondencia con la teoría:
 | $\lambda = (\varepsilon_{\min}/\varepsilon_0)^{1/((f-w)\cdot N)}$ | `(min_eps / epsilon) ** (1.0 / (...))` |
 | $W = w \cdot N$ | `int(warmup_ratio * episodes)` |
 
-Si se provee un `decay_rate` explícito, se usa directamente sin recalcular.
+Si se provee un `decay_rate` explícito (float), se convierte directamente
+con `float(decay_rate)` sin recalcular.
 Si `decay_rate='linear'`, se usa el decaimiento lineal legacy.
 
 #### Aplicación del decay en el bucle de entrenamiento
@@ -301,7 +309,7 @@ if use_exponential_decay:
     if i < warmup_episodes:
         epsilon = epsilon_initial                                    # warm-up
     else:
-        epsilon = max(min_eps, epsilon_initial * (decay_rate ** (i - warmup_episodes)))
+        epsilon = max(min_eps, epsilon_initial * (resolved_decay_rate ** (i - warmup_episodes)))
 else:
     if epsilon > min_eps:
         epsilon -= reduction                                         # lineal
@@ -312,7 +320,7 @@ Correspondencia directa:
 | Fase teórica | Condición | Código |
 |---|---|---|
 | Warm-up: $\varepsilon = \varepsilon_0$ | $t < W$ | `if i < warmup_episodes: epsilon = epsilon_initial` |
-| Exponencial: $\varepsilon_0 \cdot \lambda^{t-W}$ | $t \geq W$ | `epsilon_initial * (decay_rate ** (i - warmup_episodes))` |
+| Exponencial: $\varepsilon_0 \cdot \lambda^{t-W}$ | $t \geq W$ | `epsilon_initial * (resolved_decay_rate ** (i - warmup_episodes))` |
 | Piso: $\max(\varepsilon_{\min}, \cdot)$ | siempre | `max(min_eps, ...)` |
 
 Nótese que `epsilon_initial` almacena el valor original de $\varepsilon_0$ para
@@ -467,7 +475,7 @@ ciudades activas **antes** de ejecutar la acción.
 
 ```python
 # pandemic.py — QLearning() — Step del entorno
-state2, reward, done, _truncated, _info = env.step(action)
+state2, reward, done, _truncated, _step_info = env.step(action)
 ```
 
 El step se ejecuta sin modificaciones. El entorno retorna la recompensa
@@ -608,6 +616,57 @@ porque Double Q-Learning es estrictamente superior o igual a Q-Learning estánda
 Todos los trials de entrenamiento usan la misma semilla (`SEED` de `CONFIG.py`,
 default 42) para garantizar que las diferencias de rendimiento reflejen
 exclusivamente los hiperparámetros.
+
+### 5.4 Hiperparámetros optimizados (Bayesian Optimization)
+
+El módulo `optimize_rl.py` ejecuta una búsqueda bayesiana con Optuna
+(TPESampler, seed=42) sobre los 8 hiperparámetros de la sección 5.3. La
+función `objective()` entrena un agente completo por trial y evalúa su
+rendimiento medio normalizado.
+
+Los mejores hiperparámetros encontrados (usados en `train_rl.py`) son:
+
+| Símbolo | Parámetro | Valor optimizado |
+|---|---|---|
+| $\alpha$ | `learning_rate` | 0.2593 |
+| $\gamma$ | `discount_factor` | 0.9806 |
+| $\varepsilon_0$ | `epsilon_initial` | 0.8392 |
+| $\varepsilon_{\min}$ | `epsilon_min` | 0.0799 |
+| $N$ | `num_episodes` | 860,000 |
+| $w$ | `warmup_ratio` | 0.0240 |
+| $f$ | `target_ratio` | 0.5174 |
+| $\beta$ | `penalty_coeff` | 0.2177 |
+
+Con estos valores, el `decay_rate` ($\lambda$) se computa dinámicamente:
+
+$$\lambda = \left(\frac{0.0799}{0.8392}\right)^{\frac{1}{(0.5174 - 0.0240) \cdot 860{,}000}} \approx 0.9999944$$
+
+Nótese que $\lambda$ se recalcula automáticamente si se modifica `num_episodes`
+(e.g. vía argumento de línea de comandos), manteniendo las proporciones de
+exploración/explotación constantes.
+
+### 5.5 Pipeline de entrenamiento
+
+El flujo completo de PES_QLv2 sigue tres etapas:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. optimize_rl.py — Búsqueda bayesiana de hiperparámetros  │
+│     • 8 hiperparámetros (Tabla 5.3) via Optuna TPESampler   │
+│     • Almacenamiento SQLite para reanudación                │
+│     • Resultado: mejores valores → train_rl.py              │
+├─────────────────────────────────────────────────────────────┤
+│  2. train_rl.py — Entrenamiento final con mejores params    │
+│     • Entrena con Double Q-Learning + PBRS + ε-decay        │
+│     • Genera: q.npy, rewards.npy, config, gráficos          │
+│     • λ se recalcula dinámicamente (adaptable a N distinto)  │
+├─────────────────────────────────────────────────────────────┤
+│  3. __main__.py — Ejecución del experimento                 │
+│     • Carga q.npy (tabla Q promediada)                      │
+│     • Agente RL ejecuta la política aprendida               │
+│     • Genera logs, CSVs y visualizaciones                   │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 

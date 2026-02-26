@@ -1,746 +1,589 @@
-# PES y Reinforcement Learning: Mapeo de Teoría a Implementación
+# Mapeo Teoría RL ↔ Implementación en PES
 
 ## 1. Introducción
 
-Este documento establece la correspondencia entre la teoría de **Q-Learning (Reinforcement Learning)** y su implementación específica en el proyecto PES. Cada concepto teórico se mapea a secciones concretas del código.
+Este documento conecta la **teoría de Reinforcement Learning (RL)** con su
+**implementación concreta** en el paquete PES. Para cada concepto teórico se
+indica la variable, función o línea de código correspondiente.
+
+Para la teoría pura, consultar `theory_rl.md`.
+Para la descripción funcional del experimento, consultar `explained_pes.md`.
 
 ---
 
-## 2. Marco Teórico de Q-Learning
+## 2. Componentes del MDP (Markov Decision Process)
 
-### 2.1 Problema de Decisión Sequencial (MDP)
+### 2.1 Definición Formal
 
-**Teoría**: Un Markov Decision Process (MDP) se define como tupla ⟨S, A, P, R, γ⟩:
-- **S**: Espacio de estados
-- **A**: Espacio de acciones
-- **P(s'|s,a)**: Probabilidad de transición
-- **R(s,a)**: Función de recompensa
-- **γ**: Factor de descuento
+Un MDP se define como la tupla $(S, A, P, R, \gamma)$:
 
-**Implementación en PES**:
+| Componente | Símbolo | Implementación PES |
+|------------|---------|-------------------|
+| Estados | $S$ | `(resources_left, trial_no, severity)` — 3 dimensiones discretas |
+| Acciones | $A$ | `{0, 1, 2, ..., 10}` — recursos a asignar |
+| Transiciones | $P(s' \mid s, a)$ | Determinísticas: `env.step(action)` en `pandemic.py` |
+| Recompensas | $R(s, a)$ | $-\sum_{i} \text{severities}_i$ — negativo de suma de severidades |
+| Factor de descuento | $\gamma$ | `discount_factor = 0.9` en `train_rl.py` |
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ DEFINICIÓN DEL MDP EN PANDEMIC ENVIRONMENT                  │
-└─────────────────────────────────────────────────────────────┘
+### 2.2 Espacio de Estados
 
-Archivo: ext/pandemic.py
+Implementado en `ext/pandemic.py` → `Pandemic.__init__()`:
 
-class Pandemic(Env):
-    def __init__(self):
-        # S - ESPACIO DE ESTADOS
-        self.observation_space = spaces.Box(
-            low = numpy.zeros((31, 11, 11)),      # Min values
-            high = numpy.ones((31, 11, 11)),      # Max values
-            dtype = numpy.float16
-        )
-        # Estado = [available_resources, trial_number, severity]
-        # Componentes:
-        #   - available_resources: 0-30 (39 total - 9 pre-asignados)
-        #   - trial_number: 0-10 (max 10 trials por secuencia)
-        #   - severity: 0-10 (severidad actual de la ciudad)
-        
-        # A - ESPACIO DE ACCIONES
-        self.action_space = spaces.Discrete(11)
-        # Acción = recursos a asignar, valores 0-10
-        
-        # P - DINÁMICA DEL SISTEMA
-        # Implementada en step()
-        
-        # R - FUNCIÓN DE RECOMPENSA
-        # Implementada en step()
-        
-        # γ - FACTOR DE DESCUENTO
-        # Definido en train_rl.py
-        discount_factor = 0.9
+```python
+# Recursos disponibles: 0 a 30 (39 total - 9 pre-asignados)
+self.max_resources = AVAILABLE_RESOURCES_PER_SEQUENCE - 9   # = 30
+self.available_resources_states = self.max_resources + 1     # = 31
 
-    def reset(self):
-        """Inicializar estado s₀"""
-        self.available_resources = self.max_resources
-        self.iteration = 0
-        self.severities = []
-        new_severity = self.new_city()
-        self.severities.append(new_severity)
-        
-        # Retornar estado inicial
-        return [self.available_resources, self.iteration, int(new_severity)]
-    
-    def step(self, action):
-        """
-        Ejecutar transición de estado: s → s'
-        Retornar: (s', r, done, truncated, info)
-        """
-        # Transición de recursos
-        self.available_resources -= action  # P: actualizar estado
-        
-        # Cálculo de recompensa
-        self.severities = get_updated_severity(...)
-        reward = (-1) * numpy.sum(self.severities)  # R: penalizar severidad
-        
-        # Determinación de término
-        done = (self.iteration == self.seq_length)
-        
-        # Nuevo estado
-        new_severity = 0 if done else self.new_city()
-        new_state = [self.available_resources, self.iteration, int(new_severity)]
-        
-        return new_state, reward, done, False, {}
+# Número de trial: 0 a 10
+self.max_seq_length = NUM_MAX_TRIALS                         # = 10
+self.trial_no_states = self.max_seq_length + 1               # = 11
+
+# Severidad: 0 a 10
+self.max_severity = MAX_SEVERITY                             # = 10
+self.severity_states = self.max_severity + 1                 # = 11
 ```
 
-### 2.2 Función de Valor y Q-Función
+**Cardinalidad del espacio de estados**:
 
-**Teoría**:
+$$|S| = 31 \times 11 \times 11 = 3{,}751 \text{ estados}$$
 
-La **Q-función** (función de acción-valor) representa el valor esperado de ejecutar acción $a$ en estado $s$:
+**Significado de cada dimensión**:
 
-$$Q^\pi(s, a) = \mathbb{E}[R_t + \gamma R_{t+1} + \gamma^2 R_{t+2} + \ldots | s_t = s, a_t = a]$$
+| Dimensión | Rango | Interpretación |
+|-----------|-------|---------------|
+| `resources_left` | 0–30 | Recursos restantes en la secuencia actual |
+| `trial_no` | 0–10 | Índice del trial actual dentro de la secuencia |
+| `severity` | 0–10 | Severidad inicial de la ciudad entrante (entera) |
 
-El **valor óptimo** satisface la ecuación de Bellman:
+### 2.3 Espacio de Acciones
 
-$$Q^*(s, a) = \mathbb{E}[r + \gamma \max_{a'} Q^*(s', a') | s, a]$$
-
-**Implementación en PES**:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Q-TABLE: ALMACENAMIENTO DE Q*(s, a)                          │
-└─────────────────────────────────────────────────────────────┘
-
-Archivo: ext/pandemic.py (dentro de QLearning())
-
-# Inicialización de Q-table
-Q = numpy.random.uniform(low=-1, high=1,
-                        size=(31, 11, 11, 11))
-# Shape: (recursos, trials, severidad, acciones)
-# Q[s_resources, s_trial, s_severity, a_action] = valor esperado
-
-# Archivo guardado como: inputs/q.npy
-# Forma: Q-table entrenada (episodios configurables vía CLI, default 20,000)
+```python
+self.action_space = spaces.Discrete(self.max_allocation + 1)  # Discrete(11)
 ```
 
-### 2.3 Ecuación de Actualización Q-Learning
+Cada acción $a \in \{0, 1, ..., 10\}$ representa la cantidad de recursos a
+asignar a la ciudad actual. Si `a > resources_left`, se clampea:
 
-**Teoría**:
+```python
+# En Pandemic.step():
+if (self.available_resources - action) <= 0:
+    action = self.available_resources
+```
 
-El algoritmo Q-Learning actualiza la tabla después de cada transición (s, a, r, s'):
+### 2.4 Función de Transición
+
+La transición es **determinística** (dado el estado y la acción, el siguiente
+estado es único):
+
+$$s_{t+1} = f(s_t, a_t)$$
+
+Implementada en `Pandemic.step()`:
+
+```python
+self.available_resources -= action               # Reducir recursos
+self.resources.append(action)                    # Registrar acción
+self.severities = get_updated_severity(...)      # Actualizar severidades
+self.iteration += 1                              # Avanzar trial
+
+# Nuevo estado
+if self.iteration == self.seq_length:
+    done = True
+    new_severity = 0
+else:
+    new_severity = self.new_city()
+    self.severities.append(new_severity)
+
+return [self.available_resources, self.iteration, int(new_severity)], reward, done, ...
+```
+
+### 2.5 Función de Recompensa
+
+```python
+# En Pandemic.step():
+reward = (-1) * numpy.sum(self.severities)
+```
+
+La recompensa es el **negativo de la suma de las severidades** de todas las
+ciudades visibles en el estado actual, después de aplicar la actualización. Esto
+incentiva al agente a minimizar la severidad total.
+
+**Caso terminal**: Cuando `done == True`, la recompensa es la severidad final
+total (negativa) de toda la secuencia.
+
+**Caso no-terminal**: La recompensa intermedia refleja el costo acumulado de
+severidad en cada paso, guiando al agente paso a paso.
+
+---
+
+## 3. Q-Learning: Teoría e Implementación
+
+### 3.1 Ecuación de Actualización
+
+**Fórmula teórica (Bellman temporal-difference)**:
 
 $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[ r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right]$$
 
-Donde:
-- $\alpha$ = learning rate (cuánto se ajusta la estimación)
-- Término entre corchetes = TD-error (diferencia temporal)
-
-**Implementación en PES**:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ ACTUALIZACIÓN Q-LEARNING                                    │
-└─────────────────────────────────────────────────────────────┘
-
-Archivo: ext/pandemic.py (función QLearning())
-
-def QLearning(env, learning, discount, epsilon, min_eps, episodes, ...):
-    """
-    learning = α (learning_rate = 0.2)
-    discount = γ (discount_factor = 0.9)
-    epsilon = ε (exploration rate)
-    episodes = configurable vía línea de comandos (default: 20,000)
-    """
-    
-    Q = numpy.random.uniform(low=-1, high=1, size=env_shape)
-    reward_list = []
-    reduction = (epsilon - min_eps) / episodes  # ε-decay
-    
-    for episode in range(episodes):
-        env.random_sequence()  # Secuencia aleatoria
-        state = env.reset()    # s₀
-        episode_reward = 0
-        
-        while True:  # Mientras no done
-            # ─────────────────────────────────────────
-            # POLÍTICA EPSILON-GREEDY
-            # ─────────────────────────────────────────
-            if numpy.random.random() < 1 - epsilon:
-                # EXPLOTACIÓN: mejor acción conocida (probabilidad 1-ε)
-                state_index = [state[0], state[1], state[2]]
-                action = numpy.argmax(Q[state_index[0], state_index[1], state_index[2], :])
-            else:
-                action = numpy.random.randint(0, env.action_space.n)  # EXPLORACIÓN
-            
-            # ─────────────────────────────────────────
-            # TRANSICIÓN DE ESTADO
-            # ─────────────────────────────────────────
-            next_state, reward, done, _truncated, _info = env.step(action)
-            
-            # ─────────────────────────────────────────
-            # ACTUALIZACIÓN BELLMAN (Q-Learning Update)
-            # ─────────────────────────────────────────
-            # Q(s, a) ← Q(s, a) + α[r + γ max Q(s', a') - Q(s, a)]
-            
-            s = [state[0], state[1], state[2]]
-            s_prime = [next_state[0], next_state[1], next_state[2]]
-            
-            if done:
-                # Estado terminal: Q(s,a) = reward (sin futuro)
-                Q[s[0], s[1], s[2], action] = reward
-            else:
-                max_next_q = numpy.max(Q[s_prime[0], s_prime[1], s_prime[2], :])
-                Q[s[0], s[1], s[2], action] += learning * (
-                    reward + discount * max_next_q - Q[s[0], s[1], s[2], action]
-                )
-            
-            episode_reward += reward
-            state = next_state
-            
-            if done:
-                break
-        
-        # ─────────────────────────────────────────
-        # EPSILON DECAY (Reducción de exploración)
-        # ─────────────────────────────────────────
-        if epsilon > min_eps:
-            epsilon -= reduction
-        
-        # Registrar recompensa de episodio
-        reward_list.append(episode_reward)
-        
-        # Cada 10k episodios, guardar promedio y reiniciar lista
-        if (episode + 1) % 10000 == 0:
-            avg_reward = numpy.mean(reward_list)
-            ave_reward_list.append(avg_reward)
-            reward_list = []
-    
-    return ave_reward_list, Q, conf_list
-```
-
-**Componentes desglosados**:
-
-| Componente | Código | Significado |
-|-----------|--------|-------------|
-| **α (learning_rate)** | `learning = 0.2` | Qué tan rápido se ajustan los Q-values |
-| **γ (discount)** | `discount = 0.9` | Importancia de recompensas futuras |
-| **ε (epsilon)** | `epsilon = 0.8 → 0` | Probabilidad de acción aleatoria |
-| **TD-error** | `reward + gamma*max_Q - Q[s,a]` | Diferencia temporal |
-| **Update** | `Q[s,a] += α * TD_error` | Actualización incremental |
-
----
-
-## 3. Ejecución del Agente Entrenado
-
-### 3.1 Política Greedy (Explotación Pura)
-
-**Teoría**:
-
-Una vez entrenado, el agente utiliza la **política greedy**:
-
-$$\pi(s) = \arg\max_a Q(s, a)$$
-
-Esto selecciona la acción con el mayor Q-value en cada estado.
-
-**Implementación en PES**:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ EJECUCIÓN DEL AGENTE: CONSULTA Q-TABLE                      │
-└─────────────────────────────────────────────────────────────┘
-
-Archivo: src/pygameMediator.py (provide_rl_agent_response() → rl_agent_meta_cognitive())
-
-# Por cada trial en la secuencia:
-
-for trial in range(num_trials):
-    # Obtener estado actual
-    state = [resources_remaining, trial_number, current_severity]
-    
-    # ─────────────────────────────────────────
-    # CONSULTA GREEDY
-    # ─────────────────────────────────────────
-    q_values = Q[state[0], state[1], state[2], :]  # Q-values para todas acciones
-    action = numpy.argmax(q_values)                # argmax → acción óptima
-    
-    # Validación (no puede asignar más de lo disponible)
-    if action > resources_remaining:
-        action = resources_remaining
-    
-    # ─────────────────────────────────────────
-    # EJECUCIÓN DE ACCIÓN
-    # ─────────────────────────────────────────
-    response[trial] = action                       # Guardar decisión
-    resources_remaining -= action                  # Actualizar estado
-    current_severity = update_severity(...)        # Evolução
-    
-    # ─────────────────────────────────────────
-    # CÁLCULO DE CONFIANZA (Meta-cognitiva)
-    # ─────────────────────────────────────────
-    confidence = rl_agent_meta_cognitive(q_values, ...)  # Basado en entropía
-```
-
-### 3.2 Índices de Estado en la Práctica
-
-**Estados posibles en ejecución**:
+**Implementación** en `ext/pandemic.py` → `QLearning()`:
 
 ```python
-# Ejemplo de estados durante ejecución
+# Estado no-terminal:
+delta = learning * (reward +
+                    discount * numpy.max(Q[state2_idx[0],
+                                           state2_idx[1],
+                                           state2_idx[2]]) -
+                    Q[state_idx[0], state_idx[1], state_idx[2], action])
+Q[state_idx[0], state_idx[1], state_idx[2], action] += delta
 
-Trial 1: 
-  State = [30, 0, 3]  (30 recursos, trial 0, severidad 3)
-  Q[30, 0, 3, :] = [0.25, 0.45, 0.32, ..., -0.10]  (Q-values para a=0..10)
-  Action = argmax(...) = 1  (asignar 1 recurso)
-
-Trial 2:
-  State = [29, 1, 4]  (29 recursos, trial 1, severidad nueva)
-  Q[29, 1, 4, :] = [0.18, 0.50, 0.40, ..., -0.25]
-  Action = argmax(...) = 1  (asignar 1 recurso)
-
-Trial 3:
-  State = [28, 2, 3]
-  Q[28, 2, 3, :] = [0.10, 0.65, 0.55, ..., -0.30]
-  Action = argmax(...) = 1  (asignar 1 recurso)
+# Estado terminal (done == True):
+Q[state_idx[0], state_idx[1], state_idx[2], action] = reward
 ```
+
+> **Nota**: En el estado terminal, el Q-value se asigna directamente como la
+> recompensa (sin término $\gamma \max Q(s')$), ya que no hay estado futuro.
+
+### 3.2 Hiperparámetros
+
+Definidos en `ext/train_rl.py`:
+
+| Símbolo | Nombre | Valor | Variable |
+|---------|--------|-------|----------|
+| $\alpha$ | Learning rate | 0.2 | `learning_rate` |
+| $\gamma$ | Discount factor | 0.9 | `discount_factor` |
+| $\varepsilon_0$ | Epsilon inicial | 0.8 | `epsilon_initial` |
+| $\varepsilon_{\min}$ | Epsilon mínimo | 0.0 | `epsilon_min` |
+| $N$ | Episodios | 1,000,000 | `num_episodes` |
+
+```python
+learning_rate = 0.2
+discount_factor = 0.9
+epsilon_initial = 0.8
+epsilon_min = 0
+num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 1000000
+```
+
+> **Nota**: El número de episodios por defecto es **1,000,000** (un millón).
+> Se puede sobreescribir pasando un argumento por línea de comandos:
+> `python3 -m PES.ext.train_rl 500000`.
+
+### 3.3 Inicialización de la Q-Table
+
+```python
+Q = numpy.random.uniform(low=-1, high=1,
+                          size=(env.available_resources_states,   # 31
+                                env.trial_no_states,              # 11
+                                env.severity_states,              # 11
+                                env.action_space.n))              # 11
+```
+
+- **Shape**: `(31, 11, 11, 11)` = **41,261 entradas**
+- **Inicialización**: Valores aleatorios uniformes en $[-1, 1]$
+- **Tipo**: `float64`
+
+La inicialización aleatoria promueve exploración inicial al dar Q-values
+optimistas o pesimistas para diferentes pares estado-acción.
+
+### 3.4 Clipping de Índices
+
+El estado observado por el agente se clampea a los límites de la Q-table para
+evitar errores de índice:
+
+```python
+state_idx = [min(int(state[0]), env.available_resources_states - 1),
+             min(int(state[1]), env.trial_no_states - 1),
+             min(int(state[2]), env.severity_states - 1)]
+```
+
+Esto es necesario porque las severidades y recursos podrían exceder los
+rangos discretos en casos extremos.
 
 ---
 
-## 4. Recompensa y Función Objetivo
+## 4. Exploración vs. Explotación
 
-### 4.1 Función de Recompensa Inmediata
+### 4.1 Política ε-Greedy
 
-**Teoría**:
+**Fórmula**:
 
-La recompensa $r_t$ en el tiempo $t$ se define como feedback del ambiente.
+$$
+\pi(a|s) = \begin{cases}
+\arg\max_a Q(s, a) & \text{con probabilidad } 1 - \varepsilon \\
+a \sim \text{Uniform}(0, 10) & \text{con probabilidad } \varepsilon
+\end{cases}
+$$
 
-**Implementación en PES**:
+**Implementación**:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ RECOMPENSA EN PANDEMIC ENVIRONMENT                          │
-└─────────────────────────────────────────────────────────────┘
-
-Archivo: ext/pandemic.py, línea 359
-
-def step(self, action):
-    ...
-    # Actualizar severidades tras asignación de recurso
-    self.severities = get_updated_severity(
-        len(self.severities), 
-        self.resources, 
-        self.severities
-    )
-    
-    # Recompensa = negativo de suma de severidades
-    reward = (-1) * numpy.sum(self.severities)
-    
-    return [new_state], reward, done, []
+```python
+if numpy.random.random() < 1 - epsilon and state[0] is not None:
+    action = numpy.argmax(Q[state_idx[0], state_idx[1], state_idx[2]])
+else:
+    action = numpy.random.randint(0, env.action_space.n)
 ```
 
-**Interpretación**:
-- Suma de severidades = costo total (a minimizar)
-- Recompensa = negativo del costo
-- Agente aprende a **minimizar severidades** maximizando recompensa
+### 4.2 Decaimiento Lineal de ε
 
-**Ejemplo**:
-```
-Severidades después acción: [2.1, 3.5, 2.8]
-Suma = 8.4
-Recompensa = -8.4
-```
+```python
+reduction = (epsilon - min_eps) / episodes
+# = (0.8 - 0.0) / 1,000,000 = 0.0000008 por episodio
 
-### 4.2 Acumulación de Recompensas (Return)
-
-**Teoría**:
-
-El **return** (retorno acumulado) es:
-
-$$G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \ldots + \gamma^{T-t} r_T$$
-
-Q-Learning estima este valor futuro descontado.
-
-### 4.3 Histórico de Recompensas Almacenado
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ SEGUIMIENTO DE APRENDIZAJE                                  │
-└─────────────────────────────────────────────────────────────┘
-
-Archivo: ext/pandemic.py (dentro de QLearning())
-
-# Durante entrenamiento
-reward_list = []  # Recompensas totales por episodio
-
-for episode in range(episodes):  # Configurable vía CLI, default 20,000
-    tot_reward = 0
-    while not done:
-        action = ...
-        state, reward, done, _truncated, _info = env.step(action)
-        tot_reward += reward
-    
-    reward_list.append(tot_reward)
-    
-    # Cada 10k episodios, guardar promedio y reiniciar
-    if (episode + 1) % 10000 == 0:
-        avg = numpy.mean(reward_list)
-        ave_reward_list.append(avg)
-        reward_list = []
-
-# Guardar histórico
-numpy.save(os.path.join(train_dir, f'rewards_{train_date}.npy'), ave_reward_list)
-# Shape: (N/10000,) donde N = episodios de entrenamiento
+# Al final de cada episodio:
+if epsilon > min_eps:
+    epsilon -= reduction
 ```
 
-**Visualización del aprendizaje**:
-```
-Inicio:    ave_reward ≈ -50  (agente malo)
-10k epis:  ave_reward ≈ -35  (mejorando)
-50k epis:  ave_reward ≈ -22  (convergiendo)
-100k epis: ave_reward ≈ -15  (casi convergido)
-1M epis:   ave_reward ≈ -12  (convergido)
-```
+**Tabla de exploración durante el entrenamiento** (1,000,000 episodios):
+
+| Episodio | ε | Comportamiento |
+|----------|---|---------------|
+| 1 | 0.800 | 80 % exploración |
+| 100,000 | 0.720 | 72 % exploración |
+| 250,000 | 0.600 | 60 % exploración |
+| 500,000 | 0.400 | 40 % exploración |
+| 750,000 | 0.200 | 20 % exploración |
+| 1,000,000 | 0.000 | 100 % explotación |
+
+El decaimiento es lento y lineal. La transición de exploración a explotación es
+gradual, permitiendo que el agente explore ampliamente durante la primera mitad
+del entrenamiento y explote progresivamente en la segunda mitad.
 
 ---
 
-## 5. Política y Exploración-Explotación
+## 5. Estructura de un Episodio de Entrenamiento
 
-### 5.1 Epsilon-Greedy Policy
+### 5.1 Flujo de un Episodio
 
-**Teoría**:
+```python
+for i in range(episodes):            # 1,000,000 episodios
+    done = False
+    tot_reward, reward = 0, 0
+    env.random_sequence()             # Generar secuencia aleatoria
+    state = env.reset()               # → [max_resources, 0, severity_0]
 
-Durante entrenamiento, se necesita balance entre:
-- **Explotación** (usar mejor acción conocida): argmax Q(s, a)
-- **Exploración** (probar nuevas acciones): acción aleatoria
-
-La **epsilon-greedy policy** combina ambas:
-
-$$\pi_\varepsilon(a|s) = \begin{cases}
-1 - \varepsilon + \frac{\varepsilon}{|A|} & \text{si } a = \arg\max_a Q(s,a) \\
-\frac{\varepsilon}{|A|} & \text{si } a \neq \arg\max_a Q(s,a)
-\end{cases}$$
-
-Con $|A| = 11$ acciones posibles.
-
-**Implementación en PES**:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ EPSILON-GREEDY DURANTE ENTRENAMIENTO                        │
-└─────────────────────────────────────────────────────────────┘
-
-Archivo: ext/pandemic.py (función QLearning())
-
-epsilon = 0.8  # Inicial: 80% exploración
-min_eps = 0    # Final: 0% exploración (100% greedy)
-reduction = (epsilon - min_eps) / episodes  # Decaimiento lineal
-
-for episode in range(episodes):  # Configurable vía CLI, default 20,000
-    state = env.reset()
-    
-    while not done:
-        # ─────────────────────────────────────
-        # DECISION: EXPLORAR vs EXPLOTAR
-        # ─────────────────────────────────────
+    while done != True:
+        # 1. Selección de acción (ε-greedy)
         if numpy.random.random() < 1 - epsilon:
-            # EXPLOTACIÓN: mejor acción conocida (probabilidad 1-ε)
-            q_values = Q[s[0], s[1], s[2], :]
-            action = numpy.argmax(q_values)
+            action = numpy.argmax(Q[s0, s1, s2])
         else:
-            # EXPLORACIÓN: acción aleatoria (probabilidad ε)
-            action = numpy.random.randint(0, env.action_space.n)
-        
-        state, reward, done, _truncated, _info = env.step(action)
-        # ... actualizar Q ...
-        
-    # Reducir epsilon linealmente (menos exploración con el tiempo)
-    if epsilon > min_eps:
-        epsilon -= reduction
-    
-    # Ejemplo con 20,000 episodios:
-    # En el episodio 10k, epsilon ≈ 0.4 (40% exploración)
-    # En el episodio 20k, epsilon ≈ 0.0 (0% exploración)
+            action = numpy.random.randint(0, 11)
+
+        # 2. Ejecutar acción
+        state2, reward, done, _, _ = env.step(action)
+
+        # 3. Actualizar Q-table
+        if done:
+            Q[s0, s1, s2, action] = reward
+        else:
+            Q[s0, s1, s2, action] += α * (r + γ * max(Q[s'0, s'1, s'2]) - Q[s0, s1, s2, action])
+
+        # 4. Avanzar estado
+        tot_reward += reward
+        state = state2
+
+    # 5. Decaer epsilon
+    epsilon -= reduction
 ```
 
-**Cronograma de exploración** (ejemplo con 20,000 episodios):
-```
-Episodio    Epsilon    Exploración    Explotación
-0           0.80       80%            20%
-2k          0.72       72%            28%
-5k          0.60       60%            40%
-10k         0.40       40%            60%
-15k         0.20       20%            80%
-20k         0.00       0%             100%
-```
+### 5.2 Generación de Secuencias Aleatorias
 
-> **Nota**: La cantidad de episodios es configurable vía línea de comandos:
-> `python3 -m PES.ext.train_rl 200000` (default: 20,000)
-
-### 5.2 Política en Fase de Ejecución
-
-Durante el experimento real (`__main__.py`), se usa **política pura greedy** (ε = 0):
+Durante el entrenamiento, las secuencias se generan aleatoriamente usando las
+distribuciones de probabilidad aprendidas de los datos:
 
 ```python
-# Sin exploración, solo explotación
-action = numpy.argmax(Q[state])  # Mejor acción conocida
+# En Pandemic.random_sequence():
+self.seq_length = numpy.random.choice(
+    number_cities_prob[:, 0],
+    p=number_cities_prob[:, 1]
+)  # Muestrea longitud de secuencia (3–10 trials)
+
+self.initial_severities = numpy.random.choice(
+    severity_prob[:, 0],
+    size=(self.seq_length,),
+    p=severity_prob[:, 1]
+)  # Muestrea severidades iniciales
 ```
+
+Estas distribuciones se calculan a partir de los datos reales en
+`initial_severity.csv` y `sequence_lengths.csv`, asegurando que el
+entrenamiento refleje la distribución del experimento.
+
+### 5.3 Tracking de Progreso
+
+```python
+if (i + 1) % 10000 == 0:
+    ave_reward = numpy.mean(reward_list)
+    ave_reward_list.append(ave_reward)
+    reward_list = []
+    print(f'Episode {i+1} Average Reward: {ave_reward}')
+```
+
+El reward promedio se calcula cada 10,000 episodios y se almacena en
+`ave_reward_list`, que luego se guarda como `rewards_<fecha>.npy`.
 
 ---
 
-## 6. Convergencia y Garantías Teóricas
+## 6. Pipeline Completo de Entrenamiento (`train_rl.py`)
 
-### 6.1 Convergencia de Q-Learning
-
-**Teoría**:
-
-Q-Learning converge a $Q^*$ (valores óptimos) bajo condiciones:
-1. Cada estado-acción se visita infinitamente (exploración suficiente)
-2. Learning rate decae: $\sum_t \alpha_t = \infty$, $\sum_t \alpha_t^2 < \infty$
-3. Recompensas son acotadas
-
-**En PES**:
-- ✅ Exploración garantizada: epsilon-greedy asegura todas las acciones se prueban
-- ✅ Learning rate fijo: α = 0.2 (conservador, garantiza convergencia)
-- ✅ Recompensas acotadas: R ∈ [-suma_maxseveridades, 0]
-
-### 6.2 Convergencia Observada en Entrenamiento
-
-La curva de recompensas promedio (`rewards.npy`) muestra convergencia:
+### 6.1 Etapas del Pipeline
 
 ```
-Ejemplo de evolución durante 1M episodios:
-
-Promedio cada 10k episodios:
-[−50.2, −47.8, −43.1, −39.5, ..., −12.3, −12.1, −12.0]
-            ↓ Rápida mejora       ↓ Convergencia
+python3 -m PES.ext.train_rl [num_episodes]
 ```
+
+| Etapa | Descripción | Output |
+|-------|-------------|--------|
+| 1. Carga datos | Lee CSV de severidades y longitudes | Arrays numpy |
+| 2. Baseline aleatorio | Ejecuta 64 secuencias con política random | 2 PNGs |
+| 3. Entrenamiento Q-Learning | 1,000,000 episodios (defecto) | Q-table, rewards |
+| 4. Guardar artefactos | Q-table, rewards, config en directorio fechado | 3 archivos |
+| 5. Evaluación | Ejecuta 64 secuencias con política entrenada | seqs, perfs, confs |
+| 6. Visualización | 6 plots de performance, severidad y confianza | 6 PNGs |
+
+### 6.2 Baseline Aleatorio
+
+```python
+def random_qf(env, state, seqid):
+    """Return a uniformly random action (baseline policy)."""
+    return env.sample()
+
+seqs1, perfs1, _ = run_experiment(env, random_qf, False, trials_per_sequence, sevs)
+```
+
+El baseline utiliza asignaciones generadas aleatoriamente por el entorno
+(las severidades y longitudes de secuencia sí provienen de los archivos CSV),
+proporcionando un punto de comparación.
+
+### 6.3 Evaluación Post-Entrenamiento
+
+```python
+def eval_qf(env, state, seqid):
+    """Select an action from the trained Q-table with confidence tracking."""
+    response, confidence, rt_hold, rt_release = rl_agent_meta_cognitive(
+        Q[state[0], state[1], int(state[2])], state[0], 10000
+    )
+    if state[0] == 0:
+        confidence = -1.0    # Sin recursos → confidence inválida
+    confsrl.append(confidence)
+    return response
+
+seqs, perfs, _ = run_experiment(env, eval_qf, False, trials_per_sequence, sevs)
+```
+
+La evaluación usa `rl_agent_meta_cognitive()` para obtener tanto la acción
+(greedy, sin exploración) como la confianza del agente.
+
+### 6.4 Archivos de Salida
+
+Directorio: `inputs/<fecha>_RL_TRAIN/`
+
+| Archivo | Contenido |
+|---------|-----------|
+| `q_<fecha>.npy` | Q-table `(31, 11, 11, 11)` float64 |
+| `rewards_<fecha>.npy` | Rewards promedio cada 10k episodios |
+| `training_config_<fecha>.txt` | Hiperparámetros, shapes, metadatos |
+| `confsrl_<fecha>.npy` | Confianzas durante evaluación |
+| `random_player_sequence_performance_<fecha>.png` | Severidad por secuencia (baseline) |
+| `random_player_normalised_performance_<fecha>.png` | Performance normalizado (baseline) |
+| `rl_agent_rewards_vs_episodes_<fecha>.png` | Curva de aprendizaje |
+| `rl_agent_sequence_performance_<fecha>.png` | Severidad por secuencia (agente) |
+| `rl_agent_normalised_performance_<fecha>.png` | Performance normalizado (agente) |
+| `rl_agent_cumulative_performance_<fecha>.png` | Performance acumulativo |
+| `rl_agent_confidences_<fecha>.png` | Confianza raw del agente |
+| `rl_agent_remapped_confidences_<fecha>.png` | Confianza renormalizada [0, 1] |
 
 ---
 
-## 7. Meta-Cognición: Confianza y Entropía
+## 7. Función de Evaluación: `run_experiment()`
 
-### 7.1 Relación Entropía-Confianza
+### 7.1 Firma
 
-**Teoría**:
-
-La **entropía de Shannon** de la distribución Q-values mide incertidumbre:
-
-$$H(X) = -\sum_i p_i \log_2(p_i)$$
-
-Donde $p_i$ es la probabilidad de acción $i$.
-
-- **Baja entropía** → picos claros en Q-values → agente confiado
-- **Alta entropía** → Q-values planos → agente inseguro
-
-**Implementación en PES**:
-
-La función `rl_agent_meta_cognitive()` existe en dos ubicaciones:
-- `pygameMediator.py`: usada durante la ejecución del experimento (`python3 -m PES`)
-- `pandemic.py`: usada durante el entrenamiento (`python3 -m PES.ext.train_rl`)
-
-> **Nota**: Las funciones `entropy()` y `calculate_agent_response_and_confidence()`
-> que existían previamente en `pygameMediator.py` fueron eliminadas por ser código
-> muerto (nunca eran invocadas en el proyecto).
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ CONFIANZA BASADA EN ENTROPÍA                                │
-└─────────────────────────────────────────────────────────────┘
-
-Archivo: pandemic.py (entrenamiento) / pygameMediator.py (ejecución)
-
-def rl_agent_meta_cognitive(options, resources_left, response_timeout):
-    """
-    options = Q-values para acciones en estado actual
-    Ejemplo: options = [0.21, 0.89, 0.45, ..., -0.12]  (11 valores)
-    """
-    
-    # Entropía mínima: distribución determinística
-    m_entropy = entropy_from_pdf([1, 0, 0, ..., 0])  # H ≈ 0
-    
-    # Entropía máxima: distribución uniforme
-    M_entropy = entropy_from_pdf([1, 1, 1, ..., 1])  # H ≈ 3.46 bits
-    
-    # Entropía actual: distribución de Q-values
-    dec_entropy = entropy_from_pdf(options)  # H ∈ [0, 3.46]
-    
-    # Normalizar confianza a [0, 1]
-    confidence = (dec_entropy - M_entropy) / (m_entropy - M_entropy)
-    # ≈ confidence = 1 - (dec_entropy / max_entropy)  (aproximación)
+```python
+def run_experiment(env, actionfunction, RandomSequences=True,
+                   trials_per_sequence=None, sevs=None,
+                   AssignumpyreAllocations=False, allocs=None,
+                   NumberOfIterations=64):
 ```
 
-**Ejemplos de confianza**:
+### 7.2 Flujo
 
 ```
-Escenario 1: Decisión CLARA
-Q-values = [0.05, 0.95, 0.10, 0.05, ...]
-Entropía ≈ 0.5 bits (concentrado en índice 1)
-Confianza ≈ 0.85 (alta)
-Respuesta esperada: rápido, seguro
-
-Escenario 2: Decisión AMBIGUA
-Q-values = [0.30, 0.35, 0.25, 0.32, ...]
-Entropía ≈ 3.2 bits (distribuido)
-Confianza ≈ 0.15 (baja)
-Respuesta esperada: lento, dudoso
-```
-
-### 7.2 Mapeo Confianza → Tiempos de Reacción
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ TIEMPOS DE REACCIÓN BASADOS EN CONFIANZA                   │
-└─────────────────────────────────────────────────────────────┘
-
-Archivo: pandemic.py (entrenamiento) / pygameMediator.py (ejecución)
-
-# Mapeo lineal: mayor confianza → menor tiempo
-map_to_response_time = lambda x: x * (-2) + 1
-# confidence = 0.8 → coef = 0.8*(-2) + 1 = -0.6
-# confidence = 0.2 → coef = 0.2*(-2) + 1 = 0.6
-
-mu_hold = int(map_to_response_time(confidence) * 10)
-rt_hold = numpy.random.normal(mu=mu_hold, sigma=3)
-
-# Ejemplo con confidence = 0.8:
-# mu = 0.8*(-2)+1 = -0.6 → mu_hold = -6 → clip a 0
-# rt_hold ≈ 0ms (rápido)
-
-# Ejemplo con confidence = 0.2:
-# mu = 0.2*(-2)+1 = 0.6 → mu_hold = 6 → distribución normal
-# rt_hold ≈ 6-10ms (lento)
-```
-
----
-
-## 8. Tabla de Mapeo: Teoría ↔ Código
-
-| Concepto RL | Fórmula | Implantación | Archivo |
-|-----------|---------|-----------|---------|
-| **MDP** | ⟨S, A, P, R, γ⟩ | `Pandemic(Env)` | `pandemic.py` |
-| **Estado** | $s \in S$ | `[resources, trial, severity]` | `pandemic.py` |
-| **Acción** | $a \in A$ | `Discrete(11)` | `pandemic.py` |
-| **Transición** | $P(s' \mid s,a)$ | `step()` | `pandemic.py` |
-| **Recompensa** | $r = R(s,a,s')$ | `reward = -sum(severities)` | `pandemic.py` |
-| **Q-función** | $Q(s,a)$ | `Q[s[0], s[1], s[2], a]` | `pandemic.py` |
-| **Bellman Update** | $Q \leftarrow Q + \alpha(r + \gamma\max Q' - Q)$ | `QLearning()` | `pandemic.py` |
-| **Epsilon-Greedy** | $\pi_\varepsilon$ | `if rand < 1-ε: greedy`, `else: random` | `pandemic.py` |
-| **Entropía** | $H = -\sum p_i \log p_i$ | `entropy_from_pdf()` | `tools.py` |
-| **Confianza** | $conf = (H - H_{max}) / (H_{min} - H_{max})$ | `rl_agent_meta_cognitive()` | `pandemic.py` |
-
----
-
-## 9. Flujo Completo: Entrenamiento → Ejecución
-
-```
-FASE 1: ENTRENAMIENTO
-═════════════════════════════════════════════════
-
-python3 -m PES.ext.train_rl [episodios]  # default: 20,000
+Para cada secuencia (0 a NumberOfIterations-1):
 │
-├─ 1. Inicializar Pandemic() environment
-├─ 2. Inicializar Q = random_uniform(31, 11, 11, 11)
-├─ 3. LOOP episodios (configurable vía CLI, default 20,000):
-│   ├─ state = reset()  [recursos, trial, severidad]
-│   ├─ MIENTRAS no done:
-│   │  ├─ Epsilon-Greedy: acción = rand OR argmax Q
-│   │  ├─ state', reward, done = step(action)
-│   │  ├─ if done: Q[s,a] = reward
-│   │  ├─ else: TD-Error = reward + γ*max Q' - Q[s,a]
-│   │  ├─            Q[s,a] += α * TD-Error  ← APRENDIZAJE
-│   │  ├─ state = state'
-│   │  └─ if ε > ε_min: ε -= reduction  ← Menos exploración
-│   └─ Guardar reward promedio cada 10k episodios
+├─ Configurar secuencia (random o fija desde CSV)
+├─ Reset environment → state₀
 │
-├─ 4. Guardar Q → inputs/<fecha>_RL_TRAIN/q_<fecha>.npy  (31×11×11×11)
-├─ 5. Guardar rewards → inputs/<fecha>_RL_TRAIN/rewards_<fecha>.npy  (N/10000,)
-└─ 6. Generar gráficas de aprendizaje
+├─ While not done:
+│   ├─ action = actionfunction(env, state, seqid)
+│   ├─ state', reward, done = env.step(action)
+│   └─ state = state'
+│
+├─ Al terminar secuencia:
+│   ├─ seqs.append(sum(severities))
+│   ├─ perfs.append(normalised_performance)
+│   └─ seq_ev.append(severity_evolution)
+│
+└─ Retornar (seqs, perfs, seq_ev)
+```
 
-FASE 2: EJECUCIÓN DEL EXPERIMENTO
-═════════════════════════════════════════════════
+### 7.3 Métricas Colectadas
 
+- **`seqs`**: Suma de severidades finales por secuencia (menor = mejor).
+- **`perfs`**: Performance normalizado $\in [0, 1]$ (mayor = mejor).
+- **`seq_ev`**: Matriz de evolución temporal de severidades por ciudad.
+
+---
+
+## 8. Conexión Q-Table → Experimento
+
+### 8.1 Workflow de Deployment
+
+```
+Entrenamiento                         Experimento
+─────────────                         ───────────
+train_rl.py                           __main__.py
+    │                                     │
+    ├─ QLearning() → Q                   ├─ Cargar inputs/q.npy
+    ├─ numpy.save(                       ├─ Cargar inputs/rewards.npy
+    │   'inputs/<fecha>_RL_TRAIN/        │
+    │    q_<fecha>.npy', Q)              ├─ pygameMediator
+    │                                    │   .provide_rl_agent_response()
+    └─ (copiar manualmente)  ─────→      │      └─ numpy.load('inputs/q.npy')
+       q_<fecha>.npy → q.npy            │      └─ Q[res, trial, sev, :] → argmax
+                                         │
+                                         └─ result_formatter
+                                              .generate_results_report()
+```
+
+> **Paso manual requerido**: Después de entrenar, copiar los archivos:
+> ```bash
+> cp inputs/<fecha>_RL_TRAIN/q_<fecha>.npy inputs/q.npy
+> cp inputs/<fecha>_RL_TRAIN/rewards_<fecha>.npy inputs/rewards.npy
+> ```
+
+### 8.2 Indexación de la Q-Table en Ejecución
+
+En `src/pygameMediator.py` → `provide_rl_agent_response()`:
+
+```python
+Q = numpy.load(os.path.join(INPUTS_PATH, 'q.npy'))
+
+# state = [resources_left, trial_no, severity]
+options = Q[state[0], state[1], state[2], :]    # Vector de 11 Q-values
+
+response, confidence, rt_hold, rt_release = rl_agent_meta_cognitive(
+    options, state[0], RESPONSE_TIMEOUT
+)
+```
+
+La Q-table se indexa con las 3 primeras dimensiones del estado para obtener
+un vector de 11 Q-values (uno por acción posible). La acción es `argmax`.
+
+---
+
+## 9. Reproducibilidad del Entrenamiento
+
+> **Advertencia**: El pipeline de entrenamiento **no fija ninguna semilla**
+> (`seed`) de números aleatorios. La Q-table se inicializa con
+> `numpy.random.uniform` sin semilla, la exploración ε-greedy usa
+> `numpy.random.random()` sin semilla, y las secuencias de entrenamiento se
+> generan con `numpy.random.choice` / `random.randrange` sin semilla.
+>
+> Esto significa que **cada ejecución de `python3 -m PES.ext.train_rl`
+> produce una Q-table diferente**, y el resultado no es reproducible.
+>
+> Para obtener resultados reproducibles sería necesario añadir llamadas
+> explícitas a `numpy.random.seed(N)` y `random.seed(N)` al inicio de
+> `QLearning()` o de `train_rl.main()`. Mientras tanto, la única forma de
+> preservar un resultado concreto es conservar los archivos `.npy`
+> generados por el entrenamiento.
+
+---
+
+## 10. Convergencia y Aprendizaje
+
+### 10.1 Indicadores de Convergencia
+
+1. **Reward promedio estabilizado**: La curva `rewards_<fecha>.npy` debe
+   aplanarse en los últimos episodios.
+2. **Performance en evaluación**: `perfs` cercano a 1.0 en la mayoría de
+   secuencias indica política bien aprendida.
+3. **Confianza alta**: Distribución de `confsrl` concentrada cerca de 1.0
+   indica Q-values bien diferenciados.
+
+### 10.2 Factores que Afectan la Convergencia
+
+| Factor | Efecto positivo | Efecto negativo |
+|--------|----------------|----------------|
+| Más episodios (1M) | Mejor convergencia | Mayor tiempo computacional |
+| α = 0.2 (moderado) | Balanceo estabilidad/velocidad | — |
+| γ = 0.9 | Considera futuro | Puede propagar errores |
+| ε decay lento (lineal 1M) | Exploración exhaustiva | Convergencia lenta |
+| Estado discreto | Tabla exacta | Pierde granularidad en severidad |
+
+### 10.3 Garantías Teóricas
+
+Q-Learning tabular converge a la política óptima $Q^*$ bajo las condiciones:
+
+1. **Visitas infinitas**: Todos los pares $(s, a)$ se visitan infinitamente.
+   Con 1M episodios y ε-greedy decayendo lentamente, la cobertura es amplia.
+2. **Condiciones de Robbins-Monro**: $\sum \alpha_t = \infty$ y
+   $\sum \alpha_t^2 < \infty$. Con α constante = 0.2, esta condición no se
+   cumple estrictamente, pero en la práctica la convergencia es suficiente.
+3. **MDP estacionario**: El entorno no cambia entre episodios (cumplido: las
+   distribuciones de probabilidad de severidad y longitud son fijas).
+
+---
+
+## 11. Resumen de Correspondencias
+
+| Concepto Teórico | Implementación PES |
+|------------------|--------------------|
+| Estado $s$ | `[resources_left, trial_no, severity]` |
+| Acción $a$ | `action ∈ {0, ..., 10}` |
+| Recompensa $r$ | `-numpy.sum(env.severities)` |
+| Q-table $Q(s,a)$ | `numpy.ndarray` shape `(31, 11, 11, 11)` |
+| Actualización TD | `Q[s,a] += α(r + γ max Q[s'] - Q[s,a])` |
+| Política ε-greedy | `random < 1-ε → argmax Q ; else random` |
+| Episodio | Una secuencia completa (3–10 trials) |
+| Ambiente | `Pandemic(gym.Env)` |
+| Paso | `env.step(action)` → sev update |
+| Terminal | `iteration == seq_length` |
+| Inicialización Q | `uniform(-1, 1)` |
+| Decaimiento ε | Lineal: `ε -= (ε₀-ε_min)/N` |
+| Tracking | Reward promedio cada 10,000 episodios |
+| Evaluación | `run_experiment(env, eval_qf, ...)` 64 secuencias |
+| Confianza | Entropía de Shannon normalizada sobre Q-values |
+
+---
+
+## 12. Ejecución Práctica
+
+### 12.1 Entrenamiento
+
+```bash
+# Con episodios por defecto (1,000,000):
+source linux_mpes_env/bin/activate
+python3 -m PES.ext.train_rl
+
+# Con episodios personalizados:
+python3 -m PES.ext.train_rl 500000
+```
+
+### 12.2 Deployment
+
+```bash
+# Copiar modelo entrenado
+cp PES/inputs/<fecha>_RL_TRAIN/q_<fecha>.npy PES/inputs/q.npy
+cp PES/inputs/<fecha>_RL_TRAIN/rewards_<fecha>.npy PES/inputs/rewards.npy
+```
+
+### 12.3 Ejecución del Experimento
+
+```bash
 python3 -m PES
-│
-├─ 1. Cargar Q desde inputs/q.npy
-├─ 2. PARA cada BLOQUE (8 bloques):
-│   ├─ PARA cada SECUENCIA (8 secuencias):
-│   │  ├─ state = [30, 0, initial_severity]
-│   │  ├─ PARA cada TRIAL (3-10 trials):
-│   │  │  ├─ Q_values = Q[state[0], state[1], state[2], :]
-│   │  │  ├─ action = argmax(Q_values)  ← GREEDY (ε=0)
-│   │  │  ├─ confidence = entropy(Q_values)
-│   │  │  ├─ state = [recursos-action, trial+1, new_severity]
-│   │  │  ├─ Registrar: response, confidence, tiempos
-│   │  │  └─ Actualizar severity con fórmula
-│   │  ├─ Calcular performance = (worst-actual)/(worst-best)
-│   │  └─ Guardar en responses.txt, results.json
-│   └─ Generar gráficas por bloque
-│
-└─ 3. Estadísticas globales, reportes finales
-
-SALIDA
-══════
-inputs/<fecha>_RL_TRAIN/q_<fecha>.npy       ← Q-table entrenada
-inputs/<fecha>_RL_TRAIN/rewards_<fecha>.npy  ← Histórico de aprendizaje
-inputs/<fecha>_RL_TRAIN/                     ← Detalles del entrenamiento
-outputs/2026-02-09_RL_AGENT/    ← Resultados del experimento
- ├─ PES_log_...txt
- ├─ PES_responses_...txt
- ├─ PES_results_...json
- ├─ PES_results_...png
- └─ PES_movement_log_...npy
 ```
 
----
+### 12.4 Verificación
 
-## 10. Diferencias: Teoría vs. Práctica en PES
-
-| Aspecto | Teoría Pura | Implementación PES | Razón |
-|--------|-----------|------------------|-------|
-| **Learning rate** | Decreciente | Fijo (0.2) | Simplificar, garantizar convergencia |
-| **Epsilon decaimiento** | Óptimo | Lineal | Balance exploración-explotación simple |
-| **Estado continuo** | Posible | Discretizado | Q-table requiere índices enteros |
-| **Horizonte** | Infinito | Finito (seq length) | Episodios con término natural |
-| **Recompensa** | General | Severidad negativa | Problema-específico |
-| **Confianza** | Teórica | Entropía Q-values | Meta-cognición implementada |
-
----
-
-## 11. Validación: ¿Aprendió el Agente?
-
-Para verificar que el entrenamiento funcionó:
-
-```python
-# 1. Cargar Q-table
-Q = numpy.load('inputs/q.npy')
-
-# 2. Inspeccionar Q-values para estado específico
-state_example = (20, 5, 3)  # 20 recursos, trial 5, severidad 3
-q_vals = Q[state_example[0], state_example[1], state_example[2], :]
-print(q_vals)
-# Esperado: valores negativos (severidad), con cierta dispersión
-# Mal: todos iguales o aleatorios
-
-# 3. Graficar distribución Q-values
-import matplotlib.pyplot as plt
-plt.hist(Q.flatten(), bins=100)
-plt.title('Distribución de Q-values')
-plt.show()
-# Esperado: distribución concentrada (aprendizaje convergido)
-# Mal: uniforme (sin aprendizaje)
-
-# 4. Comparar con baseline aleatorio
-# El experimento genera gráficas comparativas
-```
-
----
-
-## Conclusión
-
-El proyecto PES implementa **Q-Learning de forma completa y rigurosa**:
-
-1. **Entrenamiento**: Episodios configurables vía CLI (`python3 -m PES.ext.train_rl [N]`, default: 20,000), epsilon-greedy, actualización Bellman
-2. **Convergencia**: Garantizada por arquitectura (exploración + learning rate)
-3. **Ejecución**: Política greedy pura sobre Q-table entrenada
-4. **Análisis**: Confianza meta-cognitiva vía `rl_agent_meta_cognitive()`, tiempos realistas
-5. **Validación**: Comparación vs. agente aleatorio
-
-> **Nota**: Las funciones `entropy()` y `calculate_agent_response_and_confidence()` fueron
-> eliminadas de `pygameMediator.py` por ser código muerto. Toda la lógica de confianza
-> se implementa ahora exclusivamente en `rl_agent_meta_cognitive()`.
-
-Todo está mappeado matemáticamente a la teoría de RL, haciendo del proyecto tanto un framework experimental como una referencia clara de cómo implementar Q-Learning en domain específico.
+- Revisar `outputs/PES_log_<fecha>_RL_AGENT.txt` para el log completo.
+- Revisar `outputs/<fecha>_RL_AGENT/PES_results_<id>.json` para estadísticas.
+- Revisar `outputs/<fecha>_RL_AGENT/PES_results_<id>.png` para visualizaciones.

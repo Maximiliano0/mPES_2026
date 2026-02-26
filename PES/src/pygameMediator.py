@@ -32,7 +32,7 @@ import tensorflow as tf
 ##########################
 ##  Imports internos    ##
 ##########################
-from .. import *
+from .. import ANSI, INPUTS_PATH, NUM_SEQUENCES, SEQ_LENGTHS_FILE, VERBOSE
 from .. ext.tools import convert_globalseq_to_seqs
 from . import log_utils
 
@@ -111,7 +111,7 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
         p =  pdf / numpy.sum(pdf)  # log(0)
         p[ p==0 ] += 0.000001
         print( p )
-        H = -numpy.dot( p, numpy.log2( p ) )
+        H = -float(numpy.dot( p, numpy.log2( p ) ))
         return H
 
   # Min entropy from a univalue distribution (0)
@@ -124,7 +124,7 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
   # Options are the available choices from the Q Table
     log_utils.tee( 'Options:', options )
 
-    entrp1 = entropy_from_pdf(options)
+    _entrp1 = entropy_from_pdf(options)
 
     o = [i for i in range(len(options))]
     o = numpy.asarray(o, dtype=numpy.float32)
@@ -159,7 +159,7 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
 
 
 def provide_rl_agent_response(
-                         resources,
+                         _resources,
                          resources_left,
                          session_no,
                          sequence_no,
@@ -254,13 +254,13 @@ def provide_rl_agent_response(
 
     try:
         Q = numpy.load(q_file)
-        rewards = numpy.load(rewards_file)
+        _rewards = numpy.load(rewards_file)
     except Exception as e:
         raise RuntimeError(
             f"\nFATAL ERROR: Failed to load training files!\n"
             f"Error: {str(e)}\n"
             f"Files may be corrupted. Please retrain by running: python3 -m PES.ext.train_rl\n"
-        )
+        ) from e
 
     if VERBOSE:
         print( "Reading preloaded Q-Table for RL-Agent" )

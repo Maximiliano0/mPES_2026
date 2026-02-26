@@ -8,7 +8,7 @@ Pipeline stages
 ---------------
 1. Load training data (initial_severity.csv, sequence_lengths.csv)
 2. Run random-player baseline and save performance plots
-3. Train Q-Learning agent (configurable episodes via CLI or default 20 000)
+3. Train Q-Learning agent (configurable episodes via CLI or default 1 000 000)
 4. Save Q-table, rewards history, and training config to a dated directory
 5. Evaluate trained agent on the same sequences and generate
    performance/confidence visualisations
@@ -66,7 +66,7 @@ def main():
     Stages: load data → random baseline → Q-Learning training →
     save artefacts → evaluate trained agent → generate plots.
 
-    Reads ``num_episodes`` from ``sys.argv[1]`` (default 20 000).
+    Reads ``num_episodes`` from ``sys.argv[1]`` (default 1 000 000).
     All output is written to ``inputs/<date>_RL_TRAIN/``.
     """
     header("RL-AGENT TRAINING PIPELINE", width=80)
@@ -74,7 +74,7 @@ def main():
     # Configure matplotlib for better aesthetics
     try:
         plt.style.use('ggplot')
-    except:
+    except OSError:
         pass  # Use default if style is not available
 
     matplotlib_config = {
@@ -124,7 +124,7 @@ def main():
 
     env = Pandemic()
 
-    def random_qf(env, state, seqid):
+    def random_qf(env, _state, _seqid):
         """Return a uniformly random action (baseline policy)."""
         return env.sample()
 
@@ -133,7 +133,7 @@ def main():
     seqs1, perfs1, _ = run_experiment(env, random_qf, False, trials_per_sequence,sevs)
     success("Random player experiment completed")
 
-    fig, ax = plt.subplots(figsize=(12, 6))
+    _fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(seqs1, color='#1f77b4', linewidth=2.5, marker='o', markersize=5, label='Random Player')
     ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
     ax.set_ylabel('Final Severity Achieved', fontsize=12, fontweight='bold')
@@ -145,7 +145,7 @@ def main():
     plt.close()
     list_item("Saved: random_player_sequence_performance.png")
 
-    fig, ax = plt.subplots(figsize=(12, 6))
+    _fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(perfs1, color='#ff7f0e', linewidth=2.5, marker='s', markersize=5, label='Random Player')
     ax.set_ylabel('Normalised Performance (0-1)', fontsize=12, fontweight='bold')
     ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
@@ -174,7 +174,7 @@ def main():
     discount_factor = 0.9
     epsilon_initial = 0.8
     epsilon_min = 0
-    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 20000
+    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 1000000
 
     info(f"Starting Q-Table training ({num_episodes:,} episodes)...")
     info("(This may take several minutes)")
@@ -245,7 +245,7 @@ def main():
     section("Training Performance Analysis", width=80)
     info("Generating reward history visualization...")
 
-    fig, ax = plt.subplots(figsize=(12, 6))
+    _fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(100*(numpy.arange(len(rewards)) + 1), rewards, color='#2ca02c', linewidth=2.5, label='Average Reward')
     ax.fill_between(100*(numpy.arange(len(rewards)) + 1), rewards, alpha=0.2, color='#2ca02c')
     ax.set_xlabel('Episodes', fontsize=12, fontweight='bold')
@@ -260,117 +260,116 @@ def main():
     print()
 
 
-    if (True):
-        section("RL-Agent Evaluation", width=80)
-        info("Running evaluation experiment with trained agent...")
-        confsrl = []
+    section("RL-Agent Evaluation", width=80)
+    info("Running evaluation experiment with trained agent...")
+    confsrl = []
 
-        def eval_qf(env, state, seqid):
-            """Select an action from the trained Q-table with confidence tracking."""
-            response, confidence, rt_hold, rt_release = rl_agent_meta_cognitive(
-                Q[state[0], state[1], int(state[2])], state[0], 10000
-            )
+    def eval_qf(_env, state, _seqid):
+        """Select an action from the trained Q-table with confidence tracking."""
+        response, confidence, _rt_hold, _rt_release = rl_agent_meta_cognitive(
+            Q[state[0], state[1], int(state[2])], state[0], 10000
+        )
 
-            if (state[0] == 0):
-                confidence = -1.0
+        if (state[0] == 0):
+            confidence = -1.0
 
-            confsrl.append(confidence)
-            return response
+        confsrl.append(confidence)
+        return response
 
-        seqs, perfs, _ = run_experiment(env, eval_qf, False, trials_per_sequence, sevs)
-        success("Evaluation experiment completed")
+    seqs, perfs, _ = run_experiment(env, eval_qf, False, trials_per_sequence, sevs)
+    success("Evaluation experiment completed")
 
-        info("Generating performance visualizations...")
+    info("Generating performance visualizations...")
 
-        fig, ax = plt.subplots(figsize=(12, 6))
-        ax.plot(seqs, color='#d62728', linewidth=2.5, marker='o', markersize=5, label='RL-Agent')
-        ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
-        ax.set_ylabel('Final Severity Achieved', fontsize=12, fontweight='bold')
-        ax.set_title('RL-Agent Evaluation: Severity per Sequence', fontsize=14, fontweight='bold', pad=20)
-        ax.grid(True, alpha=0.3)
-        ax.legend(loc='best', fontsize=11)
-        plt.tight_layout()
-        plt.savefig(os.path.join(train_dir, f'rl_agent_sequence_performance_{train_date}.png'), dpi=150, bbox_inches='tight')
-        plt.close()
-        list_item(f"Saved: rl_agent_sequence_performance_{train_date}.png")
+    _fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(seqs, color='#d62728', linewidth=2.5, marker='o', markersize=5, label='RL-Agent')
+    ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Final Severity Achieved', fontsize=12, fontweight='bold')
+    ax.set_title('RL-Agent Evaluation: Severity per Sequence', fontsize=14, fontweight='bold', pad=20)
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc='best', fontsize=11)
+    plt.tight_layout()
+    plt.savefig(os.path.join(train_dir, f'rl_agent_sequence_performance_{train_date}.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+    list_item(f"Saved: rl_agent_sequence_performance_{train_date}.png")
 
-        fig, ax = plt.subplots(figsize=(12, 6))
-        ax.plot(perfs, color='#9467bd', linewidth=2.5, marker='s', markersize=5, label='RL-Agent')
-        ax.set_ylabel('Normalised Performance (0-1)', fontsize=12, fontweight='bold')
-        ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
-        ax.set_title('RL-Agent Evaluation: Normalised Performance per Sequence', fontsize=14, fontweight='bold', pad=20)
-        ax.set_ylim(0, 1.05)
-        ax.set_xlim(0, 64)
-        ax.grid(True, alpha=0.3)
-        ax.legend(loc='best', fontsize=11)
-        plt.tight_layout()
-        plt.savefig(os.path.join(train_dir, f'rl_agent_normalised_performance_{train_date}.png'), dpi=150, bbox_inches='tight')
-        plt.close()
-        list_item(f"Saved: rl_agent_normalised_performance_{train_date}.png")
+    _fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(perfs, color='#9467bd', linewidth=2.5, marker='s', markersize=5, label='RL-Agent')
+    ax.set_ylabel('Normalised Performance (0-1)', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
+    ax.set_title('RL-Agent Evaluation: Normalised Performance per Sequence', fontsize=14, fontweight='bold', pad=20)
+    ax.set_ylim(0, 1.05)
+    ax.set_xlim(0, 64)
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc='best', fontsize=11)
+    plt.tight_layout()
+    plt.savefig(os.path.join(train_dir, f'rl_agent_normalised_performance_{train_date}.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+    list_item(f"Saved: rl_agent_normalised_performance_{train_date}.png")
 
-        cumperfs = numpy.cumsum(perfs)
-        Domain = numpy.arange(1, 1 + 64)
-        fig, ax = plt.subplots(figsize=(12, 6))
-        ax.plot(cumperfs / Domain, color='#8c564b', linewidth=2.5, marker='^', markersize=5, label='RL-Agent')
-        ax.set_ylabel('Cumulative Normalised Performance', fontsize=12, fontweight='bold')
-        ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
-        ax.set_title('RL-Agent Evaluation: Cumulative Performance Trend', fontsize=14, fontweight='bold', pad=20)
-        ax.set_ylim(0.5, 1.05)
-        ax.set_xlim(0, 64)
-        ax.grid(True, alpha=0.3)
-        ax.legend(loc='best', fontsize=11)
-        plt.tight_layout()
-        plt.savefig(os.path.join(train_dir, f'rl_agent_cumulative_performance_{train_date}.png'), dpi=150, bbox_inches='tight')
-        plt.close()
-        list_item(f"Saved: rl_agent_cumulative_performance_{train_date}.png")
+    cumperfs = numpy.cumsum(perfs)
+    Domain = numpy.arange(1, 1 + 64)
+    _fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(cumperfs / Domain, color='#8c564b', linewidth=2.5, marker='^', markersize=5, label='RL-Agent')
+    ax.set_ylabel('Cumulative Normalised Performance', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
+    ax.set_title('RL-Agent Evaluation: Cumulative Performance Trend', fontsize=14, fontweight='bold', pad=20)
+    ax.set_ylim(0.5, 1.05)
+    ax.set_xlim(0, 64)
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc='best', fontsize=11)
+    plt.tight_layout()
+    plt.savefig(os.path.join(train_dir, f'rl_agent_cumulative_performance_{train_date}.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+    list_item(f"Saved: rl_agent_cumulative_performance_{train_date}.png")
 
-        fig, ax = plt.subplots(figsize=(14, 5))
-        ax.scatter(numpy.asarray(range(len(confsrl))), confsrl, color='#1f77b4', s=40, alpha=0.6, edgecolors='navy', linewidth=0.5)
-        ax.set_title('RL-Agent: Decision Confidence Scores During Evaluation', fontsize=14, fontweight='bold', pad=20)
-        ax.set_ylabel('Confidence', fontsize=12, fontweight='bold')
-        ax.set_xlabel('Trial Number', fontsize=12, fontweight='bold')
-        ax.set_ylim(-0.1, 1.1)
-        ax.set_xlim(-10, 360)
-        ax.grid(True, alpha=0.3, axis='y')
-        plt.tight_layout()
-        plt.savefig(os.path.join(train_dir, f'rl_agent_confidences_{train_date}.png'), dpi=150, bbox_inches='tight')
-        plt.close()
-        list_item(f"Saved: rl_agent_confidences_{train_date}.png")
+    _fig, ax = plt.subplots(figsize=(14, 5))
+    ax.scatter(numpy.asarray(range(len(confsrl))), confsrl, color='#1f77b4', s=40, alpha=0.6, edgecolors='navy', linewidth=0.5)
+    ax.set_title('RL-Agent: Decision Confidence Scores During Evaluation', fontsize=14, fontweight='bold', pad=20)
+    ax.set_ylabel('Confidence', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Trial Number', fontsize=12, fontweight='bold')
+    ax.set_ylim(-0.1, 1.1)
+    ax.set_xlim(-10, 360)
+    ax.grid(True, alpha=0.3, axis='y')
+    plt.tight_layout()
+    plt.savefig(os.path.join(train_dir, f'rl_agent_confidences_{train_date}.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+    list_item(f"Saved: rl_agent_confidences_{train_date}.png")
 
-        confsrl_arr = numpy.asarray( confsrl, dtype=numpy.float32)
+    confsrl_arr = numpy.asarray( confsrl, dtype=numpy.float32)
 
-        val_confidences = numpy.arange(11, dtype=numpy.float32) / 10.0
-        _confsrl_hist = numpy.histogram( confsrl_arr, bins = val_confidences)
+    val_confidences = numpy.arange(11, dtype=numpy.float32) / 10.0
+    _confsrl_hist = numpy.histogram( confsrl_arr, bins = val_confidences)
 
-        plot_confidences(confsrl_arr, 'Confidences', Show=False)
+    plot_confidences(confsrl_arr, 'Confidences', Show=False)
 
-        numpy.save(os.path.join(train_dir, f'confsrl_{train_date}.npy'), confsrl_arr)
+    numpy.save(os.path.join(train_dir, f'confsrl_{train_date}.npy'), confsrl_arr)
 
-        confsrl_arr = confsrl_arr [ confsrl_arr != -1 ]
-
-
-        print ( confsrl_arr)
-
-        I = confsrl_arr
-        rescaled = (I - numpy.min(I) )* (  (1.0 - 0.0) / ( numpy.max(I) - numpy.min(I)) ) + 0.0
-        remapconfrl= numpy.clip( rescaled, 0.0, 1.0)
-
-        print (remapconfrl.shape )
+    confsrl_arr = confsrl_arr [ confsrl_arr != -1 ]
 
 
-        fig, ax = plt.subplots(figsize=(14, 5))
-        ax.scatter(numpy.asarray(range(remapconfrl.shape[0])), remapconfrl, color='#2ca02c', s=40, alpha=0.6, edgecolors='darkgreen', linewidth=0.5)
-        ax.set_ylabel('Remapped Confidence (0-1)', fontsize=12, fontweight='bold')
-        ax.set_xlabel('Trial Number', fontsize=12, fontweight='bold')
-        ax.set_title('RL-Agent: Normalised Confidence Scores', fontsize=14, fontweight='bold', pad=20)
-        ax.set_ylim(-0.1, 1.1)
-        ax.set_xlim(-10, 360)
-        ax.grid(True, alpha=0.3, axis='y')
-        plt.tight_layout()
-        plt.savefig(os.path.join(train_dir, f'rl_agent_remapped_confidences_{train_date}.png'), dpi=150, bbox_inches='tight')
-        plt.close()
+    print ( confsrl_arr)
 
-        plot_confidences(remapconfrl, 'Remapped Confidences', Show=False)
+    I = confsrl_arr
+    rescaled = (I - numpy.min(I) )* (  (1.0 - 0.0) / ( numpy.max(I) - numpy.min(I)) ) + 0.0
+    remapconfrl= numpy.clip( rescaled, 0.0, 1.0)
+
+    print (remapconfrl.shape )
+
+
+    _fig, ax = plt.subplots(figsize=(14, 5))
+    ax.scatter(numpy.asarray(range(remapconfrl.shape[0])), remapconfrl, color='#2ca02c', s=40, alpha=0.6, edgecolors='darkgreen', linewidth=0.5)
+    ax.set_ylabel('Remapped Confidence (0-1)', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Trial Number', fontsize=12, fontweight='bold')
+    ax.set_title('RL-Agent: Normalised Confidence Scores', fontsize=14, fontweight='bold', pad=20)
+    ax.set_ylim(-0.1, 1.1)
+    ax.set_xlim(-10, 360)
+    ax.grid(True, alpha=0.3, axis='y')
+    plt.tight_layout()
+    plt.savefig(os.path.join(train_dir, f'rl_agent_remapped_confidences_{train_date}.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+
+    plot_confidences(remapconfrl, 'Remapped Confidences', Show=False)
 
     section("Training Complete", width=80)
     success("RL-Agent training pipeline finished successfully!")

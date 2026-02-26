@@ -1,743 +1,475 @@
 # Teoría de Reinforcement Learning para Científicos de Datos
 
-**Nivel**: Intermedio | **Duración de lectura**: 40 minutos | **Requisitos**: Probabilidad, Álgebra lineal, Python
+## 1. Introducción al Reinforcement Learning
 
----
+**Reinforcement Learning (RL)** es un paradigma de aprendizaje automático donde
+un **agente** aprende a tomar decisiones mediante interacción con un
+**ambiente**. A diferencia del aprendizaje supervisado (donde hay etiquetas
+correctas) o no supervisado (donde se buscan patrones), en RL el agente aprende
+por **prueba y error**, recibiendo **recompensas** o **castigos** como señal de
+retroalimentación.
 
-## 1. Introducción: El Problema de Control Óptimo
+### 1.1 El Problema de RL
 
-### 1.1 Motivación
-
-¿Cómo enseña a una máquina a tomar **decisiones secuenciales óptimas** en un entorno dinámico?
-
-**Ejemplos de Aplicación**:
-- 🎮 Juegos: Agente aprende a ganar (AlphaGo, Atari)
-- 🚗 Robots: Control motor y navegación
-- 💊 Medicina: Selección de tratamientos secuenciales
-- 💰 Finanzas: Portfolio optimization
-- 🦠 **COVID/Pandemia**: Asignación de recursos (nuestro caso)
-
-### 1.2 ¿Por qué Reinforcement Learning?
-
-| Paradigma ML | Requiere | Aprende |
-|------------|----------|--------|
-| **Supervisado** | Etiquetas (X, y) | Mapeo: entrada → salida |
-| **No supervisado** | Solo X | Estructura de datos |
-| **Refuerzo** | Recompensas (feedback) | Secuencia óptima de acciones |
-
-En Reinforcement Learning:
-- No hay etiquetas correctas
-- El agente **explora** el ambiente
-- Recibe **recompensa** como feedback
-- Aprende a **maximizar recompensa acumulada**
-
----
-
-## 2. Cadenas de Markov
-
-### 2.1 Propiedad de Markov
-
-**Definición**: Un proceso tiene la **propiedad de Markov** si el futuro es independiente del pasado, dado el presente:
-
-$$P(s_{t+1} | s_t, s_{t-1}, \ldots, s_0) = P(s_{t+1} | s_t)$$
-
-"El futuro solo depende del presente, no de la historia."
-
-### 2.2 Cadena de Markov (CM)
-
-Una **Cadena de Markov** es tupla $\langle S, P \rangle$:
-- $S$: Conjunto finito de estados
-- $P$: Matriz de transición $P(s' | s)$ para todo $(s, s')$
-
-**Ejemplo: Clima**:
-```
-Estados: {Soleado, Nublado, Lluvia}
-
-Matriz de transición P:
-         A     Soleado  Nublado  Lluvia
-      Soleado   0.8      0.15     0.05
-P =   Nublado   0.2      0.6      0.2
-      Lluvia    0.1      0.3      0.6
-
-P(Mañana=Soleado | Hoy=Soleado) = 0.8
-P(Mañana=Lluvia | Hoy=Nublado) = 0.2
-```
-
-### 2.3 Cadena de Markov con Recompensas (MRP)
-
-Una **Markov Reward Process** es tupla $\langle S, P, R, \gamma \rangle$:
-- $S$: Estados
-- $P$: Transición
-- $R(s)$: Recompensa esperada en estado $s$
-- $\gamma \in [0,1]$: **Factor de descuento**
-
-**Factor de descuento $\gamma$**:
-- $\gamma = 1$: Recompensas futuras igual de valiosas que presentes
-- $\gamma = 0.9$: Recompensa en 1 paso = 0.9 × recompensa hoy
-- $\gamma = 0$: Solo importa recompensa inmediata
-
-$$G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \ldots = \sum_{i=0}^{\infty} \gamma^i r_{t+i}$$
-
-**Interpretación**: El **return** $G_t$ es la suma **descontada** de recompensas futuras.
-
-### 2.4 Función de Valor en MRP
-
-La **función de valor** predice el return esperado desde un estado:
-
-$$V(s) = \mathbb{E}[G_t | s_t = s] = \mathbb{E}\left[\sum_{i=0}^{\infty} \gamma^i r_{t+i} | s_t = s\right]$$
-
-**Ecuación de Bellman para MRP**:
-
-$$V(s) = R(s) + \gamma \sum_{s'} P(s'|s) V(s')$$
-
-"El valor de un estado = recompensa inmediata + valor descontado de los próximos estados"
-
-**Ejemplo numérico**:
-```
-Estado: Soleado
-R(Soleado) = +10 (es agradable)
-Transiciones: P(Soleado|Soleado)=0.8, P(Nublado|Soleado)=0.15, P(Lluvia|Soleado)=0.05
-γ = 0.9
-V(Nublado) = 5, V(Lluvia) = -5
-
-V(Soleado) = 10 + 0.9 * (0.8*V(Soleado) + 0.15*5 + 0.05*(-5))
-           = 10 + 0.9 * (0.8*V(Soleado) + 0.75 - 0.25)
-           = 10 + 0.9 * (0.8*V(Soleado) + 0.5)
-
-Resolviendo: V(Soleado) = 10 + 0.9*0.8*V(Soleado) + 0.45
-             V(Soleado) - 0.72*V(Soleado) = 10.45
-             0.28*V(Soleado) = 10.45
-             V(Soleado) ≈ 37.3
-```
-
----
-
-## 3. Procesos de Decisión de Markov (MDP)
-
-### 3.1 Definición
-
-Una **Markov Decision Process** es tupla $\langle S, A, P, R, \gamma \rangle$:
-- $S$: Conjunto finito de estados
-- $A$: Conjunto finito de acciones
-- $P(s' | s, a)$: Probabilidad de transición
-- $R(s, a, s')$ o $R(s, a)$: Recompensa por acción en estado
-- $\gamma$: Factor de descuento
-
-**Diferencia vs. MRP**: El agente **elige acciones**, generando un camino a través del MDP.
-
-### 3.2 Intuición del MDP
+El agente observa un **estado** del ambiente, ejecuta una **acción**, recibe
+una **recompensa**, y el ambiente transiciona a un nuevo estado. El objetivo es
+aprender una **política** que maximice la recompensa acumulada a largo plazo.
 
 ```
-Tiempo t: Estado s_t
-
-Agente decide: Acción a_t
-
-Ambiente responde:
-  - Nuevo estado s_{t+1} ~ P(·|s_t, a_t)
-  - Recompensa r_t ~ R(s_t, a_t)
-
-Agente observa: s_{t+1}, r_t
-
-Tiempo t+1: Repetir con estado s_{t+1}
+    ┌──────────┐    acción aₜ     ┌──────────┐
+    │          │ ───────────────→ │          │
+    │  Agente  │                  │ Ambiente │
+    │          │ ←─────────────── │          │
+    └──────────┘   sₜ₊₁, rₜ₊₁    └──────────┘
 ```
 
-### 3.3 Historia vs. Markov Property
+### 1.2 Contexto en PES
 
-En un **MDP**, aunque hay historia $\tau = (s_0, a_0, r_0, \ldots, s_t)$, solo importa el **estado actual**:
+En el **Pandemic Experiment Scenario (PES)**:
 
-$$P(s_{t+1} | \tau) = P(s_{t+1} | s_t, a_t)$$
-
----
-
-## 4. Políticas y Valor Esperado
-
-### 4.1 Política
-
-Una **política** $\pi$ es la estrategia del agente: "qué acción tomar en cada estado"
-
-Dos tipos:
-1. **Política Determinística**: $\pi(s) = a$ (única acción por estado)
-2. **Política Estocástica**: $\pi(a|s) = P(a|s)$ (probabilidad sobre acciones)
-
-### 4.2 Estado-Value Function
-
-$$V^\pi(s) = \mathbb{E}_\pi\left[\sum_{i=0}^{\infty} \gamma^i r_{t+i} | s_t = s\right]$$
-
-"El valor esperado del return, siguiendo política $\pi$ desde estado $s$"
-
-**Ecuación de Bellman para V**:
-
-$$V^\pi(s) = \sum_a \pi(a|s) \sum_{s', r} P(s', r | s, a) [r + \gamma V^\pi(s')]$$
-
-### 4.3 Acción-Value Function (Q-Function)
-
-$$Q^\pi(s, a) = \mathbb{E}_\pi\left[\sum_{i=0}^{\infty} \gamma^i r_{t+i} | s_t = s, a_t = a\right]$$
-
-"El valor esperado de tomar acción $a$ en estado $s$, luego seguir $\pi$"
-
-**Ecuación de Bellman para Q**:
-
-$$Q^\pi(s, a) = \sum_{s', r} P(s', r | s, a) [r + \gamma \sum_{a'} \pi(a'|s') Q^\pi(s', a')]$$
-
-### 4.4 Relación V-Q
-
-$$V^\pi(s) = \sum_a \pi(a|s) Q^\pi(s, a)$$
-
-"El valor del estado = promedio ponderado de valores de acciones"
+- **Agente**: Algoritmo de Q-Learning que decide asignación de recursos.
+- **Ambiente**: Simulación de pandemia (`Pandemic(gym.Env)` en `ext/pandemic.py`).
+- **Estado**: `(recursos_disponibles, número_de_trial, severidad)`.
+- **Acción**: Cantidad de recursos a asignar (0–10).
+- **Recompensa**: Negativo de la suma de severidades de todas las ciudades.
+- **Objetivo**: Minimizar la severidad total de la pandemia.
 
 ---
 
-## 5. Control Óptimo
+## 2. Procesos de Decisión de Markov (MDP)
 
-### 5.1 Valores Óptimos
+### 2.1 Definición Formal
 
-La **política óptima** es aquella que maximiza el return esperado:
+Un **MDP** es una tupla $(S, A, P, R, \gamma)$:
 
-$$\pi^* = \arg\max_\pi V^\pi(s) \quad \forall s$$
+- $S$: Conjunto finito de **estados**.
+- $A$: Conjunto finito de **acciones**.
+- $P(s' | s, a)$: **Función de transición** — Probabilidad de llegar al
+  estado $s'$ dado que se está en $s$ y se ejecuta $a$.
+- $R(s, a, s')$: **Función de recompensa** — Recompensa obtenida al
+  transicionar de $s$ a $s'$ mediante $a$.
+- $\gamma \in [0, 1]$: **Factor de descuento** — Importancia relativa de
+  recompensas futuras vs. inmediatas.
 
-Los **valores óptimos** son:
+### 2.2 Propiedad de Markov
 
-$$V^*(s) = \max_\pi V^\pi(s) = \max_a Q^*(s, a)$$
+Un estado $s_t$ satisface la propiedad de Markov si:
 
-$$Q^*(s, a) = \max_\pi Q^\pi(s, a)$$
+$$P(s_{t+1} | s_t, a_t) = P(s_{t+1} | s_0, a_0, s_1, a_1, ..., s_t, a_t)$$
 
-### 5.2 Ecuaciones de Bellman Óptimas
+Es decir, el estado futuro depende **únicamente** del estado actual y la acción
+actual, no de toda la historia. En PES, el estado `(resources, trial, severity)`
+captura toda la información necesaria para predecir el siguiente estado.
 
-**Para V***:
+### 2.3 Retorno Descontado
 
-$$V^*(s) = \max_a \sum_{s', r} P(s', r | s, a) [r + \gamma V^*(s')]$$
+El **retorno** $G_t$ es la suma descontada de recompensas futuras:
 
-"El valor óptimo = máxima recompensa inmediata + valor descontado del mejor próximo estado"
+$$G_t = r_{t+1} + \gamma r_{t+2} + \gamma^2 r_{t+3} + \cdots = \sum_{k=0}^{\infty} \gamma^k r_{t+k+1}$$
 
-**Para Q***:
+Con $\gamma = 0.9$ (valor en PES):
 
-$$Q^*(s, a) = \sum_{s', r} P(s', r | s, a) [r + \gamma \max_{a'} Q^*(s', a')]$$
+| Horizonte | Factor | Contribución |
+|-----------|--------|-------------|
+| Inmediata ($k=0$) | $0.9^0 = 1.0$ | 100 % |
+| 1 paso | $0.9^1 = 0.9$ | 90 % |
+| 2 pasos | $0.9^2 = 0.81$ | 81 % |
+| 5 pasos | $0.9^5 = 0.59$ | 59 % |
+| 10 pasos | $0.9^{10} = 0.35$ | 35 % |
 
-### 5.3 Política Óptima
-
-Una vez tenemos $Q^*$, la **política óptima es determinística**:
-
-$$\pi^*(s) = \arg\max_a Q^*(s, a)$$
-
-"En cada estado, ejecutar la acción con mayor Q-value"
-
----
-
-## 6. Algoritmos de Control: Q-Learning (FOCO PRINCIPAL)
-
-### 6.1 Motivación
-
-Los algoritmos vistos requieren conocer:
-- $P(s' | s, a)$ (dinámica del sistema)
-- $R(s, a)$ (función de recompensa)
-
-**En RL práctico**, generalmente:
-- No conocemos $P$ ni $R$ exactamente
-- Interactuamos con el ambiente ("exploración")
-- Aprendemos de la experiencia
-
-### 6.2 Temporal Difference (TD) Learning
-
-**Idea central**: Usar diferencia temporal como error de aprendizaje.
-
-Observamos una transición: $(s, a, r, s')$
-
-El **TD-error** es:
-
-$$\delta = r + \gamma V(s') - V(s)$$
-
-"Diferencia entre lo que esperabamos y lo que observamos"
-
-Actualizamos V:
-
-$$V(s) \leftarrow V(s) + \alpha \delta$$
-
-Donde $\alpha$ es el **learning rate** (cuánto pesar la nueva observación).
-
-### 6.3 Q-Learning Off-Policy
-
-**Q-Learning** es un algoritmo de **aprendizaje directo de $Q^*$** sin necesitar $P$ ni $R$.
-
-**Actualización Q-Learning**:
-
-$$Q(s, a) \leftarrow Q(s, a) + \alpha [r + \gamma \max_{a'} Q(s', a') - Q(s, a)]$$
-
-Desglosada:
-- $Q(s, a)$ = estimación actual (antes de actualización)
-- $\alpha$ = learning rate (velocidad de aprendizaje)
-- $r + \gamma \max_{a'} Q(s', a')$ = target (lo que "debería" valer)
-- Término entre corchetes = TD-error
-
-**Pseudocódigo**:
-```python
-Q = tabla con valores iniciales (ej. ceros o uniformes)
-α = learning_rate  (ej. 0.1 a 0.3)
-γ = discount_factor  (ej. 0.9 a 0.99)
-ε = exploration_rate  (ej. 0.1)
-
-for episode in range(num_episodes):
-    s = initial_state()
-    
-    while not terminal(s):
-        # Política ε-greedy: explorar vs explotar
-        if random() < ε:
-            a = random_action()  # Exploración
-        else:
-            a = argmax_a Q[s, a]  # Explotación
-        
-        # Ejecutar acción, observar resultado
-        s', r = environment(s, a)
-        
-        # Q-Learning update
-        Q[s, a] = Q[s, a] + α * (r + γ * max_a Q[s', a] - Q[s, a])
-        
-        s = s'
-```
-
-### 6.4 Interpretación de Q-Learning
-
-La **ecuación de actualización** implementa la ecuación de Bellman óptima:
-
-$$Q(s, a) \approx Q^*(s, a)$$
-
-Con suficientes actualizaciones, la tabla Q **converge** a $Q^*$.
+> Con $\gamma = 0.9$, las recompensas a 10 pasos valen ~35 % de las inmediatas.
+> Esto hace que el agente valore tanto el impacto inmediato de asignar recursos
+> como las consecuencias a mediano plazo.
 
 ---
 
-## 7. Convergencia y Garantías Teóricas
+## 3. Funciones de Valor
 
-### 7.1 Convergencia de Q-Learning
+### 3.1 Función de Valor de Estado $V(s)$
 
-**Teorema**: Q-Learning converge a $Q^*$ bajo condiciones:
+La función de valor de estado estima la recompensa esperada estando en $s$ y
+siguiendo la política $\pi$:
 
-1. **Exploración suficiente**: Cada (s, a) se visita infinitamente
-   - Garantizado por ε-greedy con ε > 0
-   
-2. **Learning rate decreciente**: $\sum_t \alpha_t = \infty$ y $\sum_t \alpha_t^2 < \infty$
-   - Ejemplo: $\alpha_t = 1/t$ converge
-   - Nuestro caso PES: $\alpha = 0.2$ fijo (conservador)
-   
-3. **Recompensas acotadas**: $|R(s, a)| < R_{max}$
-   - En PES: $R_{max}$ = suma máxima severidades ✓
+$$V^\pi(s) = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s\right]$$
 
-**Conclusión**: Q-Learning es **garantizado converger** en espacios finitos.
+### 3.2 Función de Valor de Acción $Q(s, a)$
 
-### 7.2 Tasa de Convergencia
+La función de valor de acción estima la recompensa esperada al ejecutar $a$ en
+$s$ y luego seguir $\pi$:
 
-La convergencia es **lenta** en espacios grandes:
-- Con $n$ estados y $m$ acciones: $O(nm)$ complejidad
-- En PES: 31 × 11 × 11 × 11 = 41,261 entradas en Q
-- Un número suficiente de episodios es necesario para garantizar convergencia
-  (configurable vía CLI: `python3 -m PES.ext.train_rl [episodios]`, default: 20,000)
+$$Q^\pi(s, a) = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k+1} \mid s_t = s, a_t = a\right]$$
 
-### 7.3 Maldición de la Dimensionalidad
+### 3.3 Relación entre $V$ y $Q$
 
-Al aumentar complejidad:
-- Más estados → más datos necesarios
-- Espacio de estado exponencial → imposible tabular Q
+$$V^\pi(s) = \sum_a \pi(a|s) \cdot Q^\pi(s, a)$$
 
-**Soluciones modernas**:
-- **Function Approximation**: Q(s,a) ≈ w·φ(s) (regresión lineal)
-- **Deep Q-Networks (DQN)**: Red neuronal para aproximar Q
-- **Policy Gradient**: Aproximar política directamente
+Para una política determinística $\pi^*(s) = \arg\max_a Q^*(s, a)$:
 
-PES usa la versión más simple: **tabla exacta** (viable porque espacio es pequeño).
+$$V^*(s) = \max_a Q^*(s, a)$$
 
----
+### 3.4 Implementación en PES
 
-## 8. Exploración vs. Explotación
+PES utiliza una **Q-table** (tabla de Q-values) de la forma:
 
-### 8.1 Dilema Fundamental
-
-En todo punto de decisión:
-
-**Explotación** = usar acción que creo es mejor
-$$a = \arg\max_a Q(s, a)$$
-
-**Exploración** = probar acción nueva para mejorar estimación
-$$a = \text{random}$$
-
-¿Cuál es mejor?
-- Demasiada explotación → converge a óptimo local
-- Demasiada exploración → ignora lo que ya aprendió
-
-### 8.2 Epsilon-Greedy
-
-**Estrategia ε-Greedy**:
-
-Con probabilidad $\varepsilon$: acción aleatoria (explorar)
-Con probabilidad $1-\varepsilon$: mejor acción (explotar)
-
-$$\pi_\varepsilon(a|s) = \begin{cases}
-1 - \varepsilon + \frac{\varepsilon}{m} & \text{si } a = \arg\max Q(s, a) \\
-\frac{\varepsilon}{m} & \text{en otro caso}
-\end{cases}$$
-
-Donde $m = |A|$ es número de acciones.
-
-### 8.3 Epsilon Decay
-
-La exploración es más importante **al inicio**:
-- Inicio: no sabemos nada, exploración máxima
-- Medio: vamos aprendiendo, balance
-- Final: confiamos en lo aprendido, explotación pura
-
-**Esquemas de decay**:
-
-1. **Lineal**: $\varepsilon_t = \varepsilon_0 - \frac{\varepsilon_0 - \varepsilon_{min}}{T} \cdot t$
-   - PES usa esto
-   
-2. **Exponencial**: $\varepsilon_t = \varepsilon_0 e^{-\lambda t}$
-   
-3. **Hiperbólico**: $\varepsilon_t = \frac{\varepsilon_0}{1 + \lambda t}$
-
-**Análisis en PES** (ejemplo con 20,000 episodios):
-```
-ε_0 = 0.8, ε_min = 0.0, T = configurable (default 20,000)
-reduction = (ε_0 - ε_min) / T por episodio
-
-Inicio (t=0):     ε = 0.8   (80% exploración)
-t=T*0.25:         ε = 0.6   (60% exploración)
-t=T*0.50:         ε = 0.4   (40% exploración)
-t=T*0.75:         ε = 0.2   (20% exploración)
-Final (t=T):      ε = 0.0   (0% exploración)
-```
-
----
-
-## 9. Off-Policy vs. On-Policy Learning
-
-### 9.1 Definiciones
-
-**On-Policy**: Aprender de la política que estamos siguiendo
-- Algoritmo: SARSA
-- Mejora convergencia lenta
-
-**Off-Policy**: Aprender de política diferente
-- Algoritmo: Q-Learning
-- Permite exploración audaz
-
-### 9.2 Q-Learning es Off-Policy
-
-En Q-Learning, el **target** usa:
-$$\max_{a'} Q(s', a')$$
-
-No $\sum_{a'} \pi(a'|s') Q(s', a')$ (que sería on-policy)
-
-Esto es **off-policy** porque:
-- Estamos siguiendo una política exploratoria (ε-greedy)
-- Pero aprendiendo la política greedy codificada en $\max Q$
-
-**Ventaja**: Podemos explorar sin comprometer lo que aprendemos.
-
----
-
-## 10. Función de Recompensa en Dominios Específicos
-
-### 10.1 Diseño de Recompensas
-
-La función de recompensa codifica el **objetivo del problema**.
-
-En RL, el agente aprende a:
-$$\max \mathbb{E}[R_t + \gamma R_{t+1} + \gamma^2 R_{t+2} + \ldots]$$
-
-**Lo que haga el agente depende enteramente de R.**
-
-### 10.2 Recompensa en PES
+$$Q : \underbrace{S}_{31 \times 11 \times 11} \times \underbrace{A}_{11} \rightarrow \mathbb{R}$$
 
 ```python
-# Objetivo: Minimizar severidades pandémicas
-# Código en pandemic.py, método step():
-
-severities = get_updated_severity(...)  # Calcular nuevas severidades
-reward = (-1) * numpy.sum(severities)   # Penalizar severidad
-
-# Ejemplo:
-# Si severidades = [2.5, 3.0, 1.8] → suma = 7.3
-# reward = -7.3
+Q.shape = (31, 11, 11, 11)   # (resources, trials, severity, actions)
+# Total: 41,261 entradas
 ```
 
-**Análisis**:
-- Recompensa negativa → agente quiere minimizar
-- Proporcional a severidad total → incentiva buenas decisiones
-- Inmediata → feedback rápido sobre cada acción
-
-### 10.3 Shaping de Recompensas
-
-En práctica, diseñar R es un **arte**:
-
-1. **Recompensa muy esparsa** (ej. solo al final)
-   - Problema: aprendizaje lento, muchos pasos sin feedback
-   
-2. **Recompensa muy densa** (ej. por cada acción)
-   - Problema: agente puede buscar "atajos" (reward hacking)
-   
-3. **Balance**: Recompensa por progreso + recompensa final
-   - En PES: severidad en cada step == balance automático
+Cada entrada $Q[r, t, s, a]$ almacena el valor estimado de asignar $a$ recursos
+cuando quedan $r$ recursos disponibles, se está en el trial $t$, y la severidad
+actual es $s$.
 
 ---
 
-## 11. Entropía y Confianza Meta-cognitiva
+## 4. Ecuaciones de Bellman
 
-### 11.1 Entropía de Shannon
+### 4.1 Ecuación de Bellman de Optimalidad
 
-La **entropía** mide incertidumbre en una distribución:
+$$Q^*(s, a) = \sum_{s'} P(s'|s,a) \left[ R(s,a,s') + \gamma \max_{a'} Q^*(s', a') \right]$$
 
-$$H(X) = -\sum_{i=1}^{n} p_i \log_2(p_i)$$
+Para MDP determinísticos (como PES), $P(s'|s,a) = 1$ para un único $s'$:
 
-Donde $p_i = P(X = x_i)$ es probabilidad.
+$$Q^*(s, a) = R(s, a) + \gamma \max_{a'} Q^*(s', a')$$
+
+### 4.2 Diferencia Temporal (TD Error)
+
+El **TD error** mide la discrepancia entre la estimación actual y la
+observación:
+
+$$\delta_t = r_{t+1} + \gamma \max_{a'} Q(s_{t+1}, a') - Q(s_t, a_t)$$
+
+Si $\delta_t > 0$: La recompensa observada fue **mejor** de lo esperado.
+Si $\delta_t < 0$: La recompensa observada fue **peor** de lo esperado.
+Si $\delta_t = 0$: La estimación es perfecta (convergencia).
+
+---
+
+## 5. Q-Learning
+
+### 5.1 Algoritmo
+
+Q-Learning es un algoritmo **off-policy** y **model-free** que aprende $Q^*$
+directamente, sin necesidad de conocer $P(s'|s,a)$:
+
+```
+Inicializar Q(s, a) arbitrariamente para todo (s, a)
+Para cada episodio:
+    Inicializar s
+    Repetir (para cada paso del episodio):
+        Elegir a desde s usando ε-greedy de Q
+        Ejecutar a, observar r, s'
+        Q(s, a) ← Q(s, a) + α [r + γ max_a' Q(s', a') - Q(s, a)]
+        s ← s'
+    Hasta que s sea terminal
+```
+
+### 5.2 Regla de Actualización
+
+$$Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[ \underbrace{r_{t+1} + \gamma \max_{a'} Q(s_{t+1}, a')}_{\text{target}} - \underbrace{Q(s_t, a_t)}_{\text{estimación actual}} \right]$$
+
+Los componentes:
+
+| Término | Significado |
+|---------|-------------|
+| $Q(s_t, a_t)$ | Estimación actual del valor |
+| $r_{t+1}$ | Recompensa observada |
+| $\gamma \max_{a'} Q(s_{t+1}, a')$ | Valor descontado del mejor futuro estimado |
+| $\alpha$ | Tasa de aprendizaje (0.2 en PES) |
+
+### 5.3 Propiedades
+
+| Propiedad | Descripción |
+|-----------|-------------|
+| **Off-policy** | Aprende sobre la política greedy ($\max Q$) mientras sigue ε-greedy |
+| **Model-free** | No necesita conocer las probabilidades de transición |
+| **Tabular** | Almacena un valor para cada par $(s, a)$ en una tabla |
+| **Online** | Actualiza después de cada transición |
+| **Bootstrap** | Usa su propia estimación de $Q(s')$ para actualizar $Q(s)$ |
+
+### 5.4 Reproducibilidad
+
+> **Nota importante**: Si no se fija una semilla (`seed`) antes de
+> entrenar, la inicialización aleatoria de la Q-table, las decisiones
+> ε-greedy y la generación de secuencias de entrenamiento serán
+> diferentes en cada ejecución. Esto implica que **el resultado del
+> entrenamiento no es reproducible** a menos que se establezcan
+> semillas explícitas con `numpy.random.seed()` y `random.seed()`.
+> Sin semilla fija, la única forma de preservar un resultado es
+> conservar la Q-table (`.npy`) generada.
+>
+> En la implementación actual de PES, el entrenamiento **no fija
+> semilla**, por lo que cada ejecución produce un agente distinto.
+
+### 5.5 Convergencia
+
+Q-Learning converge a $Q^*$ bajo las condiciones:
+
+1. Todos los pares $(s, a)$ se visitan infinitamente a menudo.
+2. La tasa de aprendizaje $\alpha$ satisface las condiciones de Robbins-Monro:
+   - $\sum_{t=0}^{\infty} \alpha_t = \infty$
+   - $\sum_{t=0}^{\infty} \alpha_t^2 < \infty$
+3. El MDP es ergódico (todos los estados son alcanzables).
+
+> **Nota técnica**: En PES, $\alpha = 0.2$ es constante, lo cual viola
+> estrictamente la condición 2. Sin embargo, con 1,000,000 de episodios y
+> un espacio de estados relativamente pequeño (3,751 estados), la convergencia
+> práctica es suficiente.
+
+---
+
+## 6. Exploración vs. Explotación
+
+### 6.1 El Dilema
+
+- **Exploración**: Probar acciones nuevas para descubrir mejores estrategias.
+- **Explotación**: Usar el conocimiento actual para maximizar recompensa.
+
+### 6.2 Política ε-Greedy
+
+La solución más simple al dilema:
+
+$$
+a_t = \begin{cases}
+\arg\max_a Q(s_t, a) & \text{con probabilidad } 1 - \varepsilon \\
+\text{acción aleatoria} & \text{con probabilidad } \varepsilon
+\end{cases}
+$$
+
+### 6.3 Decaimiento de ε
+
+Para transicionar de exploración a explotación, $\varepsilon$ decrece durante
+el entrenamiento:
+
+**Decaimiento lineal** (usado en PES):
+
+$$\varepsilon_{i+1} = \varepsilon_i - \frac{\varepsilon_0 - \varepsilon_{\min}}{N}$$
+
+Con los valores de PES:
+
+$$\varepsilon_{i+1} = \varepsilon_i - \frac{0.8 - 0.0}{1{,}000{,}000} = \varepsilon_i - 0.0000008$$
+
+Otras estrategias de decaimiento (no usadas en PES pero comunes en RL):
+
+- **Exponencial**: $\varepsilon_{i+1} = \varepsilon_i \cdot \lambda$, con $\lambda \in (0.999, 1)$
+- **Inversión**: $\varepsilon_i = \frac{1}{1 + i/k}$
+- **Step function**: $\varepsilon$ fijo por bloques de episodios
+
+---
+
+## 7. Función de Recompensa
+
+### 7.1 Diseño de la Función de Recompensa
+
+La función de recompensa define qué comportamiento el agente debe aprender.
+Un buen diseño es crucial:
+
+| Tipo | Descripción | Ventaja | Desventaja |
+|------|-------------|---------|-----------|
+| **Densa** | Recompensa en cada paso | Señal frecuente | Puede crear atajos |
+| **Dispersa** | Solo en terminal | Objetivo claro | Difícil de aprender |
+| **Shaped** | Modificada con heurística | Acelera aprendizaje | Puede sesgar |
+
+### 7.2 Recompensa en PES
+
+PES usa recompensa **densa** (en cada paso):
+
+$$r_t = -\sum_{i=1}^{n_t} \text{severity}_i$$
+
+Donde $n_t$ es el número de ciudades visibles en el paso $t$.
 
 **Propiedades**:
-- $H = 0$ si una categoría tiene probabilidad 1 (determinística)
-- $H = \log_2(n)$ máxima si todas categorías equiprobables
-- Para 11 acciones: $H_{max} = \log_2(11) \approx 3.46$ bits
 
-**Ejemplo**:
+- Siempre negativa (o cero si todas las severidades son 0).
+- Más negativa = peor situación → incentiva reducir severidades.
+- Densa: proporciona señal en cada trial, no solo al final.
+- La suma incluye **todas** las ciudades, no solo la actual.
+
+### 7.3 Caso Terminal
+
+En PES, cuando la secuencia termina:
+
 ```python
-# Distribución 1: Determinística
-p1 = [1.0, 0.0, 0.0, ...]  # H = 0 bits (sin incertidumbre)
-
-# Distribución 2: Uniforme
-p2 = [1/11, 1/11, ..., 1/11]  # H ≈ 3.46 bits (máxima incertidumbre)
-
-# Distribución 3: Concentrada
-p3 = [0.7, 0.15, 0.1, 0.05, ...]  # H ≈ 1.2 bits (media)
+if done:
+    Q[s, a] = reward    # Sin término de descuento futuro
 ```
 
-### 11.2 Q-Values como Distribución
-
-En estado $s$, los Q-values para cada acción:
-$$Q_s = [Q(s,0), Q(s,1), \ldots, Q(s,10)]$$
-
-Podemos normalizarlos a probabilidades (softmax):
-$$p_a = \frac{e^{Q(s,a)}}{Z}$$
-
-Donde $Z = \sum_a e^{Q(s,a)}$ es factor de normalización.
-
-### 11.3 Confianza Basada en Entropía
-
-**Intuición**:
-- Si Q-values muestran **claro ganador** (ej. Q=[0.1, 0.9, 0.2, ...])
-  - Entropía baja
-  - Agente confiado
-  
-- Si Q-values **similares** (ej. Q=[0.4, 0.45, 0.42, ...])
-  - Entropía alta
-  - Agente inseguro
-
-$$\text{Confianza} = 1 - \frac{H_{decision}}{H_{max}}$$
-
-O normalización más sofisticada en PES:
-
-$$\text{Confianza} = \frac{H_{decision} - H_{max}}{H_{min} - H_{max}}$$
-
-### 11.4 Tiempos de Reacción Humano-realistas
-
-La **confianza baja** debería correlacionar con **tiempos lentos**.
-
-En PES (`rl_agent_meta_cognitive()` en pandemic.py / pygameMediator.py):
-```python
-# Mapeo: confianza → tiempo de reacción
-# confidence alta (>0.8) → respuesta rápida (<100ms)
-# confidence baja (<0.3) → respuesta lenta (>500ms)
-
-mu_response = confidence * coefficient + offset
-rt_hold = numpy.random.normal(mu=mu_response, sigma=3)
-```
-
-Esto simula que un agente **cognitivamente realista** tarda más cuando es incierto.
+El Q-value del estado terminal se fija como la recompensa observada, ya que
+no hay estado futuro.
 
 ---
 
-## 12. Métricas de Evaluación
+## 8. Tabular vs. Aproximación de Funciones
 
-### 12.1 Return Acumulado
+### 8.1 Método Tabular (PES)
 
-La métrica más fundamental es el **return acumulado**:
+| Aspecto | Tabular |
+|---------|---------|
+| Almacenamiento | Tabla explícita $|S| \times |A|$ |
+| Tamaño en PES | $31 \times 11 \times 11 \times 11 = 41{,}261$ |
+| Actualización | Directa: `Q[s,a] += ...` |
+| Convergencia | Garantizada (bajo condiciones) |
+| Generalización | No generaliza entre estados similares |
+| Escalabilidad | Crece exponencialmente con dimensiones |
 
-$$G = \sum_{t=0}^{T} r_t$$
+### 8.2 Aproximación de Funciones (alternativa)
 
-En PES: suma de recompensas negativas = severidad total.
+Para espacios de estados grandes o continuos, se puede aproximar $Q$ con:
 
-### 12.2 Performance Normalizado
+- **Redes neuronales** (Deep Q-Network / DQN)
+- **Funciones lineales** con features
+- **Tiles coding** (discretización adaptativa)
+- **Transformers** (como en `PES_Transformer`)
 
-Para comparar entre problema, normalizamos al rango teórico:
+### 8.3 ¿Por qué tabular funciona en PES?
 
-$$\text{Performance} = \frac{\text{worst} - \text{actual}}{\text{worst} - \text{best}}$$
+El espacio de estados de PES es pequeño:
 
-- 0 = rendimiento más pobre posible
-- 0.5 = mitad de lo óptimo
-- 1 = rendimiento óptimo
+$$|S| = 31 \times 11 \times 11 = 3{,}751$$
+$$|S \times A| = 3{,}751 \times 11 = 41{,}261$$
 
-### 12.3 Curva de Aprendizaje
+Con 1,000,000 episodios y secuencias de 3–10 trials:
 
-Durante entrenamiento, graficar return promedio vs. episodios:
-
-$$\text{Avg Return}_{\text{window}} = \frac{1}{N} \sum_{i=t-N/2}^{t+N/2} G_i$$
-
-Esperado: curva creciente hasta convergencia en forma de **S**.
-
----
-
-## 13. Comparación con Supervisado y No Supervisado
-
-| Aspecto | Supervisado | No Supervisado | Refuerzo |
-|--------|-----------|---------|----------|
-| **Datos** | (X, y) etiquetados | Solo X | Trayectorias (s, a, r, s') |
-| **Feedback** | Etiqueta correcta | Ninguno | Recompensa |
-| **Objetivo** | Predecir y | Encontrar estructura | Maximizar return |
-| **Ejemplo** | Clasificación | Clustering | Control, decisiones |
-| **Desafío** | Overfitting | Validación | Exploración-Explotación |
-| **Métrica** | Accuracy, F1 | Silhueta | Return promedio |
+- Mínimo $\sim 3{,}000{,}000$ transiciones vistas.
+- Promedio de visitas por par $(s,a)$: $\sim 73$.
+- Suficiente para buena cobertura estadística.
 
 ---
 
-## 14. Limitations y Desafíos
+## 9. Entropía y Confianza Meta-cognitiva
 
-### 14.1 Maldición de la Dimensionalidad
+### 9.1 Entropía de Shannon
 
-**Problema**: En espacios de estado grandes, tabla Q es infactible.
+Para una distribución de probabilidad $p = (p_1, ..., p_n)$:
 
-Ejemplo: Estado de 10 variables continuas, 100 valores cada una
-- Tamaño de Q: $100^{10} \times |A|$ (¡¡¡astronómico!!!)
+$$H(p) = -\sum_{i=1}^{n} p_i \log_2 p_i$$
 
-**Soluciones**:
-1. Discretización (reducir precisión)
-2. Function approximation (Red neuronal)
-3. Dimensionalidad reducida
+Propiedades:
 
-PES mitiga con discretización (31 × 11 × 11 = pequeño).
+- $H \geq 0$ siempre.
+- $H = 0$ si y solo si la distribución es determinística (un $p_i = 1$).
+- $H = \log_2 n$ si la distribución es uniforme ($p_i = 1/n$ para todo $i$).
 
-### 14.2 Non-Stationary Environments
+### 9.2 Entropía como Medida de Confianza
 
-Si el ambiente cambia con el tiempo (dinámica no-estacionaria), supuestos de MDP fallan.
+En PES, los Q-values se interpretan como una distribución sobre acciones:
 
-En PES: Ambiente fijo (pandemia simulada), así que no problema.
+1. Normalizar Q-values a probabilidades: $p_i = Q_i / \sum Q_j$
+2. Calcular entropía: $H(p)$
+3. Normalizar a confianza:
 
-### 14.3 Sample Efficiency
+$$\text{confidence} = \frac{H(p) - H_{\max}}{H_{\min} - H_{\max}}$$
 
-Q-Learning puede ser **muy ineficiente** (millions de muestras necesarios).
+Donde:
+- $H_{\min}$: Entropía de distribución determinística ($\approx 0$)
+- $H_{\max}$: Entropía de distribución uniforme ($= \log_2 11 \approx 3.46$)
 
-En robótica, obtener muestras es caro. Problemas:
-- **Sample efficiency**: Minimizar muestras requeridas
-- **Off-policy learning**: Reutilizar historiales
-- **Model-based RL**: Aprender modelo del ambiente
+| Confianza | Interpretación |
+|-----------|---------------|
+| $\approx 1.0$ | Q-values muy concentrados (una acción claramente dominante) |
+| $\approx 0.5$ | Q-values moderadamente diferenciados |
+| $\approx 0.0$ | Q-values uniformes (todas las acciones igualmente valoradas) |
 
-### 14.4 Reward Hacking
+### 9.3 Confianza → Tiempo de Reacción
 
-Si recompensa mal diseñada, agente encuentra "truco" no intencional.
+PES simula respuestas humanas mapeando confianza a tiempos de reacción:
 
-Ejemplo: En juego, si recompensa = velocidad, agente aprende a dar vueltas rápidamente (no objetivo).
+$$\mu = \lfloor(-2 \cdot \text{confidence} + 1) \times 10\rfloor$$
 
----
+$$t_{\text{hold}} \sim \mathcal{N}(\mu, 3), \quad t_{\text{release}} \sim t_{\text{hold}} + \mathcal{N}(\mu, 1)$$
 
-## 15. Extensiones Modernas
-
-### 15.1 Deep Q-Networks (DQN)
-
-Reemplazar tabla Q con red neuronal:
-$$Q(s, a; w) \approx Q^*(s, a)$$
-
-Ventajas:
-- Maneja espacios continuos
-- Generaliza entre estados
-- Permite transfer learning
-
-Desventajas:
-- Más parámetros
-- Menos interpretable
-- Requiere más datos
-
-### 15.2 Policy Gradient Methods
-
-Aprender política directamente, no vía Q-values:
-$$\pi_\theta(a|s) = P(a|s; \theta)$$
-
-Actualizar parámetros $\theta$ usando gradient:
-$$\theta \leftarrow \theta + \alpha \nabla_\theta \log \pi_\theta(a|s) \cdot R$$
-
-**Ventaja**: Aplica a espacios continuos de acción.
-
-### 15.3 Actor-Critic
-
-Combinar policy gradient + value function:
-- **Actor**: Política (qué acción tomar)
-- **Critic**: Función de valor (qué tan buena es acción)
+| Confianza | $\mu$ | Interpretación |
+|-----------|-------|---------------|
+| 1.0 | -10 | Respuesta rápida (decisión segura) |
+| 0.5 | 0 | Tiempo medio |
+| 0.0 | 10 | Respuesta lenta (decisión incierta) |
 
 ---
 
-## 16. Resumen: PES Implementa Q-Learning Clásico
+## 10. Evaluación de Políticas
 
-```
-┌──────────────────────────────────────────────────────┐
-│ ARQUITECTURA DE PES                                  │
-├──────────────────────────────────────────────────────┤
-│ 1. Espacio de Estados (S)                            │
-│    - [recursos disponibles, trial actual, severidad] │
-│    - Tamaño: 31 × 11 × 11 = 3,751                   │
-│                                                      │
-│ 2. Espacio de Acciones (A)                           │
-│    - Recursos a asignar: 0-10                        │
-│    - Tamaño: 11 acciones                             │
-│                                                      │
-│ 3. Dinámica (P, R)                                   │
-│    - Severidad evoluciona según fórmula              │
-│    - Recompensa = -severidad_total                   │
-│    - Determinista con respecto a recompensa          │
-│                                                      │
-│ 4. Entrenamiento: Q-Learning                         │
-│    - Episodios configurables (default: 20,000)        │
-│    - CLI: python3 -m PES.ext.train_rl [N]             │
-│    - α = 0.2, γ = 0.9                                │
-│    - ε-greedy con decay lineal                       │
-│                                                      │
-│ 5. Ejecución: Política Greedy                        │
-│    - Consultar Q-table, tomar argmax                 │
-│    - Confianza desde entropía Q-values               │
-│    - Tiempos realistas                               │
-│                                                      │
-│ 6. Evaluación: Performance Normalizado                │
-│    - (worst - actual) / (worst - best)               │
-│    - Rango [0, 1]                                    │
-└──────────────────────────────────────────────────────┘
-```
+### 10.1 Performance Normalizado
+
+PES normaliza el resultado de cada secuencia:
+
+$$\text{Perf} = \frac{\text{Sev}_{\text{worst}} - \text{Sev}_{\text{actual}}}{\text{Sev}_{\text{worst}} - \text{Sev}_{\text{best}}}$$
+
+Donde:
+
+- $\text{Sev}_{\text{actual}}$: Severidad final con la política del agente.
+- $\text{Sev}_{\text{worst}}$: Severidad final con asignación 0 en todos los trials.
+- $\text{Sev}_{\text{best}}$: Severidad final con asignación 10 en todos los trials.
+
+### 10.2 Interpretación
+
+| Performance | Calidad |
+|-------------|---------|
+| 0.0 | Equivalente a no asignar recursos |
+| 0.5 | Mitad del rango posible |
+| 1.0 | Equivalente a asignación máxima en cada trial |
+| > 1.0 | No posible (cota teórica) |
+
+### 10.3 Baseline de Comparación
+
+El pipeline de entrenamiento ejecuta un **agente aleatorio** como baseline:
+
+- Usa las asignaciones pre-definidas de los datos.
+- Proporciona un piso de referencia para el agente entrenado.
+- Se espera que el agente Q-Learning supere significativamente al baseline.
 
 ---
 
-## 17. Para Seguir Aprendiendo
+## 11. Resumen de Fórmulas Clave
 
-### Libros Recomendados
-1. **"Reinforcement Learning: An Introduction"** (Sutton & Barto, 2018)
-   - Biblia de RL, matemática rigurosa
-   
-2. **"Deep Reinforcement Learning Hands-On"** (Lapan, 2020)
-   - Implementación práctica con código
-   
-3. **"Probabilistic Graphical Models"** (Koller & Friedman, 2009)
-   - Profundizar en probabilidades
-
-### Cursos Online
-- Stanford CS234: Reinforcement Learning
-- DeepMind UCL Course on RL
-- OpenAI Spinning Up in Deep RL
-
-### Implementación
-- OpenAI Gym: Entornos estándar
-- Stable Baselines3: Algoritmos RL
-- TensorFlow/PyTorch: Redes neuronales
+| Concepto | Fórmula |
+|----------|---------|
+| Retorno | $G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k+1}$ |
+| Valor de acción | $Q^\pi(s,a) = \mathbb{E}_\pi[G_t \mid s_t=s, a_t=a]$ |
+| Bellman óptimo | $Q^*(s,a) = R + \gamma \max_{a'} Q^*(s', a')$ |
+| Actualización Q | $Q(s,a) \leftarrow Q(s,a) + \alpha[\delta_t]$ |
+| TD error | $\delta_t = r + \gamma \max_{a'} Q(s', a') - Q(s,a)$ |
+| ε-greedy | $\pi(a\|s) = (1-\varepsilon)\mathbb{1}[a=a^*] + \varepsilon/\|A\|$ |
+| Entropía | $H(p) = -\sum p_i \log_2 p_i$ |
+| Confianza | $c = (H - H_{\max}) / (H_{\min} - H_{\max})$ |
+| Severidad | $s' = \max(0, \beta \cdot s - \alpha \cdot a)$ |
+| Performance | $(W - A) / (W - B)$ |
 
 ---
 
-## Conclusión
+## 12. Glosario
 
-**Q-Learning es algoritmo fundamental** que aprende qué acción es mejor en cada estado.
+| Término | Definición |
+|---------|-----------|
+| **Agente** | Entidad que toma decisiones (Q-Learning en PES) |
+| **Ambiente** | Sistema con el que interactúa el agente (`Pandemic(Env)`) |
+| **Estado** | Observación del agente (`[resources, trial, severity]`) |
+| **Acción** | Decisión del agente (recursos a asignar, 0–10) |
+| **Recompensa** | Señal numérica de retroalimentación ($-\sum$ severidades) |
+| **Episodio** | Una secuencia completa (3–10 trials) |
+| **Política** | Regla de decisión $\pi(a\|s)$ |
+| **Q-value** | Valor esperado de acción en estado |
+| **Q-table** | Tabla de todos los Q-values (`31×11×11×11`) |
+| **ε-greedy** | Política que explora con probabilidad ε |
+| **Descuento** | Factor $\gamma$ que reduce valor de recompensas futuras |
+| **TD error** | Diferencia entre target y estimación actual |
+| **Off-policy** | Aprende sobre política diferente a la que sigue |
+| **Model-free** | No necesita modelo de transiciones |
+| **Convergencia** | Q-values se estabilizan en valores óptimos |
+| **MDP** | Proceso de Decisión de Markov (marco formal) |
+| **Entropía** | Medida de incertidumbre de una distribución |
+| **Meta-cognición** | Auto-evaluación de la confianza del agente |
 
-En PES:
-1. Entrenamos Q-table con episodios configurables vía CLI (default: 20,000)
-2. Aprendemos la política óptima (argmax Q)
-3. La ejecutamos en el experimento real
-4. Medimos cuán bien funciona
+---
 
-La teoría garantiza convergencia, datos validados por la práctica, y código implementa fielmente los conceptos matemáticos.
+## 13. Referencias
 
-**Eso es RL aplicado.** 🚀
+1. Sutton, R. S., & Barto, A. G. (2018). *Reinforcement Learning: An
+   Introduction* (2nd ed.). MIT Press.
+2. Watkins, C. J. C. H., & Dayan, P. (1992). Q-Learning. *Machine Learning*,
+   8(3), 279–292.
+3. Mnih, V., et al. (2015). Human-level control through deep reinforcement
+   learning. *Nature*, 518(7540), 529–533.
+4. Shannon, C. E. (1948). A Mathematical Theory of Communication. *Bell System
+   Technical Journal*, 27(3), 379–423.

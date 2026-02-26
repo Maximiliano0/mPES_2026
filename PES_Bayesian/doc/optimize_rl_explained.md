@@ -69,9 +69,11 @@ del escenario pandémico:
 $$f(\boldsymbol{\theta}) = \frac{1}{64}\sum_{i=1}^{64}\;
   \text{perf}\!\left(S^{(i)}_{\text{final}},\; S^{(i)}_{\text{inicial}}\right)$$
 
-donde $\text{perf}$ es la métrica de severidad final normalizada implementada
-en `pandemic.py`.  Un valor cercano a $1.0$ indica que el agente redujo la severidad
-al mínimo posible con los recursos disponibles.
+donde $\text{perf}$ es la métrica de severidad final normalizada
+(`calculate_normalised_final_severity_performance_metric`), definida en
+`exp_utils.py` e invocada desde `run_experiment` en `pandemic.py`.  Un valor
+cercano a $1.0$ indica que el agente redujo la severidad al mínimo posible con
+los recursos disponibles.
 
 ---
 
@@ -155,7 +157,7 @@ def objective(trial: optuna.Trial) -> float:
     env_eval = Pandemic()
     env_eval.verbose = False
 
-    def qf(env, state, seqid):
+    def qf(_env, state, _seqid):
         s0 = min(int(state[0]), Q.shape[0] - 1)
         s1 = min(int(state[1]), Q.shape[1] - 1)
         s2 = min(int(state[2]), Q.shape[2] - 1)
@@ -212,10 +214,12 @@ hiperparámetros y no a variabilidad aleatoria del entrenamiento.
 #### Función `qf` (política greedy con masking)
 
 Dentro de `objective`, se define una política greedy con enmascaramiento de acciones
-infactibles, consistente con `rl_agent_meta_cognitive` en `__main__.py`:
+infactibles, consistente con `rl_agent_meta_cognitive` en `pandemic.py`
+(y, por extensión, con la versión en `pygameMediator.py` usada al ejecutar el
+experimento con `python3 -m PES_Bayesian`):
 
 ```python
-def qf(env, state, seqid):
+def qf(_env, state, _seqid):
     s0 = min(int(state[0]), Q.shape[0] - 1)
     s1 = min(int(state[1]), Q.shape[1] - 1)
     s2 = min(int(state[2]), Q.shape[2] - 1)
@@ -294,13 +298,17 @@ finally:
     numpy.seterr(**_prev_err)
 ```
 
-El módulo `PES_Bayesian` configura `numpy.seterr(all='raise')` para detectar errores
-numéricos durante la simulación.  Sin embargo, el muestreador TPE calcula internamente
-`numpy.exp(x)` donde $x$ puede ser muy negativo ($x < -700$), produciendo un *underflow*
-a $0.0$ que es matemáticamente inofensivo (simplemente indica probabilidades ínfimas).
+El módulo `PES_Bayesian` configura `numpy.seterr(all='raise', under='ignore')` en
+su `__init__.py` para detectar errores numéricos durante la simulación.  Aunque el
+*underflow* ya se ignora a nivel de paquete, el muestreador TPE calcula internamente
+`numpy.exp(x)` donde $x$ puede ser muy negativo ($x < -700$), produciendo un
+*underflow* a $0.0$ que es matemáticamente inofensivo (simplemente indica
+probabilidades ínfimas).
 
-El `try/finally` desactiva la excepción de underflow solo durante la optimización
-y la restaura al terminar.
+El `try/finally` funciona como protección adicional (*belt-and-suspenders*): captura
+el estado actual de `numpy.seterr` antes de la optimización y lo restaura al
+terminar, asegurando robustez incluso si la configuración de errores cambiara en
+versiones futuras del paquete.
 
 ### 2.5 Guardado de Q-table y reportes
 
@@ -334,6 +342,39 @@ else:
 El gráfico de importancia responde directamente a la pregunta: *¿cuál hiperparámetro
 afecta más al rendimiento?*  Esto orienta futuros ajustes manuales o refinamientos
 del espacio de búsqueda.
+
+### 2.6 Notificaciones push
+
+El módulo incluye soporte opcional de **notificaciones push** a través de
+`utils.notify`.  Si el módulo `utils` está disponible en `sys.path`, se envían
+notificaciones en dos momentos:
+
+1. **Progreso cada 10 trials** — El callback `_progress_callback` invoca
+   `notify()` cada vez que `done % 10 == 0`, informando trials completados,
+   mejor valor hasta el momento, tiempo transcurrido y rendimiento del último
+   trial.
+
+2. **Error durante la optimización** — El bloque `if __name__ == '__main__'`
+   envuelve `main()` en un `try/except`: si ocurre cualquier excepción, se
+   envía una notificación con prioridad `urgent` y el traceback completo antes
+   de re-lanzar la excepción.
+
+```python
+# Notificación de progreso (cada 10 trials)
+if done > 0 and done % 10 == 0:
+    notify(
+        f"[{_PKG_NAME}] {done}/{n_trials} trials",
+        f"Se completaron {done} de {n_trials} trials.\n"
+        f"Mejor valor hasta ahora: {best_val:.6f}\n"
+        f"Último trial: value={trial.value:.4f}\n"
+        f"Tiempo transcurrido: {elapsed:.0f}s ({elapsed / 60:.1f} min)",
+        tags="chart_with_upwards_trend"
+    )
+```
+
+Si `utils.notify` no está disponible (por ejemplo, al ejecutar fuera del
+workspace mPES), el import falla silenciosamente y `notify` se reemplaza por
+una función no-op (`lambda *a, **kw: None`).
 
 ---
 
@@ -500,3 +541,53 @@ para que las diferencias de rendimiento reflejen exclusivamente los hiperparáme
 │  Devolver f(θ) a Optuna                            │
 └────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 6. Flujo de trabajo completo
+
+La optimización Bayesiana es el **primer paso** de un flujo de tres etapas:
+
+```
+1. Optimización Bayesiana         python3 -m PES_Bayesian.ext.optimize_rl [N]
+   └─ Buscar mejores (α, γ, ε₀, ε_min, N)
+   └─ Guardar Q-table y reporte en inputs/<fecha>_BAYESIAN_OPT/
+
+2. Entrenamiento definitivo       python3 -m PES_Bayesian.ext.train_rl [episodes]
+   └─ Usa hiperparámetros fijos en train_rl.py (copiados del mejor trial)
+   └─ Guarda Q-table y gráficos en inputs/<fecha>_RL_TRAIN/
+
+3. Experimento                    python3 -m PES_Bayesian
+   └─ Lee inputs/q.npy y inputs/rewards.npy
+   └─ Ejecuta el agente RL sobre 8 bloques × 8 secuencias
+```
+
+### 6.1 Transferencia de hiperparámetros
+
+Después de ejecutar la optimización, los mejores hiperparámetros deben copiarse
+manualmente a `ext/train_rl.py` (variables `learning_rate`, `discount_factor`,
+`epsilon_initial`, `epsilon_min` y `num_episodes`).
+
+Actualmente `train_rl.py` usa los valores del trial #40:
+
+| Parámetro | Valor |
+|-----------|-------|
+| `learning_rate` | 0.35965545888114453 |
+| `discount_factor` | 0.8650520580454709 |
+| `epsilon_initial` | 0.6791201210873763 |
+| `epsilon_min` | 0.08483331103075126 |
+| `num_episodes` | 900 000 |
+
+### 6.2 Transferencia de Q-table al experimento
+
+Para que `python3 -m PES_Bayesian` use la Q-table entrenada, ésta debe copiarse
+a la raíz de `inputs/`:
+
+```bash
+cp PES_Bayesian/inputs/<fecha>_RL_TRAIN/q_<fecha>.npy  PES_Bayesian/inputs/q.npy
+cp PES_Bayesian/inputs/<fecha>_RL_TRAIN/rewards_<fecha>.npy  PES_Bayesian/inputs/rewards.npy
+```
+
+`__main__.py` valida la existencia de `q.npy` y `rewards.npy` antes de iniciar
+el experimento; si no los encuentra, muestra un error indicando que se debe
+ejecutar `train_rl.py` primero.

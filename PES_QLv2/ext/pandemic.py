@@ -341,11 +341,12 @@ class Pandemic(Env):
 
         Returns
         -------
-        tuple
+        tuple of (list, float, bool, bool, dict)
             - observation (list): New state [available_resources, trial_number, severity]
             - reward (float): Reward for this step (negative sum of severities)
-            - done (bool): Whether the episode is finished
-            - info (list): Additional information (empty list)
+            - done (bool): Whether the episode is finished (``True`` when all trials exhausted)
+            - truncated (bool): Always ``False`` (no time-based truncation)
+            - info (dict): Empty auxiliary information dict
         """
         # Flag that marks the termination of an episode
         done = False
@@ -711,7 +712,7 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes,
       leaving more episodes for pure exploitation compared to linear decay.
       Decay rate (λ) is auto-computed unless explicitly provided, ensuring
       consistent behavior regardless of the number of episodes.
-    - Double Q-Learning uses ~2× memory during training (74 KB vs 37 KB) but the saved
+    - Double Q-Learning uses ~2× memory during training (~586 KB vs ~293 KB) but the saved
       q.npy file remains the same size (single averaged table)
     - Reward Shaping (penalty_coeff > 0) uses Potential-Based Reward Shaping (PBRS)
       with Φ(s) = −Σ s_i.  The shaping reward F = β·(γ·Φ(s') − Φ(s)) gives a bonus

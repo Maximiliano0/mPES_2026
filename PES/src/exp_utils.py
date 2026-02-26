@@ -30,7 +30,6 @@ Main Functions
 ##  Imports externos    ##
 ##########################
 import os
-import random
 import numpy
 import scipy.stats as ss
 from statsmodels.stats.weightstats import DescrStatsW as WeightedStats
@@ -38,7 +37,10 @@ from statsmodels.stats.weightstats import DescrStatsW as WeightedStats
 ##########################
 ##  Imports internos    ##
 ##########################
-from .. import *
+from .. import (
+    INPUTS_PATH, MAX_ALLOCATABLE_RESOURCES, MIN_ALLOCATABLE_RESOURCES,
+    RESPONSE_MULTIPLIER, SEQ_LENGTHS_FILE, SEVERITY_MULTIPLIER
+)
 
 def get_sequence_severity_from_allocations( Allocations, InitialSeverities ):
     """Return the total severity for a sequence given allocations and initial severities."""
@@ -196,6 +198,7 @@ def exit_experiment_gracefully( Message, Filehandles, MovementData, LogUtils, Py
     PygameMediator : module
         Pygame mediator module (currently unused for RL-Agent mode)
     """
+    _ = PygameMediator  # reserved for non-RL-Agent modes
 
   # Output helpful message - use these values in config to 'resume' a subsequent experiment
     LogUtils.tee()
@@ -438,7 +441,7 @@ def sampler( samples, sum_to, range_list, rn = 100 ):
     return new_arr
 
 
-def get_confidence_weighted_mean( all_messages, first_severity, AbsoluteSequenceIndex, AbsoluteTrialCount ):
+def get_confidence_weighted_mean( all_messages, first_severity, _AbsoluteSequenceIndex, AbsoluteTrialCount ):
     """
     Aggregate decisions from multiple participants using confidence-weighted mean.
 
@@ -521,7 +524,7 @@ def get_confidence_weighted_mode():
     raise NotImplementedError
 
 
-def get_confidence_weighted_median( all_messages, first_severity,  AbsoluteSequenceIndex, AbsoluteTrialCount ):
+def get_confidence_weighted_median( all_messages, first_severity,  _AbsoluteSequenceIndex, AbsoluteTrialCount ):
     """
     Aggregate decisions from multiple participants using confidence-weighted median.
 

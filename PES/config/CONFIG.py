@@ -57,7 +57,7 @@ MIN_ALLOCATABLE_RESOURCES = 0   # Minimum resources allocatable per trial (Sugge
 MAX_INIT_SEVERITY  = 5          # Maximum initial city severity (Suggested: 5)
 MIN_INIT_SEVERITY  = 2          # Minimum initial city severity (Suggested: 2)
 MAX_INIT_RESOURCES = 6          # Maximum initial resource allocation (Suggested: 6)
-MIN_INIT_RESOURCES = 3          # Minimum initial resource allocation (Suggested: 3)       
+MIN_INIT_RESOURCES = 3          # Minimum initial resource allocation (Suggested: 3)
 
 # ==================== EXPERIMENT STRUCTURE ====================
 NUM_BLOCKS = 8                  # Number of experimental blocks (Suggested: 8, Range: 6-8)

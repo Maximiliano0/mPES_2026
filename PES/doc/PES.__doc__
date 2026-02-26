@@ -4,7 +4,7 @@ investigating resource allocation decision-making under stress in pandemic conte
 In this version (v2.0), the system is powered by a pre-trained Reinforcement Learning 
 Agent (RL-Agent) that automatically allocates limited resources to cities to minimize 
 disease spread. The RL-Agent uses Q-Learning with a Q-Table trained via a configurable
-training pipeline (default: 20,000 episodes, adjustable via CLI).
+training pipeline (default: 1,000,000 episodes, adjustable via CLI).
 
 ## Current Version (v2.0) - Key Features:
 - RL-Agent based decision-making (Reinforcement Learning with Q-Learning)
@@ -21,7 +21,7 @@ training pipeline (default: 20,000 episodes, adjustable via CLI).
   - Trial number: 0-10 values (11 states)
   - Severity: 0-10 values (11 states)
 - **Action space**: Resource allocation (0-10, discrete, 11 actions)
-- **Training**: Configurable episodes (default 20,000; CLI: `python3 -m PES.ext.train_rl [N]`)
+- **Training**: Configurable episodes (default 1,000,000; CLI: `python3 -m PES.ext.train_rl [N]`)
 - **Q-Table dimensions**: 31 × 11 × 11 × 11 = 41,261 entries
 - **Hyperparameters**: α=0.2, γ=0.9, ε=0.8→0 (linear decay)
 - **Policy**: Greedy (deterministic) during execution; ε-greedy during training
@@ -70,7 +70,7 @@ training pipeline (default: 20,000 episodes, adjustable via CLI).
 
 ## Usage:
 - Execute experiment: `python3 -m PES`
-- Train new RL-Agent: `python3 -m PES.ext.train_rl [num_episodes]` (default: 20,000)
+- Train new RL-Agent: `python3 -m PES.ext.train_rl [num_episodes]` (default: 1,000,000)
 
 ## Documentation (4 files):
 - **PES.__doc__**: This file — project overview and quick reference
