@@ -8,10 +8,10 @@ Generate a new Python 3 script following the mPES project conventions.
 
 | Package | Description |
 |---------|-------------|
-| `PES` | Tabular Q-Learning baseline |
-| `PES_Bayesian` | Q-Learning + Bayesian optimisation (Optuna) |
-| `PES_QLv2` | Double Q-Learning, ε-decay warm-up, PBRS |
-| `PES_Transformer` | Causal Transformer encoder + RL |
+| `pes` | Tabular Q-Learning baseline |
+| `pes_base_line` | Q-Learning + Bayesian optimisation (Optuna) |
+| `pes_qlv2` | Double Q-Learning, ε-decay warm-up, PBRS |
+| `pes_transformer` | Causal Transformer encoder + RL |
 | `utils` | Shared helpers |
 
 ## Structure
@@ -105,9 +105,26 @@ if __name__ == '__main__':
     main()
 ```
 
+## Workflow
+
+1. **Use `pes_base_line` as reference** — Before writing any new script, study the
+   corresponding modules in `pes_base_line/` (environment, training loop, optimisation,
+   config, `__init__.py`, `__main__.py`) as the canonical implementation example.
+   Mirror its patterns, naming, and structure unless the target package explicitly
+   requires a different approach.
+
+2. **Write the documentation** — After finishing the code, create a Markdown file
+   inside the target package's `doc/` directory (e.g., `pes_qlv2/doc/explained_<topic>.md`).
+   The document must:
+   - Explain the **theoretical foundations** behind the algorithm or feature implemented.
+   - Map each theoretical concept to the **specific functions, classes, or code sections**
+     where it is applied (include module paths and function names).
+   - Follow the style of existing docs in `pes/doc/` (title, sections, equations where
+     appropriate, code references).
+
 ## Rules
 
-- Adapt the package name (`PES`, `PES_Bayesian`, `PES_QLv2`, `PES_Transformer`)
+- Adapt the package name (`pes`, `pes_base_line`, `pes_qlv2`, `pes_transformer`)
   based on where the user wants to place the script.
 - Do NOT cross-reference between packages — each package is self-contained.
 - Ask the user for the script's purpose if not specified.

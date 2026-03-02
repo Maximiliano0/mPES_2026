@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# optuna_dashboard.sh — Lanza Optuna Dashboard para PES_Bayesian o PES_QLv2
+# optuna_dashboard.sh — Lanza Optuna Dashboard para pes_base_line o pes_qlv2
 #
 # Uso:
 #   ./optuna_dashboard.sh                   # Menú interactivo
-#   ./optuna_dashboard.sh bayesian          # Directo a PES_Bayesian
-#   ./optuna_dashboard.sh qlv2              # Directo a PES_QLv2
-#   ./optuna_dashboard.sh bayesian 9090     # PES_Bayesian en puerto 9090
+#   ./optuna_dashboard.sh bayesian          # Directo a pes_base_line
+#   ./optuna_dashboard.sh qlv2              # Directo a pes_qlv2
+#   ./optuna_dashboard.sh bayesian 9090     # pes_base_line en puerto 9090
 #
 # Requisitos:
 #   - Entorno virtual activado (linux_mpes_env)
@@ -23,8 +23,8 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"      # mPES/ (raíz del workspace)
 DEFAULT_PORT=8080
 
 # ── Rutas relativas a los directorios de inputs de cada proyecto ─────────────
-BAYESIAN_INPUTS="PES_Bayesian/inputs"
-QLV2_INPUTS="PES_QLv2/inputs"
+BAYESIAN_INPUTS="pes_base_line/inputs"
+QLV2_INPUTS="pes_qlv2/inputs"
 
 # ── Colores para la salida en terminal ───────────────────────────────────────
 GREEN='\033[0;32m'
@@ -112,15 +112,15 @@ show_menu() {
 
     # Mostrar opciones con estado
     if [[ -n "${bayesian_db}" ]]; then
-        echo -e "  ${GREEN}1)${RESET} PES_Bayesian   ${BLUE}→${RESET} $(basename "${bayesian_db}")"
+        echo -e "  ${GREEN}1)${RESET} pes_base_line   ${BLUE}→${RESET} $(basename "${bayesian_db}")"
     else
-        echo -e "  ${RED}1)${RESET} PES_Bayesian   ${RED}(sin estudios)${RESET}"
+        echo -e "  ${RED}1)${RESET} pes_base_line   ${RED}(sin estudios)${RESET}"
     fi
 
     if [[ -n "${qlv2_db}" ]]; then
-        echo -e "  ${GREEN}2)${RESET} PES_QLv2       ${BLUE}→${RESET} $(basename "${qlv2_db}")"
+        echo -e "  ${GREEN}2)${RESET} pes_qlv2       ${BLUE}→${RESET} $(basename "${qlv2_db}")"
     else
-        echo -e "  ${RED}2)${RESET} PES_QLv2       ${RED}(sin estudios)${RESET}"
+        echo -e "  ${RED}2)${RESET} pes_qlv2       ${RED}(sin estudios)${RESET}"
     fi
 
     echo -e "  ${YELLOW}q)${RESET} Salir"

@@ -10,14 +10,14 @@ documentation so that it faithfully explains the current implementation.
 When invoking this prompt, specify the **target package** name. Examples:
 
 ```
-@update-pkg-docs PES
-@update-pkg-docs PES_Bayesian
-@update-pkg-docs PES_QLv2
-@update-pkg-docs PES_Transformer
+@update-pkg-docs pes
+@update-pkg-docs pes_base_line
+@update-pkg-docs pes_qlv2
+@update-pkg-docs pes_transformer
 ```
 
 Throughout this prompt, `<PKG>` refers to the package name provided by the
-user (e.g. `PES`, `PES_Bayesian`, `PES_QLv2`, `PES_Transformer`).
+user (e.g. `pes`, `pes_base_line`, `pes_qlv2`, `pes_transformer`).
 
 ## Scope
 
@@ -97,7 +97,65 @@ documentation as a faithful mirror of the code.
 - ASCII diagrams for architecture/flow (match existing style).
 - Include academic references where relevant (author, year, title, venue).
 
-## Step 4 — Export each `.md` to `.html`
+## Step 4 — Update docstrings
+
+Using the mental model built in Step 1, review **every** public function and
+class across all `.py` files in the package and ensure their docstrings are
+present, accurate, and follow the **NumPy-style** convention.
+
+### What to check and update
+
+- **Missing docstrings**: every public function, method, and class must have a
+  docstring. Add one if missing.
+- **Stale descriptions**: if the implementation has changed (parameters added or
+  removed, return type changed, logic altered), update the docstring to match.
+- **Parameter lists**: verify that `Parameters`, `Returns`, `Raises`, and
+  `Attributes` sections list exactly the current parameters/returns, with
+  correct types and descriptions.
+- **Examples section**: if present, confirm any example code still runs
+  correctly against the current implementation.
+- **Internal helpers**: private functions (prefixed with `_`) do not require
+  docstrings but may have them — if present, ensure they are correct.
+
+### NumPy-style template
+
+```python
+def function_name(param_a: int, param_b: str = "default") -> bool:
+    """One-line summary (imperative mood, no period).
+
+    Extended description explaining behaviour, edge cases, or
+    algorithmic notes when useful.
+
+    Parameters
+    ----------
+    param_a : int
+        Description of param_a.
+    param_b : str, optional
+        Description of param_b (default "default").
+
+    Returns
+    -------
+    bool
+        Description of the return value.
+
+    Raises
+    ------
+    ValueError
+        When ``param_a`` is negative.
+    """
+```
+
+### Style rules for docstrings
+
+- Write docstrings in **English**.
+- Use triple double-quotes (`"""`).
+- First line: imperative summary ≤ 79 characters.
+- Blank line between summary and body.
+- Wrap body text at **120 characters** (project standard).
+- Reference `CONFIG.py` constants by name when describing default values
+  sourced from configuration.
+
+## Step 5 — Export each `.md` to `.html`
 
 Convert every `.md` inside `<PKG>/doc/` to a matching `.html` file in the same
 directory. Use the Python `markdown` library with this pipeline:
@@ -186,3 +244,6 @@ Before finishing, verify:
 - [ ] Every `.md` has a corresponding up-to-date `.html` in `<PKG>/doc/`.
 - [ ] HTML files render math correctly (KaTeX delimiters, no broken `$`).
 - [ ] No English leaking into Spanish-language documentation (except code/names).
+- [ ] Every public function and class in `<PKG>/` has a NumPy-style docstring.
+- [ ] Docstring parameter lists, return types, and descriptions match the code.
+- [ ] No stale references in docstrings to removed parameters or changed behaviour.

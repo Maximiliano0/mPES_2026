@@ -2,7 +2,7 @@
 # ------------------------------------------------------------------
 #  Lanzar optimización Bayesiana de Q-Learning
 #
-#  Script compartido para PES_Bayesian y PES_QLv2.
+#  Script compartido para pes_base_line y pes_qlv2.
 #  Todas las rutas se resuelven de forma relativa a la ubicación
 #  de este script (utils/ → mPES/).
 #
@@ -14,8 +14,8 @@
 #
 #  Uso:
 #    chmod +x run_bayesian_opt.sh
-#    ./run_bayesian_opt.sh bayesian 100              # PES_Bayesian, corrida nueva
-#    ./run_bayesian_opt.sh qlv2 100                  # PES_QLv2, corrida nueva
+#    ./run_bayesian_opt.sh bayesian 100              # pes_base_line, corrida nueva
+#    ./run_bayesian_opt.sh qlv2 100                  # pes_qlv2, corrida nueva
 #    ./run_bayesian_opt.sh bayesian 100 2026-02-12   # reanudar desde fecha
 # ------------------------------------------------------------------
 set -euo pipefail
@@ -28,8 +28,8 @@ VENV="$PROJECT_DIR/linux_mpes_env/bin/activate"
 # ── Resolver paquete desde primer argumento ──────────────────────
 resolve_package() {
     case "${1:-}" in
-        bayesian|Bayesian|BAYESIAN|bay|1) echo "PES_Bayesian" ;;
-        qlv2|QLv2|QLVAL2|ql|2)           echo "PES_QLv2"     ;;
+        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_base_line" ;;
+        qlv2|QLv2|QLVAL2|ql|2)           echo "pes_qlv2"     ;;
         *) return 1 ;;
     esac
 }
@@ -40,7 +40,7 @@ if [[ $# -lt 2 ]]; then
     echo ""
     echo "Uso: $0 <paquete> <n_trials> [fecha_resume]"
     echo ""
-    echo "  Paquetes: bayesian (PES_Bayesian), qlv2 (PES_QLv2)"
+    echo "  Paquetes: bayesian (pes_base_line), qlv2 (pes_qlv2)"
     echo ""
     echo "Ejemplos:"
     echo "  $0 bayesian 100"

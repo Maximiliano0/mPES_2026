@@ -11,10 +11,10 @@ variant sharing the same experiment framework.
 
 | Package | Algorithm | Key files |
 |---------|-----------|-----------|
-| `PES` | Tabular Q-Learning (baseline) | `ext/pandemic.py`, `ext/train_rl.py` |
-| `PES_Bayesian` | Q-Learning + Bayesian hyperparam optimisation (Optuna) | `ext/optimize_rl.py` |
-| `PES_QLv2` | Double Q-Learning, ε-decay warm-up, PBRS | `ext/pandemic.py`, `ext/optimize_rl.py` |
-| `PES_Transformer` | Causal Transformer encoder + RL | `ext/transformer_model.py`, `ext/train_transformer.py` |
+| `pes` | Tabular Q-Learning (baseline) | `ext/pandemic.py`, `ext/train_rl.py` |
+| `pes_base_line` | Q-Learning + Bayesian hyperparam optimisation (Optuna) | `ext/optimize_rl.py` |
+| `pes_qlv2` | Double Q-Learning, ε-decay warm-up, PBRS | `ext/pandemic.py`, `ext/optimize_rl.py` |
+| `pes_transformer` | Causal Transformer encoder + RL | `ext/transformer_model.py`, `ext/train_transformer.py` |
 | `utils` | Shared helpers (notifications, shell scripts) | `notify.py` |
 
 ### Common package layout
