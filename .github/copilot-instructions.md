@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions
 
-> Last updated: 2026-02-26
+> Last updated: 2026-03-04
 
 ## Project Overview
 
@@ -14,7 +14,8 @@ variant sharing the same experiment framework.
 | `pes` | Tabular Q-Learning (baseline) | `ext/pandemic.py`, `ext/train_rl.py` |
 | `pes_base_line` | Q-Learning + Bayesian hyperparam optimisation (Optuna) | `ext/optimize_rl.py` |
 | `pes_qlv2` | Double Q-Learning, ε-decay warm-up, PBRS | `ext/pandemic.py`, `ext/optimize_rl.py` |
-| `pes_transformer` | Causal Transformer encoder + RL | `ext/transformer_model.py`, `ext/train_transformer.py` |
+| `pes_dqn` | Deep Q-Network (experience replay + target net) | `ext/dqn_model.py`, `ext/train_dqn.py`, `ext/optimize_dqn.py` |
+| `pes_transformer` | Causal Transformer encoder + RL | `ext/transformer_model.py`, `ext/train_transformer.py`, `ext/optimize_tr.py` |
 | `utils` | Shared helpers (notifications, shell scripts) | `notify.py` |
 
 ### Common package layout
@@ -35,34 +36,6 @@ variant sharing the same experiment framework.
     ├── result_formatter.py # Matplotlib result plots
     └── terminal_utils.py  # Rich console output (header, section, info…)
 ```
-
-## Code Quality — Mandatory Workflow
-
-After **every** code modification, run the following checks **in order**:
-
-1. **pyright** — static type checking
-   ```bash
-   source linux_mpes_env/bin/activate && pyright <PACKAGE_DIR>/
-   ```
-   Fix every error, warning, and information-level issue before proceeding.
-
-2. **pylint** — linting with project standard
-   ```bash
-   source linux_mpes_env/bin/activate && pylint --rcfile=.pylintrc <PACKAGE_DIR>/
-   ```
-   Fix every reported issue. The `.pylintrc` at the project root defines the
-   correction standard for all packages. Do **not** suppress enforced rules —
-   fix them in source.
-
-3. **Coherence audit** — verify the changed module still makes sense:
-   - Imports resolve and are used.
-   - Public functions and classes have NumPy-style docstrings.
-   - No trailing whitespace or missing final newlines.
-   - No unused variables/arguments (prefix with `_` if intentionally unused).
-   - Changed code is consistent with the rest of the package.
-
-**Target:** `10.00/10` pylint score, `0 errors` in pyright.
-
 ## Virtual Environment
 
 Always activate `linux_mpes_env` before running any tool:

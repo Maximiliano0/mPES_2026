@@ -8,7 +8,7 @@ pygameMediator, severity updates, performance calculation, and
 result report generation (JSON + PNG).
 
 The DQN-specific behaviour (training the neural network) is performed offline
-via ext/train_drl.py; the resulting Keras model is consumed here at experiment
+via ext/train_dqn.py; the resulting Keras model is consumed here at experiment
 time.
 
 Experiment Structure
@@ -99,7 +99,7 @@ def main():
     global Responses_filehandle
 
     # Validate DQN model and rewards file if needed
-    if PLAYER_TYPE == 'DEEP_Q_LEARNING':
+    if PLAYER_TYPE in ('RL_AGENT', 'DQN_AGENT'):
         model_file = os.path.join(INPUTS_PATH, DQN_MODEL_FILE)
         rewards_file = os.path.join(INPUTS_PATH, 'rewards.npy')
 
@@ -110,7 +110,7 @@ def main():
             terminal_utils.error("DQN model file not found!")
             terminal_utils.list_item(f"Expected path: {model_file}", level=2)
             print("\nTo train the DQN Agent, run:")
-            terminal_utils.list_item("python3 -m pes_dqn.ext.train_drl")
+            terminal_utils.list_item("python3 -m pes_dqn.ext.train_dqn")
             print()
             return
 
@@ -118,7 +118,7 @@ def main():
             terminal_utils.error("Rewards history file not found!")
             terminal_utils.list_item(f"Expected path: {rewards_file}", level=2)
             print("\nTo train the DQN Agent, run:")
-            terminal_utils.list_item("python3 -m pes_dqn.ext.train_drl")
+            terminal_utils.list_item("python3 -m pes_dqn.ext.train_dqn")
             print()
             return
 
@@ -139,7 +139,7 @@ def main():
             terminal_utils.error("Failed to load DQN model!")
             terminal_utils.list_item(f"Error: {str(e)}", level=2)
             print("\nPlease retrain the model by running:")
-            terminal_utils.list_item("python3 -m pes_dqn.ext.train_drl")
+            terminal_utils.list_item("python3 -m pes_dqn.ext.train_dqn")
             print()
             return
 
@@ -515,7 +515,7 @@ def main():
                     ResourceAllocationsAtCurrentlyVisibleCities.append(-1)   # FIXME: what does this do?
 
                     # Get response from Agent
-                    if resources_left > 0 and PLAYER_TYPE == 'DEEP_Q_LEARNING':
+                    if resources_left > 0 and PLAYER_TYPE in ('RL_AGENT', 'DQN_AGENT'):
                         (pc,      # corresponds to the value of 'confidence' precalculated on provide_response.  Ignored for online players.
                          r,
                          # corresponds to the value of 'resp' variable (defined as global within
@@ -527,7 +527,7 @@ def main():
                          # corresponds to the value of 'rt_release'    (defined as global within
                          # 'provide_response') at the time of return
                          mov      # corresponds to 'movement' array in 'provide_response'
-                         ) = pygameMediator.provide_rl_agent_response(
+                         ) = pygameMediator.provide_dqn_agent_response(
                             ResourceAllocationsAtCurrentlyVisibleCities,
                             resources_left,
                             CurrentBlockIndex,
@@ -657,7 +657,7 @@ def main():
         # END OF `for CurrentBlockIndex in range( NUM_BLOCKS )`
 
     # Generate result summary JSON and visualization PNG
-    if PLAYER_TYPE == 'DEEP_Q_LEARNING' and len(MyPerformances) > 0:
+    if PLAYER_TYPE in ('RL_AGENT', 'DQN_AGENT') and len(MyPerformances) > 0:
         try:
             # Reorganize performances by block for better statistical analysis
             performances_by_block = []

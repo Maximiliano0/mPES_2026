@@ -17,7 +17,7 @@ Usage
 -----
 ::
 
-    python3 -m pes_dqn.ext.train_drl [num_episodes]
+    python3 -m pes_dqn.ext.train_dqn [num_episodes]
 '''
 
 ##########################
@@ -36,7 +36,7 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 ##########################
 ##  Imports internos    ##
 ##########################
-from .pandemic import Pandemic, rl_agent_meta_cognitive, run_experiment, DQNTraining
+from .pandemic import Pandemic, dqn_agent_meta_cognitive, run_experiment, DQNTraining
 from .dqn_model import normalize_state
 from ..src.terminal_utils import header, section, success, info, list_item
 from .tools import plot_confidences, convert_globalseq_to_seqs
@@ -82,7 +82,7 @@ def main():
 
     # Create training output directory with date stamp
     train_date = datetime.now().strftime("%Y-%m-%d")
-    train_dir = os.path.join(INPUTS_PATH, f'{train_date}_DRL_TRAIN')
+    train_dir = os.path.join(INPUTS_PATH, f'{train_date}_DQN_TRAIN')
     os.makedirs(train_dir, exist_ok=True)
     info(f"Output directory: {train_dir}")
 
@@ -188,6 +188,7 @@ def main():
         target_sync_freq=DQN_TARGET_SYNC_FREQ,
         train_freq=DQN_TRAIN_FREQ,
         seed=SEED,
+        compute_confidence=True,
     )
     print()
     success("Training completed")
@@ -288,7 +289,7 @@ def main():
             s_norm = normalize_state(state, _max_res, _max_tri, _max_sev)
             q_vals = model(s_norm[numpy.newaxis, :], training=False)[0].numpy()
 
-            _response, confidence, _rt_hold, _rt_release = rl_agent_meta_cognitive(
+            _response, confidence, _rt_hold, _rt_release = dqn_agent_meta_cognitive(
                 q_vals, state[0], 10000
             )
 

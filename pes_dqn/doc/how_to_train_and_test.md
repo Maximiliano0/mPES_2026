@@ -26,7 +26,7 @@ source linux_mpes_env/bin/activate
 ### 1.1 Quick Start
 
 ```bash
-python3 -m pes_dqn.ext.train_drl
+python3 -m pes_dqn.ext.train_dqn
 ```
 
 This runs the **full training pipeline** with default settings (100 000 episodes).
@@ -36,7 +36,7 @@ This runs the **full training pipeline** with default settings (100 000 episodes
 Pass the number of episodes as the first argument:
 
 ```bash
-python3 -m pes_dqn.ext.train_drl 200000
+python3 -m pes_dqn.ext.train_dqn 200000
 ```
 
 ### 1.3 What Happens During Training
@@ -58,7 +58,7 @@ The pipeline proceeds through these stages:
 
 ### 1.4 Training Output Files
 
-All outputs are saved to `pes_dqn/inputs/<YYYY-MM-DD>_DRL_TRAIN/`:
+All outputs are saved to `pes_dqn/inputs/<YYYY-MM-DD>_DQN_TRAIN/`:
 
 | File | Description |
 |------|-------------|
@@ -80,7 +80,7 @@ consumed by the experiment runner:
 
 ### 1.5 Default Hyperparameters
 
-These defaults are set in `config/CONFIG.py` and `ext/train_drl.py`:
+These defaults are set in `config/CONFIG.py` and `ext/train_dqn.py`:
 
 | Parameter | Default | Source |
 |-----------|---------|--------|
@@ -90,16 +90,45 @@ These defaults are set in `config/CONFIG.py` and `ext/train_drl.py`:
 | Target sync freq | 1 000 steps | `CONFIG.DQN_TARGET_SYNC_FREQ` |
 | Learning rate (Adam) | 1 × 10⁻³ | `CONFIG.DQN_LEARNING_RATE` |
 | Train freq | every 4 env steps | `CONFIG.DQN_TRAIN_FREQ` |
-| Discount γ | 0.865 | `train_drl.py` |
-| Initial ε | 0.679 | `train_drl.py` |
-| Min ε | 0.085 | `train_drl.py` |
+| Discount γ | 0.865 | `train_dqn.py` |
+| Initial ε | 0.679 | `train_dqn.py` |
+| Min ε | 0.085 | `train_dqn.py` |
 | Episodes | 100 000 | CLI arg or default |
 | Random seed | 42 | `CONFIG.SEED` |
 
 ### 1.6 Expected Training Time
 
-On a modern CPU (no GPU), approximately **30 minutes to 1 hour** for
-100 000 episodes.  Training time scales linearly with episode count.
+On a modest CPU (e.g. Intel i3-6006U @ 2 GHz, 4 threads), approximately
+**15–30 minutes** for 100 000 episodes with CPU optimisations enabled
+(NumPy replay buffer, no confidence forward pass during training,
+TensorFlow thread-pool tuning).  Training time scales linearly with
+episode count.
+
+> **Note:** Without the CPU optimisations (`compute_confidence=True` and
+> the old `deque`-based replay buffer), training may take 45–60 minutes
+> on the same hardware.
+
+### 1.7 CPU Training Optimisations
+
+The following optimisations are active by default and require no
+configuration:
+
+| Optimisation | Effect | Location |
+|-------------|--------|----------|
+| NumPy replay buffer | Pre-allocated arrays with `randint` indexing instead of `deque` + `random.sample` | `ext/dqn_model.py` |
+| Skip confidence forward pass | `compute_confidence=False` eliminates 1 of 2 forward passes per step | `ext/pandemic.py` |
+| TF thread-pool tuning | `intra_op=0` (auto), `inter_op=2` for multi-core CPUs | `ext/dqn_model.py` |
+| OMP_NUM_THREADS | Set to CPU core count before TF import | `__init__.py` |
+
+To re-enable confidence tracking during training (at ~2× slower speed):
+
+```python
+rewards, model, confs = DQNTraining(
+    env, lr, gamma, eps, min_eps, episodes,
+    ...,
+    compute_confidence=True,   # ← enables meta-cognitive observation
+)
+```
 
 ---
 
@@ -109,7 +138,7 @@ If the default hyperparameters are not satisfactory, you can run an
 automated search using Optuna:
 
 ```bash
-python3 -m pes_dqn.ext.optimize_drl 30
+python3 -m pes_dqn.ext.optimize_dqn 30
 ```
 
 The integer argument is the number of trials (default: 30).
@@ -119,7 +148,7 @@ The integer argument is the number of trials (default: 30).
 Optimisation state is stored in an SQLite database.  To resume:
 
 ```bash
-python3 -m pes_dqn.ext.optimize_drl 50 --resume 2026-03-02
+python3 -m pes_dqn.ext.optimize_dqn 50 --resume 2026-03-02
 ```
 
 This loads the study from `inputs/<date>_BAYESIAN_OPT/optuna_study_<date>.db`
@@ -175,7 +204,7 @@ This launches the full experiment lifecycle:
      distribution.
    - Simulates human-like **response timing** based on confidence.
 5. **Saves** results (performance JSON, visualisation PNG, response logs) to
-   `pes_dqn/outputs/<YYYY-MM-DD>_DEEP_Q_LEARNING/`.
+   `pes_dqn/outputs/<YYYY-MM-DD>_DQN_AGENT/`.
 
 ### 3.3 Experiment Outputs
 
@@ -193,7 +222,10 @@ This launches the full experiment lifecycle:
 All experiment parameters are in `config/CONFIG.py`.  Key settings:
 
 ```python
-PLAYER_TYPE = 'DEEP_Q_LEARNING'   # Agent type (do not change for DQN)
+PLAYER_TYPE = {  # Decision maker type - SELECT ONE
+    1: 'RL_AGENT',           # DQN agent labelled as RL_AGENT
+    2: 'DQN_AGENT'           # DQN agent labelled as DQN_AGENT
+}[2]                         # <-- change index to select
 DQN_MODEL_FILE = 'dqn_model.keras'  # Model filename in inputs/
 NUM_BLOCKS = 8
 NUM_SEQUENCES = 8
@@ -213,7 +245,7 @@ Expected path: .../pes_dqn/inputs/dqn_model.keras
 **Solution:** Run training first:
 
 ```bash
-python3 -m pes_dqn.ext.train_drl
+python3 -m pes_dqn.ext.train_dqn
 ```
 
 ### Rewards file not found
@@ -229,10 +261,20 @@ model runs on CPU.
 
 ### Poor agent performance
 
-- Try increasing episodes: `python3 -m pes_dqn.ext.train_drl 200000`
+- Try increasing episodes: `python3 -m pes_dqn.ext.train_dqn 200000`
 - Run Bayesian optimisation to find better hyperparameters:
-  `python3 -m pes_dqn.ext.optimize_drl 50`
+  `python3 -m pes_dqn.ext.optimize_dqn 50`
 - Check that `CONFIG.SEED = 42` for reproducible results.
+
+### Slow training on CPU
+
+The default configuration is already optimised for CPU.  If training is
+still too slow:
+
+- Reduce episode count: `python3 -m pes_dqn.ext.train_dqn 50000`
+- Verify `compute_confidence=False` is set (default) in `train_dqn.py`
+- Check that `OMP_NUM_THREADS` is set to your CPU core count
+  (auto-configured in `__init__.py`)
 
 ---
 
@@ -241,8 +283,8 @@ model runs on CPU.
 | Task | Command |
 |------|---------|
 | Activate environment | `source linux_mpes_env/bin/activate` |
-| Train DQN (default) | `python3 -m pes_dqn.ext.train_drl` |
-| Train DQN (custom) | `python3 -m pes_dqn.ext.train_drl 200000` |
-| Optimise hyperparams | `python3 -m pes_dqn.ext.optimize_drl 30` |
-| Resume optimisation | `python3 -m pes_dqn.ext.optimize_drl 50 --resume YYYY-MM-DD` |
+| Train DQN (default) | `python3 -m pes_dqn.ext.train_dqn` |
+| Train DQN (custom) | `python3 -m pes_dqn.ext.train_dqn 200000` |
+| Optimise hyperparams | `python3 -m pes_dqn.ext.optimize_dqn 30` |
+| Resume optimisation | `python3 -m pes_dqn.ext.optimize_dqn 50 --resume YYYY-MM-DD` |
 | Run experiment | `python3 -m pes_dqn` |

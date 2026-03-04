@@ -6,7 +6,7 @@ Provides the core simulation components:
 - **Pandemic** (gym.Env):  OpenAI Gym environment that models a pandemic
   resource-allocation problem.  State = (resources_left, trial_no, severity);
   action = resources to allocate (0-10).
-- **rl_agent_meta_cognitive**:  Entropy-based meta-cognitive function that
+- **dqn_agent_meta_cognitive**:  Entropy-based meta-cognitive function that
   computes confidence and simulated response times from Q-values.
 - **run_experiment**:  Runs multiple sequences through the environment using
   any action-selection function and collects performance metrics.
@@ -383,7 +383,7 @@ class Pandemic(Env):
         return [self.available_resources, self.iteration, int(new_severity)], reward, done, False, {}  # type: ignore[override]
 
 
-def rl_agent_meta_cognitive(options, resources_left, response_timeout):
+def dqn_agent_meta_cognitive(options, resources_left, response_timeout):
     """
     Compute meta-cognitive confidence and response time estimates from DQN Q-values.
 
@@ -541,7 +541,7 @@ def run_experiment(env, actionfunction, RandomSequences=True,
 
 def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
                 hidden_units, batch_size, replay_buffer_size, target_sync_freq,
-                train_freq=4, seed=None):
+                train_freq=4, seed=None, compute_confidence=False):
     """
     Train a Deep Q-Network agent on the Pandemic environment.
 
@@ -577,6 +577,11 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
         Environment steps between gradient updates.  Default: 4.
     seed : int or None, optional
         Random seed for full reproducibility.  Default: ``None``.
+    compute_confidence : bool, optional
+        When ``True``, run an extra forward pass every environment step
+        to record meta-cognitive confidence values.  **Disabling this
+        (default) halves the number of forward passes during training,
+        which roughly doubles training speed on CPU.**  Default: ``False``.
 
     Returns
     -------
@@ -586,6 +591,7 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
         Trained online Q-network.
     conf_list : list of float
         Meta-cognitive confidence values (one per environment step).
+        Empty list when *compute_confidence* is ``False``.
 
     Notes
     -----
@@ -594,6 +600,9 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
       network (see :func:`dqn_model.normalize_state`).
     - The function prints average reward every 10 000 episodes to track
       convergence.
+    - Setting *compute_confidence* to ``False`` eliminates the second
+      forward pass per step that was previously used solely for
+      meta-cognitive observation.
     """
 
     # ----- Reproducibility -----
@@ -652,15 +661,19 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
                 action = int(numpy.argmax(q_vals))
             else:
                 action = numpy.random.randint(0, action_dim)
+                q_vals = None
 
-            # Meta-cognitive confidence (observational only)
-            q_for_conf = online_model(
-                state_norm[numpy.newaxis, :], training=False
-            )[0].numpy()
-            _, confidence, _, _ = rl_agent_meta_cognitive(
-                q_for_conf, state[0], 10000
-            )
-            conf_list.append(confidence)
+            # Meta-cognitive confidence (observational only — CPU-heavy)
+            # Skipped by default to halve forward-pass count during training.
+            if compute_confidence:
+                if q_vals is None:
+                    q_vals = online_model(
+                        state_norm[numpy.newaxis, :], training=False
+                    )[0].numpy()
+                _, confidence, _, _ = dqn_agent_meta_cognitive(
+                    q_vals.copy(), state[0], 10000
+                )
+                conf_list.append(confidence)
 
             # Step
             state2, reward, done, _trunc, _info = env.step(action)

@@ -12,7 +12,7 @@ Sections
 - Value Ranges & Limits          (severity, allocation bounds)
 - Experiment Structure           (blocks, sequences, trials)
 - Output & Logging               (file prefixes)
-- Player & Agent Settings        (RL_AGENT selection)
+- Player & Agent Settings        (RL_AGENT / DQN_AGENT selector)
 - Pandemic Dynamics              (α / β multipliers)
 - UI & Interaction               (trust scale, fixed sequences)
 - Deep Q-Network (DQN)           (architecture & training knobs)
@@ -84,8 +84,9 @@ OUTPUT_FILE_PREFIX = 'PES_'    # Prefix for all output filenames
 
 # ==================== PLAYER & AGENT SETTINGS ====================
 PLAYER_TYPE = {  # Decision maker type - SELECT ONE
-    1: 'DEEP_Q_LEARNING'  # Deep Q-Network Reinforcement Learning agent
-}[1]
+    1: 'RL_AGENT',  # Deep Q-Network Reinforcement Learning agent
+    2: 'DQN_AGENT'  # Deep Q-Network Reinforcement Learning agent
+}[2]
 
 STARTING_BLOCK_INDEX = 0   # Resume from block index (0 = start from beginning)
 STARTING_SEQ_INDEX = 0   # Resume from sequence index (0 = start from beginning)

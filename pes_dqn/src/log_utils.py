@@ -73,8 +73,8 @@ def create_ConsoleLog_filehandle_singleton(SubjectId: str):
 
     Examples
     --------
-    >>> handle = create_ConsoleLog_filehandle_singleton('2026-02-09_RL_AGENT')
-    >>> # Creates: outputs/PES_log_2026-02-09_RL_AGENT.txt
+    >>> handle = create_ConsoleLog_filehandle_singleton('2026-02-09_DQN_AGENT')
+    >>> # Creates: outputs/PES_log_2026-02-09_DQN_AGENT.txt
     """
 
     assert SubjectId is not None

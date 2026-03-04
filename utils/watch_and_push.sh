@@ -3,9 +3,9 @@
 #  Vigila las optimizaciones bayesianas activas.
 #  Cuando cada una termina, hace git add + commit + push a la rama actual.
 #
-#  Script compartido para pes_base_line y pes_qlv2.
-#  Todas las rutas se resuelven de forma relativa a la ubicación
-#  de este script (utils/ → mPES/).
+#  Script compartido para pes_base_line, pes_qlv2, pes_dqn
+#  y pes_transformer.  Todas las rutas se resuelven de forma
+#  relativa a la ubicación de este script (utils/ → mPES/).
 #
 #  Lógica:
 #    - Recibe el nombre del paquete y uno o más PIDs como argumentos.
@@ -32,8 +32,10 @@ source "$VENV"
 # ── Resolver paquete desde primer argumento ──────────────────────
 resolve_package() {
     case "${1:-}" in
-        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_base_line" ;;
-        qlv2|QLv2|QLVAL2|ql|2)           echo "pes_qlv2"     ;;
+        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_base_line"    ;;
+        qlv2|QLv2|QLVAL2|ql|2)           echo "pes_qlv2"         ;;
+        dqn|DQN|3)                        echo "pes_dqn"          ;;
+        transformer|tr|4)                 echo "pes_transformer"  ;;
         *) return 1 ;;
     esac
 }
@@ -42,7 +44,7 @@ resolve_package() {
 if [[ $# -lt 2 ]]; then
     echo "Uso: $0 <paquete> <pid1> [pid2] ..."
     echo ""
-    echo "  Paquetes: bayesian (pes_base_line), qlv2 (pes_qlv2)"
+    echo "  Paquetes: bayesian (pes_base_line), qlv2 (pes_qlv2), dqn (pes_dqn), transformer (pes_transformer)"
     echo ""
     echo "Ejemplo: nohup $0 bayesian 12345 &"
     exit 1

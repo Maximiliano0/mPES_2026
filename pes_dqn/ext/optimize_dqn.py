@@ -5,7 +5,7 @@ Bayesian Optimization of DQN hyperparameters using Optuna.
 
 Optimizes: learning_rate, discount_factor, epsilon_initial, epsilon_min,
            num_episodes, hidden_units, batch_size, replay_buffer_size,
-           target_sync_freq
+           target_sync_freq, train_freq
 Objective: maximize mean normalised performance over the 64 evaluation sequences.
 
 The evaluation uses infeasible-action masking (actions > available resources are
@@ -14,7 +14,7 @@ in __main__.py.  The best model weights found during the search are preserved in
 memory and saved directly, avoiding a lossy re-training step.
 
 Usage:
-    python3 -m pes_dqn.ext.optimize_drl [n_trials] [--resume YYYY-MM-DD]
+    python3 -m pes_dqn.ext.optimize_dqn [n_trials] [--resume YYYY-MM-DD]
 
     n_trials : int, optional
         Number of Bayesian optimization trials (default: 30).
@@ -22,16 +22,17 @@ Usage:
         Resume a previous optimization run stored under that date.
 
 Search space:
-    learning_rate        ∈ [1e-4, 1e-2]        (log scale)
-    discount_factor      ∈ [0.80, 0.99]
-    epsilon_initial      ∈ [0.4, 1.0]
-    epsilon_min          ∈ [0.01, 0.10]
-    num_episodes         ∈ [50000, 200000]      (step=25000)
-    hidden_dim           ∈ [32, 128]            (step=32)
-    n_hidden_layers      ∈ {1, 2, 3}
-    batch_size           ∈ {16, 32, 64}
-    replay_buffer_size   ∈ [20000, 100000]      (step=10000)
-    target_sync_freq     ∈ [500, 2000]          (step=500)
+    learning_rate        ∈ [5e-4, 5e-3]         (log scale)
+    discount_factor      ∈ [0.85, 0.95]
+    epsilon_initial      ∈ [0.50, 0.90]
+    epsilon_min          ∈ [0.02, 0.10]
+    num_episodes         ∈ [50000, 1000000]      (step=50000)
+    hidden_dim           ∈ [32, 64]             (step=32)
+    n_hidden_layers      ∈ {1, 2}
+    batch_size           ∈ {32, 64}
+    replay_buffer_size   ∈ [20000, 50000]       (step=10000)
+    target_sync_freq     ∈ [500, 1500]          (step=500)
+    train_freq           ∈ {2, 4}
 
 Outputs (saved to INPUTS_PATH/<date>_BAYESIAN_OPT/):
     - dqn_best_<date>.keras            : Keras model from the best trial
@@ -77,11 +78,6 @@ from .. import INPUTS_PATH
 # Suppress non-critical warnings
 warnings.filterwarnings('ignore', category=UserWarning, message='.*Box bound precision.*')
 warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
-
-##########################
-##  Internal imports    ##
-##########################
-
 
 try:
     from utils.notify import notify
@@ -134,16 +130,17 @@ def objective(trial: optuna.Trial) -> float:
     evaluate on the fixed 64 sequences, and return mean normalised performance.
     """
     # --- Sample hyperparameters ---
-    learning_rate = trial.suggest_float('learning_rate', 1e-4, 1e-2, log=True)
-    discount_factor = trial.suggest_float('discount_factor', 0.80, 0.99)
-    epsilon_initial = trial.suggest_float('epsilon_initial', 0.40, 1.0)
-    epsilon_min = trial.suggest_float('epsilon_min', 0.01, 0.10)
-    num_episodes = trial.suggest_int('num_episodes', 50000, 200000, step=25000)
-    hidden_dim = trial.suggest_int('hidden_dim', 32, 128, step=32)
-    n_hidden_layers = trial.suggest_int('n_hidden_layers', 1, 3)
-    batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])
-    replay_buffer_size = trial.suggest_int('replay_buffer_size', 20000, 100000, step=10000)
-    target_sync_freq = trial.suggest_int('target_sync_freq', 500, 2000, step=500)
+    learning_rate = trial.suggest_float('learning_rate', 5e-4, 5e-3, log=True)
+    discount_factor = trial.suggest_float('discount_factor', 0.85, 0.95)
+    epsilon_initial = trial.suggest_float('epsilon_initial', 0.50, 0.90)
+    epsilon_min = trial.suggest_float('epsilon_min', 0.02, 0.10)
+    num_episodes = trial.suggest_int('num_episodes', 50000, 1000000, step=50000)
+    hidden_dim = trial.suggest_int('hidden_dim', 32, 64, step=32)
+    n_hidden_layers = trial.suggest_int('n_hidden_layers', 1, 2)
+    batch_size = trial.suggest_categorical('batch_size', [32, 64])
+    replay_buffer_size = trial.suggest_int('replay_buffer_size', 20000, 50000, step=10000)
+    target_sync_freq = trial.suggest_int('target_sync_freq', 500, 1500, step=500)
+    train_freq = trial.suggest_categorical('train_freq', [2, 4])
 
     hidden_units = [hidden_dim] * n_hidden_layers
 
@@ -160,7 +157,9 @@ def objective(trial: optuna.Trial) -> float:
         batch_size=batch_size,
         replay_buffer_size=replay_buffer_size,
         target_sync_freq=target_sync_freq,
+        train_freq=train_freq,
         seed=SEED,
+        compute_confidence=True,
     )
 
     # --- Evaluate on fixed sequences ---
@@ -174,7 +173,7 @@ def objective(trial: optuna.Trial) -> float:
     def qf(_env, state, _seqid):
         s_norm = normalize_state(state, max_res, max_tri, max_sev)
         q_vals = model(s_norm[numpy.newaxis, :], training=False)[0].numpy()
-        # Mask infeasible actions (consistent with rl_agent_meta_cognitive)
+        # Mask infeasible actions (consistent with dqn_agent_meta_cognitive)
         o = numpy.arange(len(q_vals), dtype=numpy.float32)
         q_vals[o > state[0]] = 0.00001
         return int(numpy.argmax(q_vals))
@@ -356,17 +355,18 @@ def main():
 
     # --- Run optimisation ---
     section("Running Bayesian Optimisation", width=80)
-    info("Search space:")
-    list_item("learning_rate        ∈ [1e-4, 1e-2]   (log scale)")
-    list_item("discount_factor      ∈ [0.80, 0.99]")
-    list_item("epsilon_initial      ∈ [0.4, 1.0]")
-    list_item("epsilon_min          ∈ [0.01, 0.10]")
-    list_item("num_episodes         ∈ [50000, 200000]  (step=25000)")
-    list_item("hidden_dim           ∈ [32, 128]  (step=32)")
-    list_item("n_hidden_layers      ∈ {1, 2, 3}")
-    list_item("batch_size           ∈ {16, 32, 64}")
-    list_item("replay_buffer_size   ∈ [20000, 100000]  (step=10000)")
-    list_item("target_sync_freq     ∈ [500, 2000]  (step=500)")
+    info("Search space (tightened for CPU):")
+    list_item("learning_rate        ∈ [5e-4, 5e-3]   (log scale)")
+    list_item("discount_factor      ∈ [0.85, 0.95]")
+    list_item("epsilon_initial      ∈ [0.50, 0.90]")
+    list_item("epsilon_min          ∈ [0.02, 0.10]")
+    list_item("num_episodes         ∈ [50000, 1000000]  (step=50000)")
+    list_item("hidden_dim           ∈ [32, 64]  (step=32)")
+    list_item("n_hidden_layers      ∈ {1, 2}")
+    list_item("batch_size           ∈ {32, 64}")
+    list_item("replay_buffer_size   ∈ [20000, 50000]  (step=10000)")
+    list_item("target_sync_freq     ∈ [500, 1500]  (step=500)")
+    list_item("train_freq           ∈ {2, 4}")
     print()
 
     # Suppress Optuna's verbose default logging
@@ -384,8 +384,27 @@ def main():
         load_if_exists=True,   # Resume from previous run if DB exists
     )
 
-    # Calculate how many trials remain (allows seamless resume)
+    # Warm-start: enqueue the known-good defaults from train_dqn.py so
+    # that TPE has a strong baseline from trial #1.  If the study already
+    # has completed trials (resume) this is harmless — Optuna deduplicates.
     completed = len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
+    if completed == 0:
+        study.enqueue_trial({
+            'learning_rate': 1e-3,
+            'discount_factor': 0.865,
+            'epsilon_initial': 0.679,
+            'epsilon_min': 0.085,
+            'num_episodes': 100000,
+            'hidden_dim': 64,
+            'n_hidden_layers': 2,
+            'batch_size': 32,
+            'replay_buffer_size': 50000,
+            'target_sync_freq': 1000,
+            'train_freq': 4,
+        })
+        info("Warm-start: known-good defaults enqueued as first trial")
+
+    # Calculate how many trials remain (allows seamless resume)
     remaining = max(0, n_trials - completed)
     if completed > 0:
         info(f"Resuming: {completed} trials already completed, {remaining} remaining")
@@ -471,7 +490,9 @@ def main():
             batch_size=bp['batch_size'],
             replay_buffer_size=bp['replay_buffer_size'],
             target_sync_freq=bp['target_sync_freq'],
+            train_freq=bp['train_freq'],
             seed=SEED,
+            compute_confidence=True,
         )
         best_rewards = numpy.array(best_rewards_list)
         success(f"Retrained model (deterministic — seed = {SEED})")

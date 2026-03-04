@@ -7,8 +7,8 @@ display and the DQN agent by processing game states and generating
 appropriately timed and confident responses.
 
 Key Functions:
-    - rl_agent_meta_cognitive: Meta-cognitive decision making with entropy-based confidence
-    - provide_rl_agent_response: Main interface returning DQN agent response and timing
+    - dqn_agent_meta_cognitive: Meta-cognitive decision making with entropy-based confidence
+    - provide_dqn_agent_response: Main interface returning DQN agent response and timing
 
 Module Dependencies:
     External: numpy, tensorflow, os
@@ -52,7 +52,7 @@ BACKGROUND_COLOUR = ANSI.GRAY
 RESPONSE_TIMEOUT = 5000  # in milliseconds
 
 
-def rl_agent_meta_cognitive(options, resources_left, response_timeout):
+def dqn_agent_meta_cognitive(options, resources_left, response_timeout):
     """Generate DQN agent response with meta-cognitive confidence and timing simulation.
 
     Implements a meta-cognitive decision-making process where the agent:
@@ -102,7 +102,7 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     Examples
     --------
     >>> q_options = np.array([0.1, 0.2, 0.5, 0.15, 0.05, 0, 0, 0, 0, 0, 0])
-    >>> response, conf, rt_h, rt_r = rl_agent_meta_cognitive(
+    >>> response, conf, rt_h, rt_r = dqn_agent_meta_cognitive(
     ...     q_options, resources_left=15, response_timeout=5000)
     >>> print(f"Response: {response}, Confidence: {conf:.2f}, "
     ...       f"Hold time: {rt_h:.3f}s, Release time: {rt_r:.3f}s")
@@ -153,7 +153,7 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     return response, confidence, rt_hold, rt_release
 
 
-def provide_rl_agent_response(
+def provide_dqn_agent_response(
     _resources,
     resources_left,
     session_no,
@@ -204,7 +204,7 @@ def provide_rl_agent_response(
 
     Notes
     -----
-    - Requires DQN pre-training via: ``python3 -m pes_dqn.ext.train_drl``
+    - Requires DQN pre-training via: ``python3 -m pes_dqn.ext.train_dqn``
     - Requires ``first_severity`` initialised before calling this function.
     - State is normalised to [0, 1]³ before the forward pass.
     """
@@ -218,7 +218,7 @@ def provide_rl_agent_response(
     if not os.path.exists(model_path):
         raise FileNotFoundError(
             f"\nFATAL ERROR: DQN model file not found at {model_path}\n"
-            f"Please train the DQN Agent first by running: python3 -m pes_dqn.ext.train_drl\n"
+            f"Please train the DQN Agent first by running: python3 -m pes_dqn.ext.train_dqn\n"
         )
 
     try:
@@ -227,7 +227,7 @@ def provide_rl_agent_response(
         raise RuntimeError(
             f"\nFATAL ERROR: Failed to load DQN model!\n"
             f"Error: {str(e)}\n"
-            f"File may be corrupted. Please retrain by running: python3 -m pes_dqn.ext.train_drl\n"
+            f"File may be corrupted. Please retrain by running: python3 -m pes_dqn.ext.train_dqn\n"
         ) from e
 
     if VERBOSE:
@@ -284,7 +284,7 @@ def provide_rl_agent_response(
         print(f"Q-values for this state: {q_values}")
 
     # Calculate the response and confidence using meta-cognitive entropy-based evaluation
-    resp, confidence, rt_hold, rt_release = rl_agent_meta_cognitive(
+    resp, confidence, rt_hold, rt_release = dqn_agent_meta_cognitive(
         q_values, resources_left, RESPONSE_TIMEOUT)
 
     # Final validation: ensure response never exceeds available resources

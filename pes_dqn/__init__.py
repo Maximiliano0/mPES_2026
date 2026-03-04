@@ -4,8 +4,8 @@ with Deep Q-Network).
 
 Variant of pes that replaces tabular Q-Learning with a neural-network-based
 Deep Q-Network (DQN).  Bayesian hyperparameter optimisation (Optuna / TPE)
-is available via ext/optimize_drl.py.  The DQN model, experience-replay buffer,
-and target-network helpers live in ext/dqn_model.py; training in ext/train_drl.py.
+is available via ext/optimize_dqn.py.  The DQN model, experience-replay buffer,
+and target-network helpers live in ext/dqn_model.py; training in ext/train_dqn.py.
 
 Handles package setup including:
 - Configuration loading from config/CONFIG.py (includes SEED for reproducibility)
@@ -136,6 +136,15 @@ SEVERITY_MULTIPLIER = 1 + PANDEMIC_PARAMETER  # β (Beta)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 # Force TensorFlow to use CPU by default.
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
+
+###################################
+### CPU training optimisation   ###
+###################################
+# Set OpenMP thread count *before* TensorFlow is imported so that the
+# thread pool matches the host CPU (e.g. Intel i3-6006U → 4 threads).
+# The actual TF threading configuration is applied in ext/dqn_model.py
+# (tf.config.threading.set_intra_op_parallelism_threads / inter_op).
+os.environ.setdefault("OMP_NUM_THREADS", str(os.cpu_count() or 4))
 
 # Set some nice numpy printing defaults and error handling
 numpy.set_printoptions(threshold=sys.maxsize, precision=3, suppress=True,

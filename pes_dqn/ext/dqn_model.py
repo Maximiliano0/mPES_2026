@@ -4,9 +4,11 @@ pes_dqn - Deep Q-Network (DQN) model components.
 Provides the neural-network building blocks used by the DQN training loop
 in :pymod:`pandemic`:
 
-- **ReplayBuffer**:  Fixed-capacity circular buffer that stores experience
-  tuples ``(state, action, reward, next_state, done)`` and provides uniform
-  random mini-batch sampling for off-policy learning.
+- **ReplayBuffer**:  Fixed-capacity circular buffer backed by pre-allocated
+  NumPy arrays.  Stores experience tuples
+  ``(state, action, reward, next_state, done)`` and provides uniform random
+  mini-batch sampling via ``numpy.random.randint`` + advanced indexing —
+  significantly faster than a ``deque``-based buffer on CPU.
 - **build_q_network**:  Constructs a fully-connected Keras ``Sequential``
   model that maps a normalised state vector to Q-values for every action.
 - **normalize_state**:  Scales raw integer state components to the [0, 1]
@@ -22,13 +24,18 @@ Architecture
                    (hidden_units[0])    (hidden_units[1])    (action_dim)
 
 The default hidden-layer sizes are configurable via ``config/CONFIG.py``.
+
+CPU Optimisations
+-----------------
+- TensorFlow intra/inter-op thread pools are configured at import time
+  to match the host CPU (defaults to auto-detect / 2 inter-op threads).
+- The replay buffer uses contiguous NumPy arrays to avoid Python-level
+  iteration when sampling mini-batches.
 """
 
 ##########################
 ##  Imports externos    ##
 ##########################
-import random
-from collections import deque
 from typing import List, Tuple
 
 import numpy
@@ -40,29 +47,50 @@ import tensorflow as tf
 
 
 # ---------------------------------------------------------------------------
-#  Replay Buffer
+#  CPU threading optimisation
+# ---------------------------------------------------------------------------
+#  On CPUs with few cores (e.g. Intel i3-6006U, 4 threads) explicitly
+#  tuning the thread pools improves throughput for the small DQN model.
+#  Must be called *before* any TF operation creates the thread pool.
+tf.config.threading.set_intra_op_parallelism_threads(0)   # 0 = auto-detect
+tf.config.threading.set_inter_op_parallelism_threads(2)
+
+
+# ---------------------------------------------------------------------------
+#  Replay Buffer  (NumPy-backed, cache-friendly)
 # ---------------------------------------------------------------------------
 class ReplayBuffer:
-    """Fixed-capacity circular experience-replay buffer.
+    """Fixed-capacity circular experience-replay buffer backed by pre-allocated NumPy arrays.
 
-    Stores ``(state, action, reward, next_state, done)`` tuples and provides
-    uniform-random mini-batch sampling for off-policy training.
+    Stores ``(state, action, reward, next_state, done)`` transitions in
+    contiguous NumPy arrays.  Sampling uses ``numpy.random.randint`` +
+    advanced indexing, which is *orders of magnitude* faster than
+    ``random.sample`` on a Python ``deque`` — particularly for large
+    buffers (50 000+ entries).
 
     Parameters
     ----------
     capacity : int
         Maximum number of transitions stored.  When full, the oldest
-        transition is silently discarded.
+        transition is silently overwritten.
+    state_dim : int, optional
+        Dimensionality of each state vector (default ``3``).
     """
 
-    def __init__(self, capacity: int) -> None:
-        self.buffer: deque[Tuple[numpy.ndarray, int, float,
-                                 numpy.ndarray, bool]] = deque(maxlen=capacity)
+    def __init__(self, capacity: int, state_dim: int = 3) -> None:
+        self.capacity = capacity
+        self.size = 0
+        self._idx = 0
+        self._states = numpy.zeros((capacity, state_dim), dtype=numpy.float32)
+        self._actions = numpy.zeros(capacity, dtype=numpy.int32)
+        self._rewards = numpy.zeros(capacity, dtype=numpy.float32)
+        self._next_states = numpy.zeros((capacity, state_dim), dtype=numpy.float32)
+        self._dones = numpy.zeros(capacity, dtype=numpy.float32)
 
     # ------------------------------------------------------------------
     def push(self, state: numpy.ndarray, action: int, reward: float,
              next_state: numpy.ndarray, done: bool) -> None:
-        """Append one transition, evicting the oldest if at capacity.
+        """Append one transition, overwriting the oldest if at capacity.
 
         Parameters
         ----------
@@ -77,13 +105,24 @@ class ReplayBuffer:
         done : bool
             Whether the episode ended after this transition.
         """
-        self.buffer.append((state, action, reward, next_state, done))
+        i = self._idx
+        self._states[i] = state
+        self._actions[i] = action
+        self._rewards[i] = reward
+        self._next_states[i] = next_state
+        self._dones[i] = float(done)
+        self._idx = (i + 1) % self.capacity
+        self.size = min(self.size + 1, self.capacity)
 
     # ------------------------------------------------------------------
     def sample(self, batch_size: int
                ) -> Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray,
                            numpy.ndarray, numpy.ndarray]:
         """Return a uniformly sampled mini-batch of transitions.
+
+        Uses ``numpy.random.randint`` with advanced indexing for
+        cache-friendly, vectorised sampling — much faster than
+        ``random.sample`` on a Python ``deque``.
 
         Parameters
         ----------
@@ -98,18 +137,17 @@ class ReplayBuffer:
         next_states : ndarray, shape ``(batch_size, state_dim)``
         dones : ndarray, shape ``(batch_size,)``
         """
-        batch = random.sample(self.buffer, batch_size)
-        states, actions, rewards, next_states, dones = zip(*batch)
-        return (numpy.array(states, dtype=numpy.float32),
-                numpy.array(actions, dtype=numpy.int32),
-                numpy.array(rewards, dtype=numpy.float32),
-                numpy.array(next_states, dtype=numpy.float32),
-                numpy.array(dones, dtype=numpy.float32))
+        indices = numpy.random.randint(0, self.size, size=batch_size)
+        return (self._states[indices],
+                self._actions[indices],
+                self._rewards[indices],
+                self._next_states[indices],
+                self._dones[indices])
 
     # ------------------------------------------------------------------
     def __len__(self) -> int:
         """Return the current number of stored transitions."""
-        return len(self.buffer)
+        return self.size
 
 
 # ---------------------------------------------------------------------------

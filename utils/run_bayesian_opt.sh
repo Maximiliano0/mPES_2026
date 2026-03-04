@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------
-#  Lanzar optimización Bayesiana de Q-Learning
+#  Lanzar optimización Bayesiana
 #
-#  Script compartido para pes_base_line y pes_qlv2.
-#  Todas las rutas se resuelven de forma relativa a la ubicación
-#  de este script (utils/ → mPES/).
+#  Script compartido para pes_base_line, pes_qlv2, pes_dqn
+#  y pes_transformer.  Todas las rutas se resuelven de forma
+#  relativa a la ubicación de este script (utils/ → mPES/).
 #
 #  Funcionalidades:
 #    - Lanza la optimización en segundo plano con nohup.
@@ -16,6 +16,8 @@
 #    chmod +x run_bayesian_opt.sh
 #    ./run_bayesian_opt.sh bayesian 100              # pes_base_line, corrida nueva
 #    ./run_bayesian_opt.sh qlv2 100                  # pes_qlv2, corrida nueva
+#    ./run_bayesian_opt.sh dqn 30                    # pes_dqn, corrida nueva
+#    ./run_bayesian_opt.sh transformer 30            # pes_transformer, corrida nueva
 #    ./run_bayesian_opt.sh bayesian 100 2026-02-12   # reanudar desde fecha
 # ------------------------------------------------------------------
 set -euo pipefail
@@ -28,8 +30,10 @@ VENV="$PROJECT_DIR/linux_mpes_env/bin/activate"
 # ── Resolver paquete desde primer argumento ──────────────────────
 resolve_package() {
     case "${1:-}" in
-        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_base_line" ;;
-        qlv2|QLv2|QLVAL2|ql|2)           echo "pes_qlv2"     ;;
+        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_base_line"    ;;
+        qlv2|QLv2|QLVAL2|ql|2)           echo "pes_qlv2"         ;;
+        dqn|DQN|3)                        echo "pes_dqn"          ;;
+        transformer|tr|4)                 echo "pes_transformer"  ;;
         *) return 1 ;;
     esac
 }
@@ -40,21 +44,34 @@ if [[ $# -lt 2 ]]; then
     echo ""
     echo "Uso: $0 <paquete> <n_trials> [fecha_resume]"
     echo ""
-    echo "  Paquetes: bayesian (pes_base_line), qlv2 (pes_qlv2)"
+    echo "  Paquetes: bayesian (pes_base_line), qlv2 (pes_qlv2), dqn (pes_dqn), transformer (pes_transformer)"
     echo ""
     echo "Ejemplos:"
     echo "  $0 bayesian 100"
     echo "  $0 qlv2 100"
+    echo "  $0 dqn 30"
+    echo "  $0 transformer 30"
     echo "  $0 bayesian 100 2026-02-12"
     exit 1
 fi
 
 PKG_NAME="$(resolve_package "$1")" || {
     echo "Error: Paquete desconocido: '$1'"
-    echo "  Opciones válidas: bayesian, qlv2"
+    echo "  Opciones válidas: bayesian, qlv2, dqn, transformer"
     exit 1
 }
 N_TRIALS="$2"
+
+# ── Resolver módulo de optimización por paquete ──────────────────
+resolve_module() {
+    case "$1" in
+        pes_base_line) echo "pes_base_line.ext.optimize_rl" ;;
+        pes_qlv2)      echo "pes_qlv2.ext.optimize_rl"     ;;
+        pes_dqn)       echo "pes_dqn.ext.optimize_dqn"     ;;
+        pes_transformer) echo "pes_transformer.ext.optimize_tr" ;;
+    esac
+}
+OPT_MODULE="$(resolve_module "$PKG_NAME")"
 
 LOG_DIR="$PROJECT_DIR/$PKG_NAME/inputs"
 
@@ -75,7 +92,7 @@ LOGFILE="$LOG_DIR/bayesian_opt${LOG_SUFFIX}.log"
 gsettings set org.gnome.settings-daemon.plugins.power lid-close-ac-action 'nothing'
 
 # Lanzar optimización en segundo plano
-nohup python3 -m "${PKG_NAME}.ext.optimize_rl" $ARGS > "$LOGFILE" 2>&1 &
+nohup python3 -m "${OPT_MODULE}" $ARGS > "$LOGFILE" 2>&1 &
 OPT_PID=$!
 echo "Optimización lanzada  PID=$OPT_PID  trials=$N_TRIALS"
 echo "Log: $LOGFILE"
@@ -93,4 +110,4 @@ echo ""
 echo "Comandos útiles:"
 echo "  Progreso:    grep 'Trial' $LOGFILE | tail -10"
 echo "  Tiempo real: tail -f $LOGFILE"
-echo "  Vivo?:       pgrep -f '${PKG_NAME}.ext.optimize_rl' -a"
+echo "  Vivo?:       pgrep -f '${OPT_MODULE}' -a"

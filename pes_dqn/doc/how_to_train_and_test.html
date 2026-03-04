@@ -87,13 +87,13 @@
 <hr />
 <h2 id="1-training-the-dqn-agent">1. Training the DQN Agent</h2>
 <h3 id="11-quick-start">1.1 Quick Start</h3>
-<div class="highlight"><pre><span></span><code>python3 -m pes_dqn.ext.train_drl
+<div class="highlight"><pre><span></span><code>python3 -m pes_dqn.ext.train_dqn
 </code></pre></div>
 
 <p>This runs the <strong>full training pipeline</strong> with default settings (100 000 episodes).</p>
 <h3 id="12-custom-episode-count">1.2 Custom Episode Count</h3>
 <p>Pass the number of episodes as the first argument:</p>
-<div class="highlight"><pre><span></span><code>python3 -m pes_dqn.ext.train_drl <span class="m">200000</span>
+<div class="highlight"><pre><span></span><code>python3 -m pes_dqn.ext.train_dqn <span class="m">200000</span>
 </code></pre></div>
 
 <h3 id="13-what-happens-during-training">1.3 What Happens During Training</h3>
@@ -113,7 +113,7 @@
    generates performance, confidence, and cumulative-performance plots.</li>
 </ol>
 <h3 id="14-training-output-files">1.4 Training Output Files</h3>
-<p>All outputs are saved to <code>pes_dqn/inputs/&lt;YYYY-MM-DD&gt;_DRL_TRAIN/</code>:</p>
+<p>All outputs are saved to <code>pes_dqn/inputs/&lt;YYYY-MM-DD&gt;_DQN_TRAIN/</code>:</p>
 <table>
 <thead>
 <tr>
@@ -167,7 +167,7 @@ consumed by the experiment runner:</p>
 <li><code>pes_dqn/inputs/rewards.npy</code></li>
 </ul>
 <h3 id="15-default-hyperparameters">1.5 Default Hyperparameters</h3>
-<p>These defaults are set in <code>config/CONFIG.py</code> and <code>ext/train_drl.py</code>:</p>
+<p>These defaults are set in <code>config/CONFIG.py</code> and <code>ext/train_dqn.py</code>:</p>
 <table>
 <thead>
 <tr>
@@ -210,17 +210,17 @@ consumed by the experiment runner:</p>
 <tr>
 <td>Discount γ</td>
 <td>0.865</td>
-<td><code>train_drl.py</code></td>
+<td><code>train_dqn.py</code></td>
 </tr>
 <tr>
 <td>Initial ε</td>
 <td>0.679</td>
-<td><code>train_drl.py</code></td>
+<td><code>train_dqn.py</code></td>
 </tr>
 <tr>
 <td>Min ε</td>
 <td>0.085</td>
-<td><code>train_drl.py</code></td>
+<td><code>train_dqn.py</code></td>
 </tr>
 <tr>
 <td>Episodes</td>
@@ -235,19 +235,69 @@ consumed by the experiment runner:</p>
 </tbody>
 </table>
 <h3 id="16-expected-training-time">1.6 Expected Training Time</h3>
-<p>On a modern CPU (no GPU), approximately <strong>30 minutes to 1 hour</strong> for
-100 000 episodes.  Training time scales linearly with episode count.</p>
+<p>On a modest CPU (e.g. Intel i3-6006U @ 2 GHz, 4 threads), approximately
+<strong>15–30 minutes</strong> for 100 000 episodes with CPU optimisations enabled
+(NumPy replay buffer, no confidence forward pass during training,
+TensorFlow thread-pool tuning).  Training time scales linearly with
+episode count.</p>
+<blockquote>
+<p><strong>Note:</strong> Without the CPU optimisations (<code>compute_confidence=True</code> and
+the old <code>deque</code>-based replay buffer), training may take 45–60 minutes
+on the same hardware.</p>
+</blockquote>
+<h3 id="17-cpu-training-optimisations">1.7 CPU Training Optimisations</h3>
+<p>The following optimisations are active by default and require no
+configuration:</p>
+<table>
+<thead>
+<tr>
+<th>Optimisation</th>
+<th>Effect</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NumPy replay buffer</td>
+<td>Pre-allocated arrays with <code>randint</code> indexing instead of <code>deque</code> + <code>random.sample</code></td>
+<td><code>ext/dqn_model.py</code></td>
+</tr>
+<tr>
+<td>Skip confidence forward pass</td>
+<td><code>compute_confidence=False</code> eliminates 1 of 2 forward passes per step</td>
+<td><code>ext/pandemic.py</code></td>
+</tr>
+<tr>
+<td>TF thread-pool tuning</td>
+<td><code>intra_op=0</code> (auto), <code>inter_op=2</code> for multi-core CPUs</td>
+<td><code>ext/dqn_model.py</code></td>
+</tr>
+<tr>
+<td>OMP_NUM_THREADS</td>
+<td>Set to CPU core count before TF import</td>
+<td><code>__init__.py</code></td>
+</tr>
+</tbody>
+</table>
+<p>To re-enable confidence tracking during training (at ~2× slower speed):</p>
+<div class="highlight"><pre><span></span><code><span class="n">rewards</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">confs</span> <span class="o">=</span> <span class="n">DQNTraining</span><span class="p">(</span>
+    <span class="n">env</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">min_eps</span><span class="p">,</span> <span class="n">episodes</span><span class="p">,</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">compute_confidence</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>   <span class="c1"># ← enables meta-cognitive observation</span>
+<span class="p">)</span>
+</code></pre></div>
+
 <hr />
 <h2 id="2-bayesian-hyperparameter-optimisation-optional">2. Bayesian Hyperparameter Optimisation (Optional)</h2>
 <p>If the default hyperparameters are not satisfactory, you can run an
 automated search using Optuna:</p>
-<div class="highlight"><pre><span></span><code>python3 -m pes_dqn.ext.optimize_drl <span class="m">30</span>
+<div class="highlight"><pre><span></span><code>python3 -m pes_dqn.ext.optimize_dqn <span class="m">30</span>
 </code></pre></div>
 
 <p>The integer argument is the number of trials (default: 30).</p>
 <h3 id="21-resume-a-previous-search">2.1 Resume a Previous Search</h3>
 <p>Optimisation state is stored in an SQLite database.  To resume:</p>
-<div class="highlight"><pre><span></span><code>python3 -m pes_dqn.ext.optimize_drl <span class="m">50</span> --resume <span class="m">2026</span>-03-02
+<div class="highlight"><pre><span></span><code>python3 -m pes_dqn.ext.optimize_dqn <span class="m">50</span> --resume <span class="m">2026</span>-03-02
 </code></pre></div>
 
 <p>This loads the study from <code>inputs/&lt;date&gt;_BAYESIAN_OPT/optuna_study_&lt;date&gt;.db</code>
@@ -317,7 +367,7 @@ pes_dqn/inputs/rewards.npy        ← reward history
      distribution.</li>
 <li>Simulates human-like <strong>response timing</strong> based on confidence.</li>
 <li><strong>Saves</strong> results (performance JSON, visualisation PNG, response logs) to
-   <code>pes_dqn/outputs/&lt;YYYY-MM-DD&gt;_DEEP_Q_LEARNING/</code>.</li>
+   <code>pes_dqn/outputs/&lt;YYYY-MM-DD&gt;_DQN_AGENT/</code>.</li>
 </ol>
 <h3 id="33-experiment-outputs">3.3 Experiment Outputs</h3>
 <table>
@@ -356,7 +406,10 @@ pes_dqn/inputs/rewards.npy        ← reward history
 </table>
 <h3 id="34-configuration">3.4 Configuration</h3>
 <p>All experiment parameters are in <code>config/CONFIG.py</code>.  Key settings:</p>
-<div class="highlight"><pre><span></span><code><span class="n">PLAYER_TYPE</span> <span class="o">=</span> <span class="s1">&#39;DEEP_Q_LEARNING&#39;</span>   <span class="c1"># Agent type (do not change for DQN)</span>
+<div class="highlight"><pre><span></span><code><span class="n">PLAYER_TYPE</span> <span class="o">=</span> <span class="p">{</span>  <span class="c1"># Decision maker type - SELECT ONE</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;RL_AGENT&#39;</span><span class="p">,</span>           <span class="c1"># DQN agent labelled as RL_AGENT</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;DQN_AGENT&#39;</span>           <span class="c1"># DQN agent labelled as DQN_AGENT</span>
+<span class="p">}[</span><span class="mi">2</span><span class="p">]</span>                         <span class="c1"># &lt;-- change index to select</span>
 <span class="n">DQN_MODEL_FILE</span> <span class="o">=</span> <span class="s1">&#39;dqn_model.keras&#39;</span>  <span class="c1"># Model filename in inputs/</span>
 <span class="n">NUM_BLOCKS</span> <span class="o">=</span> <span class="mi">8</span>
 <span class="n">NUM_SEQUENCES</span> <span class="o">=</span> <span class="mi">8</span>
@@ -370,7 +423,7 @@ Expected path: .../pes_dqn/inputs/dqn_model.keras
 </code></pre></div>
 
 <p><strong>Solution:</strong> Run training first:</p>
-<div class="highlight"><pre><span></span><code>python3 -m pes_dqn.ext.train_drl
+<div class="highlight"><pre><span></span><code>python3 -m pes_dqn.ext.train_dqn
 </code></pre></div>
 
 <h3 id="rewards-file-not-found">Rewards file not found</h3>
@@ -382,10 +435,19 @@ Expected path: .../pes_dqn/inputs/dqn_model.keras
 model runs on CPU.</p>
 <h3 id="poor-agent-performance">Poor agent performance</h3>
 <ul>
-<li>Try increasing episodes: <code>python3 -m pes_dqn.ext.train_drl 200000</code></li>
+<li>Try increasing episodes: <code>python3 -m pes_dqn.ext.train_dqn 200000</code></li>
 <li>Run Bayesian optimisation to find better hyperparameters:
-  <code>python3 -m pes_dqn.ext.optimize_drl 50</code></li>
+  <code>python3 -m pes_dqn.ext.optimize_dqn 50</code></li>
 <li>Check that <code>CONFIG.SEED = 42</code> for reproducible results.</li>
+</ul>
+<h3 id="slow-training-on-cpu">Slow training on CPU</h3>
+<p>The default configuration is already optimised for CPU.  If training is
+still too slow:</p>
+<ul>
+<li>Reduce episode count: <code>python3 -m pes_dqn.ext.train_dqn 50000</code></li>
+<li>Verify <code>compute_confidence=False</code> is set (default) in <code>train_dqn.py</code></li>
+<li>Check that <code>OMP_NUM_THREADS</code> is set to your CPU core count
+  (auto-configured in <code>__init__.py</code>)</li>
 </ul>
 <hr />
 <h2 id="5-quick-reference">5. Quick Reference</h2>
@@ -403,19 +465,19 @@ model runs on CPU.</p>
 </tr>
 <tr>
 <td>Train DQN (default)</td>
-<td><code>python3 -m pes_dqn.ext.train_drl</code></td>
+<td><code>python3 -m pes_dqn.ext.train_dqn</code></td>
 </tr>
 <tr>
 <td>Train DQN (custom)</td>
-<td><code>python3 -m pes_dqn.ext.train_drl 200000</code></td>
+<td><code>python3 -m pes_dqn.ext.train_dqn 200000</code></td>
 </tr>
 <tr>
 <td>Optimise hyperparams</td>
-<td><code>python3 -m pes_dqn.ext.optimize_drl 30</code></td>
+<td><code>python3 -m pes_dqn.ext.optimize_dqn 30</code></td>
 </tr>
 <tr>
 <td>Resume optimisation</td>
-<td><code>python3 -m pes_dqn.ext.optimize_drl 50 --resume YYYY-MM-DD</code></td>
+<td><code>python3 -m pes_dqn.ext.optimize_dqn 50 --resume YYYY-MM-DD</code></td>
 </tr>
 <tr>
 <td>Run experiment</td>

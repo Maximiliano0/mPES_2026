@@ -92,7 +92,7 @@ misma integración con la UI de Pygame.</p>
 <tr>
 <td>Factor de descuento</td>
 <td>$\gamma$</td>
-<td><code>discount</code> (por defecto 0.865 en <code>train_drl.py</code>)</td>
+<td><code>discount</code> (por defecto 0.865 en <code>train_dqn.py</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -207,19 +207,64 @@ buffer circular y las muestrea <strong>uniformemente al azar</strong>, rompiendo
 correlación y permitiendo reutilizar datos.</p>
 <h3 id="52-implementacion">5.2 Implementación</h3>
 <p><code>ext/dqn_model.py</code> → clase <code>ReplayBuffer</code>:</p>
+<p>El buffer está respaldado por <strong>arrays NumPy pre-alocados</strong> en lugar de un
+<code>deque</code> de Python.  Esto elimina la iteración a nivel de Python al muestrear
+mini-batches y aprovecha la localidad de caché de arrays contiguos:</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ReplayBuffer</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capacity</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">:</span> <span class="n">deque</span><span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">deque</span><span class="p">(</span><span class="n">maxlen</span><span class="o">=</span><span class="n">capacity</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capacity</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span> <span class="o">=</span> <span class="n">capacity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_states</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">capacity</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rewards</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">capacity</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_next_states</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dones</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">capacity</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">done</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">done</span><span class="p">))</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_states</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">action</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rewards</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_next_states</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dones</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">done</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
-        <span class="n">batch</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">)</span>
-        <span class="n">states</span><span class="p">,</span> <span class="n">actions</span><span class="p">,</span> <span class="n">rewards</span><span class="p">,</span> <span class="n">next_states</span><span class="p">,</span> <span class="n">dones</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">batch</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="o">...</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_states</span><span class="p">[</span><span class="n">indices</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span><span class="p">[</span><span class="n">indices</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_rewards</span><span class="p">[</span><span class="n">indices</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_states</span><span class="p">[</span><span class="n">indices</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_dones</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span>
 </code></pre></div>
 
+<p><strong>Ventaja frente a <code>deque</code> + <code>random.sample</code></strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Operación</th>
+<th><code>deque</code> (anterior)</th>
+<th>NumPy (actual)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>push</code></td>
+<td>Crear tupla + append</td>
+<td>Asignación directa a array</td>
+</tr>
+<tr>
+<td><code>sample(32)</code></td>
+<td><code>random.sample</code> O(n) + <code>zip</code> + <code>numpy.array</code></td>
+<td><code>randint</code> + advanced indexing O(batch)</td>
+</tr>
+<tr>
+<td>Memoria</td>
+<td>Objetos Python dispersos</td>
+<td>Arrays contiguos (cache-friendly)</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Configuración</strong> (<code>config/CONFIG.py</code>):</p>
 <table>
 <thead>
@@ -341,11 +386,13 @@ para errores grandes, ofreciendo robustez ante outliers:</p>
     Mientras no done:
         1. Normalizar estado:     s_norm = normalize_state(state, 30, 10, 9)
         2. Selección ε-greedy:    action = argmax Q_θ(s_norm) ó random
-        3. Meta-cognición:        confidence = rl_agent_meta_cognitive(q_vals, ...)
+        3. (Opcional) Meta-cognición: confidence = dqn_agent_meta_cognitive(q_vals, ...)
+           → Solo si compute_confidence=True; desactivado por defecto para
+             eliminar el segundo forward pass y duplicar la velocidad en CPU.
         4. Paso del entorno:      s&#39;, r, done = env.step(action)
         5. Almacenar transición:  buffer.push(s_norm, action, r, s&#39;_norm, done)
         6. Si global_step % train_freq == 0 y |buffer| ≥ batch_size:
-             ─ Samplear mini-batch del buffer
+             ─ Samplear mini-batch del buffer (NumPy advanced indexing)
              ─ train_step(online, target, optimizer, batch)
              ─ Si train_steps % target_sync_freq == 0:
                    sync_target_network(online, target)
@@ -357,6 +404,22 @@ para errores grandes, ofreciendo robustez ante outliers:</p>
     Retornar (ave_reward_list, online_model, conf_list)
 </code></pre></div>
 
+<h3 id="91-parametro-compute_confidence">9.1 Parámetro <code>compute_confidence</code></h3>
+<p><code>DQNTraining()</code> acepta un parámetro opcional <code>compute_confidence</code> (por
+defecto <code>False</code>).  Cuando está desactivado, se <strong>elimina</strong> el segundo
+forward pass por step que antes se usaba exclusivamente para observar la
+confianza meta-cognitiva:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Antes (compute_confidence implícito = True):</span>
+<span class="c1">#   1 forward pass  → ε-greedy</span>
+<span class="c1">#   1 forward pass  → meta-cognición  ← ELIMINADO por defecto</span>
+<span class="c1"># Ahora (compute_confidence=False, default):</span>
+<span class="c1">#   1 forward pass  → ε-greedy</span>
+<span class="c1">#   (sin forward pass adicional)</span>
+</code></pre></div>
+
+<p>Esto reduce ~50 % el tiempo de inferencia durante el entrenamiento,
+resultando en una mejora de velocidad de ~1.5–2× en CPUs modestas
+(p. ej. Intel i3-6006U).</p>
 <p><strong>Parámetros configurables</strong> (<code>config/CONFIG.py</code>):</p>
 <table>
 <thead>
@@ -406,7 +469,7 @@ para errores grandes, ofreciendo robustez ante outliers:</p>
 </table>
 <hr />
 <h2 id="10-optimizacion-bayesiana-de-hiperparametros">10. Optimización Bayesiana de Hiperparámetros</h2>
-<p><code>ext/optimize_drl.py</code> utiliza <strong>Optuna</strong> (TPE sampler) para buscar
+<p><code>ext/optimize_dqn.py</code> utiliza <strong>Optuna</strong> (TPE sampler) para buscar
 hiperparámetros óptimos del DQN.</p>
 <h3 id="101-espacio-de-busqueda">10.1 Espacio de Búsqueda</h3>
 <table>
@@ -483,7 +546,7 @@ finalizar se reconstruye la red y se guarda como <code>dqn_model.keras</code>.</
 <hr />
 <h2 id="11-inferencia-en-tiempo-de-experimento">11. Inferencia en Tiempo de Experimento</h2>
 <h3 id="111-carga-del-modelo">11.1 Carga del Modelo</h3>
-<p><code>src/pygameMediator.py</code> → <code>provide_rl_agent_response()</code>:</p>
+<p><code>src/pygameMediator.py</code> → <code>provide_dqn_agent_response()</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="n">model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
 </code></pre></div>
 
@@ -493,7 +556,7 @@ finalizar se reconstruye la red y se guarda como <code>dqn_model.keras</code>.</
 <span class="n">action</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">q_values</span><span class="p">))</span>
 </code></pre></div>
 
-<p>El vector de Q-values (11 elementos) se pasa a <code>rl_agent_meta_cognitive()</code>
+<p>El vector de Q-values (11 elementos) se pasa a <code>dqn_agent_meta_cognitive()</code>
 para calcular la confianza por entropía, exactamente igual que en el
 paquete tabular.</p>
 <hr />
@@ -520,7 +583,7 @@ paquete tabular.</p>
 <tr>
 <td>Datos</td>
 <td>Un paso → un update</td>
-<td>Replay buffer → mini-batch</td>
+<td>Replay buffer (NumPy arrays) → mini-batch</td>
 </tr>
 <tr>
 <td>Estabilidad</td>
@@ -535,22 +598,45 @@ paquete tabular.</p>
 <tr>
 <td>Tiempo (CPU)</td>
 <td>~30 s</td>
-<td>~30 min – 1 h</td>
+<td>~15–30 min (con optimizaciones CPU)</td>
 </tr>
 </tbody>
 </table>
 <hr />
+<h2 id="121-optimizaciones-para-cpu">12.1 Optimizaciones para CPU</h2>
+<p>Dado que <code>pes_dqn</code> está diseñado para ejecutarse en CPUs modestas
+(p. ej. Intel i3-6006U @ 2 GHz, 4 hilos), se implementan tres
+optimizaciones clave:</p>
+<h3 id="1211-replay-buffer-con-numpy-pre-alocado">12.1.1 Replay Buffer con NumPy pre-alocado</h3>
+<p>El buffer de experiencia usa <strong>arrays NumPy contiguos</strong> pre-alocados en
+lugar de un <code>deque</code> de Python con tuplas.  El muestreo se realiza con
+<code>numpy.random.randint</code> + indexación avanzada, que es órdenes de magnitud
+más rápido que <code>random.sample</code> sobre un <code>deque</code> de 50 000+ elementos.</p>
+<h3 id="1212-eliminacion-del-forward-pass-de-confianza">12.1.2 Eliminación del forward pass de confianza</h3>
+<p>El parámetro <code>compute_confidence=False</code> (por defecto) elimina el segundo
+forward pass por step de entorno.  Durante 100 000 episodios con ~5 steps
+promedio, esto ahorra ~500 000 forward passes.</p>
+<h3 id="1213-configuracion-de-hilos-tensorflow">12.1.3 Configuración de hilos TensorFlow</h3>
+<p>Al importar <code>ext/dqn_model.py</code> se configuran los pools de hilos de TF:</p>
+<div class="highlight"><pre><span></span><code><span class="n">tf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">threading</span><span class="o">.</span><span class="n">set_intra_op_parallelism_threads</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>   <span class="c1"># auto-detect</span>
+<span class="n">tf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">threading</span><span class="o">.</span><span class="n">set_inter_op_parallelism_threads</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Además, <code>OMP_NUM_THREADS</code> se configura en <code>__init__.py</code> al número de
+cores disponibles antes de importar TensorFlow.</p>
+<hr />
 <h2 id="13-estructura-de-archivos">13. Estructura de Archivos</h2>
 <div class="highlight"><pre><span></span><code>pes_dqn/
-├── __init__.py              # Exporta constantes DQN al nivel de paquete
+├── __init__.py              # Exporta constantes DQN; configura OMP_NUM_THREADS
 ├── __main__.py              # Valida .keras antes de ejecutar
 ├── config/CONFIG.py         # 7 constantes DQN_*
 ├── ext/
-│   ├── dqn_model.py         # ReplayBuffer, build_q_network, normalize_state,
-│   │                        #   train_step, sync_target_network
-│   ├── pandemic.py          # Entorno Gym + DQNTraining()
-│   ├── train_drl.py         # Pipeline de entrenamiento autónomo
-│   ├── optimize_drl.py      # Búsqueda Bayesiana con Optuna
+│   ├── dqn_model.py         # ReplayBuffer (NumPy-backed), build_q_network,
+│   │                        #   normalize_state, train_step, sync_target_network;
+│   │                        #   configura tf.config.threading al importar
+│   ├── pandemic.py          # Entorno Gym + DQNTraining(compute_confidence=False)
+│   ├── train_dqn.py         # Pipeline de entrenamiento autónomo
+│   ├── optimize_dqn.py      # Búsqueda Bayesiana con Optuna
 │   └── tools.py             # Entropía, gráficas (sin cambios)
 ├── src/
 │   ├── pygameMediator.py    # Carga .keras, forward pass en experimento

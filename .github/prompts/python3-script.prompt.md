@@ -1,6 +1,6 @@
 # Python 3 Script Template
 
-> Last updated: 2026-02-26
+> Last updated: 2026-03-04
 
 Generate a new Python 3 script following the mPES project conventions.
 
@@ -11,6 +11,7 @@ Generate a new Python 3 script following the mPES project conventions.
 | `pes` | Tabular Q-Learning baseline |
 | `pes_base_line` | Q-Learning + Bayesian optimisation (Optuna) |
 | `pes_qlv2` | Double Q-Learning, ε-decay warm-up, PBRS |
+| `pes_dqn` | Deep Q-Network (experience replay + target net) |
 | `pes_transformer` | Causal Transformer encoder + RL |
 | `utils` | Shared helpers |
 
@@ -124,7 +125,7 @@ if __name__ == '__main__':
 
 ## Rules
 
-- Adapt the package name (`pes`, `pes_base_line`, `pes_qlv2`, `pes_transformer`)
+- Adapt the package name (`pes`, `pes_base_line`, `pes_qlv2`, `pes_dqn`, `pes_transformer`)
   based on where the user wants to place the script.
 - Do NOT cross-reference between packages — each package is self-contained.
 - Ask the user for the script's purpose if not specified.

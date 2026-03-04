@@ -1,6 +1,6 @@
 # Update Package Documentation
 
-> Last updated: 2026-02-26
+> Last updated: 2026-03-04
 
 Read a target package's source code, then update and export its Markdown
 documentation so that it faithfully explains the current implementation.
@@ -13,6 +13,7 @@ When invoking this prompt, specify the **target package** name. Examples:
 @update-pkg-docs pes
 @update-pkg-docs pes_base_line
 @update-pkg-docs pes_qlv2
+@update-pkg-docs pes_dqn
 @update-pkg-docs pes_transformer
 ```
 
