@@ -1,4 +1,3 @@
-````prompt
 # Run Bayesian Optimisation
 
 > Last updated: 2026-03-04
@@ -139,4 +138,3 @@ And useful monitoring commands:
 - If `$RESUME_DATE` is not specified, start a **fresh** run.
 - Do **not** modify any Python source files — this prompt only *launches*
   existing optimisation scripts.
-````
