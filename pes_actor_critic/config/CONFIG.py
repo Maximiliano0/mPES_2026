@@ -86,8 +86,9 @@ OUTPUT_FILE_PREFIX = 'PES_'    # Prefix for all output filenames
 # ==================== PLAYER & AGENT SETTINGS ====================
 PLAYER_TYPE = {  # Decision maker type - SELECT ONE
     1: 'RL_AGENT',     # Tabular Q-Learning agent (fallback / baseline comparison)
-    2: 'AC_AGENT'      # Advantage Actor-Critic (A2C) agent
-}[2]
+    2: 'DQN_AGENT',    # Deep Q-Network (experience replay + target net)
+    3: 'AC_AGENT'      # Advantage Actor-Critic (A2C) agent
+}[3]
 
 STARTING_BLOCK_INDEX = 0   # Resume from block index (0 = start from beginning)
 STARTING_SEQ_INDEX = 0   # Resume from sequence index (0 = start from beginning)

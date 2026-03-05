@@ -32,10 +32,11 @@ source "$VENV"
 # ── Resolver paquete desde primer argumento ──────────────────────
 resolve_package() {
     case "${1:-}" in
-        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_base_line"    ;;
-        qlv2|QLv2|QLVAL2|ql|2)           echo "pes_qlv2"         ;;
-        dqn|DQN|3)                        echo "pes_dqn"          ;;
-        transformer|tr|4)                 echo "pes_transformer"  ;;
+        pes_base_line|bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_base_line"       ;;
+        pes_qlv2|qlv2|QLv2|QLVAL2|ql|2)                echo "pes_qlv2"            ;;
+        pes_dqn|dqn|DQN|3)                              echo "pes_dqn"             ;;
+        pes_actor_critic|ac|a2c|actor-critic|4)         echo "pes_actor_critic"    ;;
+        pes_transformer|transformer|tr|5)                echo "pes_transformer"     ;;
         *) return 1 ;;
     esac
 }
@@ -44,7 +45,7 @@ resolve_package() {
 if [[ $# -lt 2 ]]; then
     echo "Uso: $0 <paquete> <pid1> [pid2] ..."
     echo ""
-    echo "  Paquetes: bayesian (pes_base_line), qlv2 (pes_qlv2), dqn (pes_dqn), transformer (pes_transformer)"
+    echo "  Paquetes: bayesian (pes_base_line), qlv2 (pes_qlv2), dqn (pes_dqn), ac (pes_actor_critic), transformer (pes_transformer)"
     echo ""
     echo "Ejemplo: nohup $0 bayesian 12345 &"
     exit 1
@@ -52,7 +53,7 @@ fi
 
 PKG_NAME="$(resolve_package "$1")" || {
     echo "Error: Paquete desconocido: '$1'"
-    echo "  Opciones válidas: bayesian, qlv2"
+    echo "  Opciones válidas: bayesian, qlv2, dqn, ac, transformer (o nombre completo del paquete)"
     exit 1
 }
 shift  # Quitar el primer argumento (paquete); quedan solo PIDs

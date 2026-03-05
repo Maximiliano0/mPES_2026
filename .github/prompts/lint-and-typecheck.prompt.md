@@ -8,7 +8,7 @@ issue in source code** until both tools report zero problems.
 ## Inputs
 
 - `$PACKAGE_DIR` — the package directory to check (e.g. `pes`, `pes_base_line`,
-  `pes_qlv2`, `pes_dqn`, `pes_transformer`, `utils`).
+  `pes_qlv2`, `pes_dqn`, `pes_actor_critic`, `pes_transformer`, `utils`).
   If omitted, infer the package from the file that was just edited.
 
 ## Workflow

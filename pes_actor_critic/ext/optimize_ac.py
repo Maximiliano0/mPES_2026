@@ -1,20 +1,20 @@
 '''
-pes_dqn - Pandemic Experiment Scenario
+pes_actor_critic - Pandemic Experiment Scenario
 
-Bayesian Optimization of DQN hyperparameters using Optuna.
+Bayesian Optimization of A2C hyperparameters using Optuna.
 
-Optimizes: learning_rate, discount_factor, epsilon_initial, epsilon_min,
-           num_episodes, hidden_units, batch_size, replay_buffer_size,
-           target_sync_freq, train_freq
+Optimizes: actor_lr, critic_lr, discount_factor, entropy_coeff,
+           epsilon_initial, epsilon_min, num_episodes, actor_hidden_dim,
+           critic_hidden_dim, n_hidden_layers
 Objective: maximize mean normalised performance over the 64 evaluation sequences.
 
 The evaluation uses infeasible-action masking (actions > available resources are
-suppressed before argmax) so that the metric matches the behaviour of the RL agent
+suppressed before argmax) so that the metric matches the behaviour of the AC agent
 in __main__.py.  The best model weights found during the search are preserved in
 memory and saved directly, avoiding a lossy re-training step.
 
 Usage:
-    python3 -m pes_dqn.ext.optimize_dqn [n_trials] [--resume YYYY-MM-DD]
+    python3 -m pes_actor_critic.ext.optimize_ac [n_trials] [--resume YYYY-MM-DD]
 
     n_trials : int, optional
         Number of Bayesian optimization trials (default: 30).
@@ -22,20 +22,19 @@ Usage:
         Resume a previous optimization run stored under that date.
 
 Search space:
-    learning_rate        ∈ [5e-4, 5e-3]         (log scale)
-    discount_factor      ∈ [0.85, 0.95]
+    actor_lr             ∈ [1e-4, 1e-2]         (log scale)
+    critic_lr            ∈ [1e-4, 1e-2]         (log scale)
+    discount_factor      ∈ [0.85, 0.99]
+    entropy_coeff        ∈ [0.001, 0.1]         (log scale)
     epsilon_initial      ∈ [0.50, 0.90]
     epsilon_min          ∈ [0.02, 0.10]
-    num_episodes         ∈ [50000, 300000]       (step=25000)
-    hidden_dim           ∈ [32, 64]             (step=32)
+    num_episodes         ∈ [50000, 1000000]      (step=50000)
+    actor_hidden_dim     ∈ [32, 64]             (step=32)
+    critic_hidden_dim    ∈ [32, 64]             (step=32)
     n_hidden_layers      ∈ {1, 2}
-    batch_size           ∈ {32, 64}
-    replay_buffer_size   ∈ [20000, 50000]       (step=10000)
-    target_sync_freq     ∈ [500, 1500]          (step=500)
-    train_freq           ∈ {2, 4}
 
 Outputs (saved to INPUTS_PATH/<date>_BAYESIAN_OPT/):
-    - dqn_best_<date>.keras            : Keras model from the best trial
+    - ac_best_<date>.keras             : Keras Actor model from the best trial
     - rewards_best_<date>.npy          : Reward history of the best training run
     - optimization_results_<date>.txt  : Full report (1-based trial #)
     - optimization_history_<date>.png  : Convergence plot (1-based trial #)
@@ -68,8 +67,8 @@ import tensorflow as tf  # noqa: E402  (after env var)
 ##########################
 ##  Imports internos    ##
 ##########################
-from .pandemic import Pandemic, run_experiment, DQNTraining
-from .dqn_model import build_q_network, normalize_state
+from .pandemic import Pandemic, run_experiment, A2CTraining
+from .ac_model import build_actor, normalize_state
 from ..src.terminal_utils import header, section, success, info, list_item
 from .tools import convert_globalseq_to_seqs
 from ..config.CONFIG import SEED
@@ -126,23 +125,23 @@ def _load_evaluation_data():
 ###################################
 def objective(trial: optuna.Trial) -> float:
     """
-    Optuna objective: train a DQN with sampled hyperparameters,
+    Optuna objective: train an A2C agent with sampled hyperparameters,
     evaluate on the fixed 64 sequences, and return mean normalised performance.
     """
     # --- Sample hyperparameters ---
-    learning_rate = trial.suggest_float('learning_rate', 5e-4, 5e-3, log=True)
-    discount_factor = trial.suggest_float('discount_factor', 0.85, 0.95)
+    actor_lr = trial.suggest_float('actor_lr', 1e-4, 1e-2, log=True)
+    critic_lr = trial.suggest_float('critic_lr', 1e-4, 1e-2, log=True)
+    discount_factor = trial.suggest_float('discount_factor', 0.85, 0.99)
+    entropy_coeff = trial.suggest_float('entropy_coeff', 0.001, 0.1, log=True)
     epsilon_initial = trial.suggest_float('epsilon_initial', 0.50, 0.90)
     epsilon_min = trial.suggest_float('epsilon_min', 0.02, 0.10)
-    num_episodes = trial.suggest_int('num_episodes', 50000, 300000, step=25000)
-    hidden_dim = trial.suggest_int('hidden_dim', 32, 64, step=32)
+    num_episodes = trial.suggest_int('num_episodes', 50000, 1000000, step=50000)
+    actor_hidden_dim = trial.suggest_int('actor_hidden_dim', 32, 64, step=32)
+    critic_hidden_dim = trial.suggest_int('critic_hidden_dim', 32, 64, step=32)
     n_hidden_layers = trial.suggest_int('n_hidden_layers', 1, 2)
-    batch_size = trial.suggest_categorical('batch_size', [32, 64])
-    replay_buffer_size = trial.suggest_int('replay_buffer_size', 20000, 50000, step=10000)
-    target_sync_freq = trial.suggest_int('target_sync_freq', 500, 1500, step=500)
-    train_freq = trial.suggest_categorical('train_freq', [2, 4])
 
-    hidden_units = [hidden_dim] * n_hidden_layers
+    actor_hidden = [actor_hidden_dim] * n_hidden_layers
+    critic_hidden = [critic_hidden_dim] * n_hidden_layers
 
     # --- Train ---
     env = Pandemic()
@@ -150,14 +149,12 @@ def objective(trial: optuna.Trial) -> float:
     env.severity_prob = _severity_prob  # type: ignore[assignment]
     env.verbose = False
 
-    rewards, model, _ = DQNTraining(
-        env, learning_rate, discount_factor,
+    rewards, actor_model, _ = A2CTraining(
+        env, actor_lr, critic_lr,
+        discount_factor, entropy_coeff,
         epsilon_initial, epsilon_min, num_episodes,
-        hidden_units=hidden_units,
-        batch_size=batch_size,
-        replay_buffer_size=replay_buffer_size,
-        target_sync_freq=target_sync_freq,
-        train_freq=train_freq,
+        actor_hidden=actor_hidden,
+        critic_hidden=critic_hidden,
         seed=SEED,
         compute_confidence=True,
     )
@@ -172,11 +169,14 @@ def objective(trial: optuna.Trial) -> float:
 
     def qf(_env, state, _seqid):
         s_norm = normalize_state(state, max_res, max_tri, max_sev)
-        q_vals = model(s_norm[numpy.newaxis, :], training=False)[0].numpy()
-        # Mask infeasible actions (consistent with dqn_agent_meta_cognitive)
-        o = numpy.arange(len(q_vals), dtype=numpy.float32)
-        q_vals[o > state[0]] = 0.00001
-        return int(numpy.argmax(q_vals))
+        probs = actor_model(s_norm[numpy.newaxis, :], training=False)[0].numpy()
+        # Mask infeasible actions (consistent with ac_agent_meta_cognitive)
+        o = numpy.arange(len(probs), dtype=numpy.float32)
+        probs[o > state[0]] = 0.0
+        total = numpy.sum(probs)
+        if total > 0:
+            probs = probs / total
+        return int(numpy.argmax(probs))
 
     _, perfs, _ = run_experiment(env_eval, qf, False, _trials_per_sequence, _sevs)
     mean_perf = float(numpy.mean(perfs))
@@ -190,8 +190,8 @@ def objective(trial: optuna.Trial) -> float:
     # Preserve the best model weights to avoid lossy retraining at the end
     global _best_artifacts
     if mean_perf > _best_artifacts['value']:
-        _best_artifacts['weights'] = model.get_weights()
-        _best_artifacts['hidden_units'] = hidden_units
+        _best_artifacts['weights'] = actor_model.get_weights()
+        _best_artifacts['hidden_units'] = actor_hidden
         _best_artifacts['rewards'] = list(rewards)
         _best_artifacts['value'] = mean_perf
 
@@ -214,7 +214,7 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
     report_file = os.path.join(opt_dir, f'optimization_results_{opt_date}.txt')
     with open(report_file, 'w', encoding='utf-8') as f:
         f.write("=" * 80 + "\n")
-        f.write("BAYESIAN OPTIMIZATION RESULTS — DQN HYPERPARAMETERS\n")
+        f.write("BAYESIAN OPTIMIZATION RESULTS — A2C HYPERPARAMETERS\n")
         f.write("=" * 80 + "\n\n")
         f.write(f"Date:              {opt_date}\n")
         f.write(f"Total trials:      {len(study.trials)}\n")
@@ -237,9 +237,9 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
         f.write("ALL TRIALS\n")
         f.write("-" * 80 + "\n")
         f.write(
-            f"{'#':>4s}  {'mean_perf':>10s}  {'lr':>10s}  "
-            f"{'gamma':>8s}  {'eps0':>6s}  {'eps_min':>7s}  "
-            f"{'episodes':>8s}  {'h_dim':>5s}  {'layers':>6s}\n"
+            f"{'#':>4s}  {'mean_perf':>10s}  {'a_lr':>10s}  "
+            f"{'c_lr':>10s}  {'gamma':>8s}  {'ent':>8s}  "
+            f"{'eps0':>6s}  {'eps_min':>7s}  {'episodes':>8s}\n"
         )
         f.write("-" * 80 + "\n")
         for t in sorted(study.trials, key=lambda t: t.value if t.value is not None else -1, reverse=True):
@@ -248,10 +248,10 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
             p = t.params
             f.write(
                 f"{t.number + 1:4d}  {t.value:10.6f}  "
-                f"{p['learning_rate']:10.6f}  {p['discount_factor']:8.4f}  "
+                f"{p['actor_lr']:10.6f}  {p['critic_lr']:10.6f}  "
+                f"{p['discount_factor']:8.4f}  {p['entropy_coeff']:8.5f}  "
                 f"{p['epsilon_initial']:6.3f}  {p['epsilon_min']:7.4f}  "
-                f"{p['num_episodes']:8d}  {p['hidden_dim']:5d}  "
-                f"{p['n_hidden_layers']:6d}\n"
+                f"{p['num_episodes']:8d}\n"
             )
 
     success(f"Report saved: optimization_results_{opt_date}.txt")
@@ -279,7 +279,7 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
             label='Best so far', zorder=4)
     ax.set_xlabel('Trial number', fontsize=12, fontweight='bold')
     ax.set_ylabel('Mean normalised performance', fontsize=12, fontweight='bold')
-    ax.set_title('Bayesian Optimisation: Convergence (DQN)', fontsize=14, fontweight='bold', pad=20)
+    ax.set_title('Bayesian Optimisation: Convergence (A2C)', fontsize=14, fontweight='bold', pad=20)
     ax.legend(loc='lower right', fontsize=11)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -296,7 +296,7 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.barh(names[::-1], values[::-1], color='#2ca02c', edgecolor='darkgreen', linewidth=0.5)
         ax.set_xlabel('Importance', fontsize=12, fontweight='bold')
-        ax.set_title('DQN Hyperparameter Importance', fontsize=14, fontweight='bold', pad=20)
+        ax.set_title('A2C Hyperparameter Importance', fontsize=14, fontweight='bold', pad=20)
         ax.grid(True, alpha=0.3, axis='x')
         plt.tight_layout()
         fig.savefig(os.path.join(opt_dir, f'hyperparameter_importances_{opt_date}.png'), dpi=150, bbox_inches='tight')
@@ -306,9 +306,9 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
         info(f"Could not compute importances: {e}")
 
     # --- Save best model and rewards ---
-    best_model.save(os.path.join(opt_dir, f'dqn_best_{opt_date}.keras'))
+    best_model.save(os.path.join(opt_dir, f'ac_best_{opt_date}.keras'))
     numpy.save(os.path.join(opt_dir, f'rewards_best_{opt_date}.npy'), best_rewards)
-    success(f"Best model saved: dqn_best_{opt_date}.keras")
+    success(f"Best Actor model saved: ac_best_{opt_date}.keras")
     success(f"Best rewards saved: rewards_best_{opt_date}.npy")
 
 
@@ -316,9 +316,9 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
 ##             Main              ##
 ###################################
 def main():
-    """Run Bayesian optimisation of DQN hyperparameters using Optuna."""
+    """Run Bayesian optimisation of A2C hyperparameters using Optuna."""
 
-    header("BAYESIAN OPTIMISATION — DQN HYPERPARAMETERS", width=80)
+    header("BAYESIAN OPTIMISATION — A2C HYPERPARAMETERS", width=80)
 
     # Parse arguments: [n_trials] [--resume YYYY-MM-DD]
     n_trials = 30
@@ -355,18 +355,17 @@ def main():
 
     # --- Run optimisation ---
     section("Running Bayesian Optimisation", width=80)
-    info("Search space (tightened for CPU):")
-    list_item("learning_rate        ∈ [5e-4, 5e-3]   (log scale)")
-    list_item("discount_factor      ∈ [0.85, 0.95]")
+    info("Search space:")
+    list_item("actor_lr             ∈ [1e-4, 1e-2]   (log scale)")
+    list_item("critic_lr            ∈ [1e-4, 1e-2]   (log scale)")
+    list_item("discount_factor      ∈ [0.85, 0.99]")
+    list_item("entropy_coeff        ∈ [0.001, 0.1]   (log scale)")
     list_item("epsilon_initial      ∈ [0.50, 0.90]")
     list_item("epsilon_min          ∈ [0.02, 0.10]")
-    list_item("num_episodes         ∈ [50000, 300000]   (step=25000)")
-    list_item("hidden_dim           ∈ [32, 64]  (step=32)")
+    list_item("num_episodes         ∈ [50000, 1000000]  (step=50000)")
+    list_item("actor_hidden_dim     ∈ [32, 64]  (step=32)")
+    list_item("critic_hidden_dim    ∈ [32, 64]  (step=32)")
     list_item("n_hidden_layers      ∈ {1, 2}")
-    list_item("batch_size           ∈ {32, 64}")
-    list_item("replay_buffer_size   ∈ [20000, 50000]  (step=10000)")
-    list_item("target_sync_freq     ∈ [500, 1500]  (step=500)")
-    list_item("train_freq           ∈ {2, 4}")
     print()
 
     # Suppress Optuna's verbose default logging
@@ -378,29 +377,28 @@ def main():
 
     study = optuna.create_study(
         direction='maximize',
-        study_name=f'dqn_opt_{opt_date}',
+        study_name=f'a2c_opt_{opt_date}',
         sampler=optuna.samplers.TPESampler(seed=42),
         storage=storage,
         load_if_exists=True,   # Resume from previous run if DB exists
     )
 
-    # Warm-start: enqueue the known-good defaults from train_dqn.py so
+    # Warm-start: enqueue the known-good defaults from train_ac.py so
     # that TPE has a strong baseline from trial #1.  If the study already
     # has completed trials (resume) this is harmless — Optuna deduplicates.
     completed = len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
     if completed == 0:
         study.enqueue_trial({
-            'learning_rate': 1e-3,
-            'discount_factor': 0.865,
+            'actor_lr': 3e-4,
+            'critic_lr': 1e-3,
+            'discount_factor': 0.99,
+            'entropy_coeff': 0.01,
             'epsilon_initial': 0.679,
             'epsilon_min': 0.085,
-            'num_episodes': 100000,  # within new range [50k, 300k]
-            'hidden_dim': 64,
+            'num_episodes': 100000,
+            'actor_hidden_dim': 64,
+            'critic_hidden_dim': 64,
             'n_hidden_layers': 2,
-            'batch_size': 32,
-            'replay_buffer_size': 50000,
-            'target_sync_freq': 1000,
-            'train_freq': 4,
         })
         info("Warm-start: known-good defaults enqueued as first trial")
 
@@ -427,11 +425,11 @@ def main():
         # Notificar cada 10 trials completados
         if done > 0 and done % 10 == 0:
             notify(
-                f"[pes_dqn] Progreso: {done}/{n_trials} trials",
-                f"Trials completados: {done}/{n_trials}\n"
-                f"Mejor mean_perf: {best_val:.4f}\n"
-                f"Ultimo trial: {trial.value:.4f}\n"
-                f"Tiempo: {elapsed / 60:.1f} min",
+                f"[{_PKG_NAME}] {done}/{n_trials} trials",
+                f"Se completaron {done} de {n_trials} trials.\n"
+                f"Mejor valor hasta ahora: {best_val:.6f}\n"
+                f"Último trial: value={trial.value:.4f}\n"
+                f"Tiempo transcurrido: {elapsed:.0f}s ({elapsed / 60:.1f} min)",
                 tags="chart_with_upwards_trend"
             )
 
@@ -463,41 +461,42 @@ def main():
     section("Best Model", width=80)
 
     bp = best.params
-    best_hidden = [bp['hidden_dim']] * bp['n_hidden_layers']
+    best_actor_hidden = [bp['actor_hidden_dim']] * bp['n_hidden_layers']
 
     if _best_artifacts['weights'] is not None and _best_artifacts['value'] >= best.value:
         # Reconstruct model and load cached weights
-        best_model = build_q_network(3, 11, _best_artifacts['hidden_units'])
+        best_model = build_actor(3, 11, _best_artifacts['hidden_units'])
         best_model(tf.zeros((1, 3)))  # build
         best_model.set_weights(_best_artifacts['weights'])
         best_rewards = numpy.array(_best_artifacts['rewards'])
-        success("Using model from best optimization trial (no retraining needed)")
+        success("Using Actor from best optimization trial (no retraining needed)")
     else:
         info("Retraining with best hyperparameters (resumed study, original weights not in memory)...")
+        best_critic_hidden = [bp['critic_hidden_dim']] * bp['n_hidden_layers']
+
         env_final = Pandemic()
         env_final.number_cities_prob = _number_cities_prob  # type: ignore[assignment]
         env_final.severity_prob = _severity_prob  # type: ignore[assignment]
         env_final.verbose = False
 
-        best_rewards_list, best_model, _ = DQNTraining(
+        best_rewards_list, best_model, _ = A2CTraining(
             env_final,
-            bp['learning_rate'],
+            bp['actor_lr'],
+            bp['critic_lr'],
             bp['discount_factor'],
+            bp['entropy_coeff'],
             bp['epsilon_initial'],
             bp['epsilon_min'],
             bp['num_episodes'],
-            hidden_units=best_hidden,
-            batch_size=bp['batch_size'],
-            replay_buffer_size=bp['replay_buffer_size'],
-            target_sync_freq=bp['target_sync_freq'],
-            train_freq=bp['train_freq'],
+            actor_hidden=best_actor_hidden,
+            critic_hidden=best_critic_hidden,
             seed=SEED,
             compute_confidence=True,
         )
         best_rewards = numpy.array(best_rewards_list)
         success(f"Retrained model (deterministic — seed = {SEED})")
 
-    list_item(f"Model parameters: {best_model.count_params()}")
+    list_item(f"Actor parameters: {best_model.count_params()}")
     print()
 
     # --- Save everything ---
@@ -510,31 +509,16 @@ def main():
     info(f"Output directory: {opt_dir}")
     print()
 
-    # --- Final push notification ---
-    notify(
-        "[pes_dqn] Optimizacion completa",
-        f"Trials: {total_completed}/{n_trials}\n"
-        f"Mejor mean_perf: {best.value:.4f}\n"
-        f"Best trial: #{best.number + 1}\n"
-        f"lr={bp['learning_rate']:.4f}  gamma={bp['discount_factor']:.3f}\n"
-        f"episodes={bp['num_episodes']}  hidden={best_hidden}\n"
-        f"Tiempo total: {elapsed_total / 60:.1f} min",
-        tags="white_check_mark"
-    )
-
 
 if __name__ == '__main__':
     try:
         main()
     except Exception as exc:
         import traceback
-        tb_text = traceback.format_exc()
-        # Truncate to keep the notification readable (no attachments)
-        if len(tb_text) > 500:
-            tb_text = tb_text[:250] + "\n...\n" + tb_text[-250:]
         notify(
-            "[pes_dqn] ERROR en optimizacion",
-            f"Error: {exc}\n\n{tb_text}",
+            f"[{_PKG_NAME}] ERROR en optimización",
+            f"Se produjo un error durante la optimización:\n\n"
+            f"{traceback.format_exc()}",
             priority="urgent", tags="rotating_light"
         )
         raise

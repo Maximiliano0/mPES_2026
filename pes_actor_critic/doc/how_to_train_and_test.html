@@ -1,0 +1,450 @@
+<h1>How to Train and Test the A2C Model</h1>
+<blockquote>
+<p>Package: <strong>pes_actor_critic</strong> — Advantage Actor-Critic variant of the Pandemic Experiment Scenario</p>
+</blockquote>
+<hr />
+<h2>Prerequisites</h2>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.12</td>
+</tr>
+<tr>
+<td>Virtual environment</td>
+<td><code>linux_mpes_env</code> (activate before every command)</td>
+</tr>
+<tr>
+<td>TensorFlow</td>
+<td>2.16.2 (CPU — no GPU required)</td>
+</tr>
+<tr>
+<td>Input data</td>
+<td><code>inputs/initial_severity.csv</code> and <code>inputs/sequence_lengths.csv</code></td>
+</tr>
+</tbody>
+</table>
+<p>Activate the environment once per terminal session:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">source</span> linux_mpes_env/bin/activate
+</code></pre></div>
+
+<hr />
+<h2>1. Training the A2C Agent</h2>
+<h3>1.1 Quick Start</h3>
+<div class="codehilite"><pre><span></span><code>python3 -m pes_actor_critic.ext.train_ac
+</code></pre></div>
+
+<p>This runs the <strong>full training pipeline</strong> with default settings (100 000 episodes).</p>
+<h3>1.2 Custom Episode Count</h3>
+<p>Pass the number of episodes as the first argument:</p>
+<div class="codehilite"><pre><span></span><code>python3 -m pes_actor_critic.ext.train_ac <span class="m">200000</span>
+</code></pre></div>
+
+<h3>1.3 What Happens During Training</h3>
+<p>The pipeline proceeds through these stages:</p>
+<ol>
+<li><strong>Load data</strong> — reads <code>initial_severity.csv</code> and <code>sequence_lengths.csv</code>
+   from <code>pes_actor_critic/inputs/</code>.</li>
+<li><strong>Random-player baseline</strong> — runs 64 evaluation sequences with a random
+   agent and saves performance plots.</li>
+<li><strong>A2C training</strong> — trains the Actor and Critic networks for the configured
+   number of episodes using on-policy batched updates with advantage
+   estimation, entropy bonus, and ε-greedy overlay with linear decay.</li>
+<li><strong>Save artefacts</strong> — writes the trained Actor Keras model (<code>.keras</code>),
+   reward history (<code>rewards.npy</code>), and a configuration summary to a dated
+   subdirectory.</li>
+<li><strong>Evaluate</strong> — runs the trained agent on the same 64 sequences and
+   generates performance, confidence, and cumulative-performance plots.</li>
+</ol>
+<h3>1.4 Training Output Files</h3>
+<p>All outputs are saved to <code>pes_actor_critic/inputs/&lt;YYYY-MM-DD&gt;_AC_TRAIN/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ac_actor_&lt;date&gt;.keras</code></td>
+<td>Trained Actor Keras model (date-stamped copy)</td>
+</tr>
+<tr>
+<td><code>rewards_&lt;date&gt;.npy</code></td>
+<td>Average reward every 10 000 episodes</td>
+</tr>
+<tr>
+<td><code>training_config_&lt;date&gt;.txt</code></td>
+<td>Full hyperparameter record</td>
+</tr>
+<tr>
+<td><code>random_player_*.png</code></td>
+<td>Baseline performance plots</td>
+</tr>
+<tr>
+<td><code>ac_agent_rewards_vs_episodes_&lt;date&gt;.png</code></td>
+<td>Reward convergence curve</td>
+</tr>
+<tr>
+<td><code>ac_agent_sequence_performance_&lt;date&gt;.png</code></td>
+<td>Final severity per sequence</td>
+</tr>
+<tr>
+<td><code>ac_agent_normalised_performance_&lt;date&gt;.png</code></td>
+<td>Normalised performance</td>
+</tr>
+<tr>
+<td><code>ac_agent_cumulative_performance_&lt;date&gt;.png</code></td>
+<td>Cumulative performance trend</td>
+</tr>
+<tr>
+<td><code>ac_agent_confidences_&lt;date&gt;.png</code></td>
+<td>Entropy-based confidence scores</td>
+</tr>
+</tbody>
+</table>
+<p>Additionally, the Actor model and rewards are <strong>copied</strong> to the standard
+paths consumed by the experiment runner:</p>
+<ul>
+<li><code>pes_actor_critic/inputs/ac_actor.keras</code></li>
+<li><code>pes_actor_critic/inputs/rewards.npy</code></li>
+</ul>
+<h3>1.5 Default Hyperparameters</h3>
+<p>These defaults are set in <code>config/CONFIG.py</code> and <code>ext/train_ac.py</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Actor hidden layers</td>
+<td><code>[64, 64]</code></td>
+<td><code>CONFIG.AC_ACTOR_HIDDEN_UNITS</code></td>
+</tr>
+<tr>
+<td>Critic hidden layers</td>
+<td><code>[64, 64]</code></td>
+<td><code>CONFIG.AC_CRITIC_HIDDEN_UNITS</code></td>
+</tr>
+<tr>
+<td>Actor learning rate</td>
+<td>3 × 10⁻⁴</td>
+<td><code>CONFIG.AC_ACTOR_LR</code></td>
+</tr>
+<tr>
+<td>Critic learning rate</td>
+<td>1 × 10⁻³</td>
+<td><code>CONFIG.AC_CRITIC_LR</code></td>
+</tr>
+<tr>
+<td>Entropy coefficient</td>
+<td>0.01</td>
+<td><code>CONFIG.AC_ENTROPY_COEFF</code></td>
+</tr>
+<tr>
+<td>Discount γ</td>
+<td>0.99</td>
+<td><code>CONFIG.AC_DISCOUNT</code></td>
+</tr>
+<tr>
+<td>Initial ε</td>
+<td>0.679</td>
+<td><code>train_ac.py</code></td>
+</tr>
+<tr>
+<td>Min ε</td>
+<td>0.085</td>
+<td><code>train_ac.py</code></td>
+</tr>
+<tr>
+<td>Episodes</td>
+<td>100 000</td>
+<td>CLI arg or default</td>
+</tr>
+<tr>
+<td>Random seed</td>
+<td>42</td>
+<td><code>CONFIG.SEED</code></td>
+</tr>
+</tbody>
+</table>
+<h3>1.6 Expected Training Time</h3>
+<p>On a modest CPU (e.g. Intel i3-6006U @ 2 GHz, 4 threads), approximately
+<strong>20–40 minutes</strong> for 100 000 episodes with CPU optimisations enabled
+(<code>@tf.function</code> compilation, no confidence computation during training,
+TensorFlow thread-pool tuning).  Training time scales linearly with
+episode count.</p>
+<p>A2C may be slightly slower than DQN per episode due to maintaining two
+networks and performing a full gradient update per episode (vs. DQN's
+periodic mini-batch updates).</p>
+<h3>1.7 CPU Training Optimisations</h3>
+<p>The following optimisations are active by default and require no
+configuration:</p>
+<table>
+<thead>
+<tr>
+<th>Optimisation</th>
+<th>Effect</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@tf.function</code> compiled training</td>
+<td>Eliminates eager overhead for per-episode updates</td>
+<td><code>ext/ac_model.py</code></td>
+</tr>
+<tr>
+<td>Skip confidence computation</td>
+<td><code>compute_confidence=False</code> skips entropy/masking per step</td>
+<td><code>ext/pandemic.py</code></td>
+</tr>
+<tr>
+<td>TF thread-pool tuning</td>
+<td><code>intra_op=0</code> (auto), <code>inter_op=2</code> for multi-core CPUs</td>
+<td><code>ext/ac_model.py</code></td>
+</tr>
+<tr>
+<td>OMP_NUM_THREADS</td>
+<td>Set to CPU core count before TF import</td>
+<td><code>__init__.py</code></td>
+</tr>
+<tr>
+<td>Actor-only inference</td>
+<td>Only Actor loaded at experiment time (Critic discarded)</td>
+<td><code>src/pygameMediator.py</code></td>
+</tr>
+</tbody>
+</table>
+<p>To re-enable confidence tracking during training (at slightly slower speed):</p>
+<div class="codehilite"><pre><span></span><code><span class="n">rewards</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">critic</span><span class="p">,</span> <span class="n">confs</span> <span class="o">=</span> <span class="n">A2CTraining</span><span class="p">(</span>
+    <span class="n">env</span><span class="p">,</span> <span class="n">actor_lr</span><span class="p">,</span> <span class="n">critic_lr</span><span class="p">,</span> <span class="n">discount</span><span class="p">,</span> <span class="n">entropy_coeff</span><span class="p">,</span>
+    <span class="n">eps</span><span class="p">,</span> <span class="n">min_eps</span><span class="p">,</span> <span class="n">episodes</span><span class="p">,</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">compute_confidence</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>   <span class="c1"># ← enables meta-cognitive observation</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<hr />
+<h2>2. Bayesian Hyperparameter Optimisation (Optional)</h2>
+<p>If the default hyperparameters are not satisfactory, you can run an
+automated search using Optuna:</p>
+<div class="codehilite"><pre><span></span><code>python3 -m pes_actor_critic.ext.optimize_ac <span class="m">30</span>
+</code></pre></div>
+
+<p>The integer argument is the number of trials (default: 30).</p>
+<h3>2.1 Resume a Previous Search</h3>
+<p>Optimisation state is stored in an SQLite database.  To resume:</p>
+<div class="codehilite"><pre><span></span><code>python3 -m pes_actor_critic.ext.optimize_ac <span class="m">50</span> --resume <span class="m">2026</span>-03-02
+</code></pre></div>
+
+<p>This loads the study from <code>inputs/&lt;date&gt;_BAYESIAN_OPT/optuna_study_&lt;date&gt;.db</code>
+and runs additional trials until the total reaches 50.</p>
+<h3>2.2 Optimisation Outputs</h3>
+<p>Saved to <code>pes_actor_critic/inputs/&lt;YYYY-MM-DD&gt;_BAYESIAN_OPT/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ac_best_&lt;date&gt;.keras</code></td>
+<td>Best Actor model found</td>
+</tr>
+<tr>
+<td><code>rewards_best_&lt;date&gt;.npy</code></td>
+<td>Reward history of the best trial</td>
+</tr>
+<tr>
+<td><code>optimization_results_&lt;date&gt;.txt</code></td>
+<td>Full report with all trial results</td>
+</tr>
+<tr>
+<td><code>optimization_history_&lt;date&gt;.png</code></td>
+<td>Convergence plot</td>
+</tr>
+<tr>
+<td><code>hyperparameter_importances_&lt;date&gt;.png</code></td>
+<td>Parameter importance ranking</td>
+</tr>
+<tr>
+<td><code>optuna_study_&lt;date&gt;.db</code></td>
+<td>SQLite database (resumable)</td>
+</tr>
+</tbody>
+</table>
+<h3>2.3 A2C-Specific Search Space</h3>
+<p>The A2C optimisation searches over 10 hyperparameters, including two
+separate learning rates (Actor and Critic) and an entropy coefficient —
+parameters that don't exist in the DQN search space.  Conversely, DQN
+parameters like <code>batch_size</code>, <code>replay_buffer_size</code>, and
+<code>target_sync_freq</code> are absent since A2C is on-policy.</p>
+<hr />
+<h2>3. Testing the A2C Agent (Running the Experiment)</h2>
+<h3>3.1 Verify Training Files Exist</h3>
+<p>Before running the experiment, ensure these files are present:</p>
+<div class="codehilite"><pre><span></span><code>pes_actor_critic/inputs/ac_actor.keras    ← trained Actor Keras model
+pes_actor_critic/inputs/rewards.npy       ← reward history
+</code></pre></div>
+
+<p>Both are automatically created by the training pipeline (§ 1).</p>
+<h3>3.2 Run the Experiment</h3>
+<div class="codehilite"><pre><span></span><code>python3 -m pes_actor_critic
+</code></pre></div>
+
+<p>This launches the full experiment lifecycle:</p>
+<ol>
+<li><strong>Validates</strong> the Actor model (loads it, checks parameter count and output
+   shape).</li>
+<li><strong>Sets up</strong> the experiment session with logging and dated output folders.</li>
+<li><strong>Iterates</strong> through 8 blocks × 8 sequences × 3–10 trials per sequence.</li>
+<li>At each trial, the A2C agent:</li>
+<li>Normalises the current state <code>(resources_left, trial_no, severity)</code> to
+     <code>[0, 1]³</code>.</li>
+<li>Performs a <strong>forward pass</strong> through the Actor to obtain
+     $\pi_\theta(a \mid s)$.</li>
+<li>Selects the action with the highest probability (masking infeasible
+     allocations where <code>action &gt; resources_left</code>).</li>
+<li>Computes <strong>meta-cognitive confidence</strong> from the entropy of the policy
+     distribution — a theoretically grounded measure.</li>
+<li>Simulates human-like <strong>response timing</strong> based on confidence.</li>
+<li><strong>Saves</strong> results (performance JSON, visualisation PNG, response logs) to
+   <code>pes_actor_critic/outputs/&lt;YYYY-MM-DD&gt;_AC_AGENT/</code>.</li>
+</ol>
+<h3>3.3 Experiment Outputs</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PES__&lt;session_id&gt;.txt</code></td>
+<td>Experiment configuration snapshot</td>
+</tr>
+<tr>
+<td><code>PES_responses_&lt;session_id&gt;.txt</code></td>
+<td>Trial-by-trial responses</td>
+</tr>
+<tr>
+<td><code>PES_log_&lt;session_id&gt;.txt</code></td>
+<td>Console log (dual-stream)</td>
+</tr>
+<tr>
+<td><code>PES_movement_log_&lt;session_id&gt;.npy</code></td>
+<td>Movement data</td>
+</tr>
+<tr>
+<td><code>PES_results_&lt;session_id&gt;.json</code></td>
+<td>Performance summary JSON</td>
+</tr>
+<tr>
+<td><code>PES_results_&lt;session_id&gt;.png</code></td>
+<td>Performance plots</td>
+</tr>
+</tbody>
+</table>
+<h3>3.4 Configuration</h3>
+<p>All experiment parameters are in <code>config/CONFIG.py</code>.  Key settings:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">PLAYER_TYPE</span> <span class="o">=</span> <span class="p">{</span>  <span class="c1"># Decision maker type - SELECT ONE</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;RL_AGENT&#39;</span><span class="p">,</span>     <span class="c1"># Tabular Q-Learning agent (fallback / baseline comparison)</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;DQN_AGENT&#39;</span><span class="p">,</span>    <span class="c1"># Deep Q-Network (experience replay + target net)</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="s1">&#39;AC_AGENT&#39;</span>      <span class="c1"># Advantage Actor-Critic (A2C) agent</span>
+<span class="p">}[</span><span class="mi">3</span><span class="p">]</span>                   <span class="c1"># &lt;-- change index to select</span>
+<span class="n">AC_MODEL_ACTOR_FILE</span> <span class="o">=</span> <span class="s1">&#39;ac_actor.keras&#39;</span>  <span class="c1"># Actor model filename in inputs/</span>
+<span class="n">NUM_BLOCKS</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">NUM_SEQUENCES</span> <span class="o">=</span> <span class="mi">8</span>
+</code></pre></div>
+
+<hr />
+<h2>4. Troubleshooting</h2>
+<h3>Model file not found</h3>
+<div class="codehilite"><pre><span></span><code>A2C Actor model file not found!
+Expected path: .../pes_actor_critic/inputs/ac_actor.keras
+</code></pre></div>
+
+<p><strong>Solution:</strong> Run training first:</p>
+<div class="codehilite"><pre><span></span><code>python3 -m pes_actor_critic.ext.train_ac
+</code></pre></div>
+
+<h3>Rewards file not found</h3>
+<p>Same as above — the training pipeline generates both <code>ac_actor.keras</code> and
+<code>rewards.npy</code>.</p>
+<h3>TensorFlow warnings</h3>
+<p>TensorFlow GPU/CUDA warnings are suppressed by default
+(<code>TF_CPP_MIN_LOG_LEVEL=3</code>).  If you still see them, they are harmless — the
+model runs on CPU.</p>
+<h3>Poor agent performance</h3>
+<ul>
+<li>Try increasing episodes: <code>python3 -m pes_actor_critic.ext.train_ac 200000</code></li>
+<li>Run Bayesian optimisation to find better hyperparameters:
+  <code>python3 -m pes_actor_critic.ext.optimize_ac 50</code></li>
+<li>Adjust <code>AC_ENTROPY_COEFF</code> in <code>CONFIG.py</code> — higher values encourage more
+  exploration, lower values favour exploitation.</li>
+<li>Check that <code>CONFIG.SEED = 42</code> for reproducible results.</li>
+</ul>
+<h3>Slow training on CPU</h3>
+<p>The default configuration is already optimised for CPU.  If training is
+still too slow:</p>
+<ul>
+<li>Reduce episode count: <code>python3 -m pes_actor_critic.ext.train_ac 50000</code></li>
+<li>Verify <code>compute_confidence=False</code> is set (default) in <code>train_ac.py</code></li>
+<li>Check that <code>OMP_NUM_THREADS</code> is set to your CPU core count
+  (auto-configured in <code>__init__.py</code>)</li>
+</ul>
+<h3>Actor vs. Critic model confusion</h3>
+<p>Only the <strong>Actor</strong> model (<code>ac_actor.keras</code>) is needed for the experiment.
+The Critic is used only during training and is not saved to the standard
+inputs path.</p>
+<hr />
+<h2>5. Quick Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Activate environment</td>
+<td><code>source linux_mpes_env/bin/activate</code></td>
+</tr>
+<tr>
+<td>Train A2C (default)</td>
+<td><code>python3 -m pes_actor_critic.ext.train_ac</code></td>
+</tr>
+<tr>
+<td>Train A2C (custom)</td>
+<td><code>python3 -m pes_actor_critic.ext.train_ac 200000</code></td>
+</tr>
+<tr>
+<td>Optimise hyperparams</td>
+<td><code>python3 -m pes_actor_critic.ext.optimize_ac 30</code></td>
+</tr>
+<tr>
+<td>Resume optimisation</td>
+<td><code>python3 -m pes_actor_critic.ext.optimize_ac 50 --resume YYYY-MM-DD</code></td>
+</tr>
+<tr>
+<td>Run experiment</td>
+<td><code>python3 -m pes_actor_critic</code></td>
+</tr>
+</tbody>
+</table>

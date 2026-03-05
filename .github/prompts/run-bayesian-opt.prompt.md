@@ -8,7 +8,7 @@ watcher that commits+pushes results when the process finishes.
 ## Inputs
 
 - `$PACKAGE` — the target package.
-  Valid values: `pes_base_line`, `pes_qlv2`, `pes_dqn`, `pes_transformer`.
+  Valid values: `pes_base_line`, `pes_qlv2`, `pes_dqn`, `pes_actor_critic`, `pes_transformer`.
 - `$N_TRIALS` — number of optimisation trials (default: **30**).
 - `$RESUME_DATE` *(optional)* — `YYYY-MM-DD` date string to resume a previous
   run stored under that date.
@@ -22,7 +22,8 @@ Each package has its own optimisation module:
 | `pes_base_line` | `pes_base_line.ext.optimize_rl` | `bayesian`, `bay`, `1` |
 | `pes_qlv2` | `pes_qlv2.ext.optimize_rl` | `qlv2`, `ql`, `2` |
 | `pes_dqn` | `pes_dqn.ext.optimize_dqn` | `dqn`, `3` |
-| `pes_transformer` | `pes_transformer.ext.optimize_tr` | `transformer`, `tr`, `4` |
+| `pes_actor_critic` | `pes_actor_critic.ext.optimize_ac` | `ac`, `a2c`, `actor-critic`, `4` |
+| `pes_transformer` | `pes_transformer.ext.optimize_tr` | `transformer`, `tr`, `5` |
 
 If the user provides an alias instead of the full package name, resolve it
 using the table above.
@@ -54,13 +55,28 @@ LOG_DIR="${PKG}/inputs"
 mkdir -p "$LOG_DIR"
 ```
 
-### Step 3 — Prevent system suspension
+### Step 3 — Prevent system suspension and shutdown
 
-Disable GNOME lid-close suspension so the laptop stays awake:
+Disable GNOME lid-close suspension, screen blanking, automatic suspend,
+and idle-triggered shutdown so the laptop stays awake and running:
 
 ```bash
+# Lid close → do nothing (AC and battery)
 gsettings set org.gnome.settings-daemon.plugins.power lid-close-ac-action 'nothing'
+gsettings set org.gnome.settings-daemon.plugins.power lid-close-battery-action 'nothing'
+
+# Disable automatic suspend on AC and battery
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
+
+# Disable screen blanking / screen lock
+gsettings set org.gnome.desktop.session idle-delay 0
+gsettings set org.gnome.desktop.screensaver lock-enabled false
 ```
+
+> **Note:** these settings persist across sessions.  The prompt does **not**
+> restore them automatically — the user should revert them manually after
+> the optimisation finishes if desired.
 
 ### Step 4 — Launch the optimisation
 
@@ -80,18 +96,20 @@ OPT_PID=$!
 
 Report the PID and log path to the user.
 
-### Step 5 — Launch the suspend inhibitor
+### Step 5 — Launch the suspend and shutdown inhibitor
 
-Keep the system awake while the optimisation is running:
+Keep the system awake and block shutdown while the optimisation is running:
 
 ```bash
 nohup systemd-inhibit \
-    --what=idle:sleep:handle-lid-switch \
+    --what=idle:sleep:shutdown:handle-lid-switch \
     --who="mPES Bayesian Optimization ($PKG)" \
     --why="Running $N_TRIALS-trial Bayesian optimization" \
     --mode=block \
     tail --pid=$OPT_PID -f /dev/null > /dev/null 2>&1 &
 ```
+
+This inhibit lock is automatically released when `$OPT_PID` exits.
 
 ### Step 6 — Launch the watcher
 

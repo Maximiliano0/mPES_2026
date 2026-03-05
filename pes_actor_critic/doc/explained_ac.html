@@ -1,0 +1,757 @@
+<h1>Mapeo Teoría Actor-Critic (A2C) ↔ Implementación en pes_actor_critic</h1>
+<h2>1. Introducción</h2>
+<p>Este documento conecta la <strong>teoría de Advantage Actor-Critic (A2C)</strong> con su
+<strong>implementación concreta</strong> en el paquete <code>pes_actor_critic</code>.  Para cada
+concepto teórico se indica la variable, función o línea de código
+correspondiente.</p>
+<p><code>pes_actor_critic</code> reemplaza la red DQN de <code>pes_dqn</code> (y la tabla Q tabular
+de <code>pes</code> / <code>pes_base_line</code>) por <strong>dos redes neuronales separadas</strong>:</p>
+<ul>
+<li>un <strong>Actor</strong> $\pi_\theta(a \mid s)$ que produce directamente una
+  distribución de probabilidad sobre las acciones, y</li>
+<li>un <strong>Critic</strong> $V_\phi(s)$ que estima el valor del estado actual.</li>
+</ul>
+<p>Conserva el mismo entorno Gym (<code>Pandemic</code>), el mismo espacio de estados y
+acciones, y la misma integración con la UI de Pygame.</p>
+<hr />
+<h2>2. Componentes del MDP (heredados de <code>pes</code>)</h2>
+<p>El MDP subyacente es idéntico al del paquete base:</p>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Símbolo</th>
+<th>Implementación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Estados</td>
+<td>$S$</td>
+<td><code>(resources_left, trial_no, severity)</code> — 3 dimensiones discretas</td>
+</tr>
+<tr>
+<td>Acciones</td>
+<td>$A$</td>
+<td>${0, 1, 2, \dots, 10}$ — recursos a asignar</td>
+</tr>
+<tr>
+<td>Transiciones</td>
+<td>$P(s' \mid s, a)$</td>
+<td>Determinísticas: <code>env.step(action)</code> en <code>pandemic.py</code></td>
+</tr>
+<tr>
+<td>Recompensas</td>
+<td>$R(s, a)$</td>
+<td>$-\sum_{i} \text{severities}_i$</td>
+</tr>
+<tr>
+<td>Factor de descuento</td>
+<td>$\gamma$</td>
+<td><code>AC_DISCOUNT</code> (por defecto 0.99 en <code>CONFIG.py</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cardinalidad del espacio de estados</strong> (con <code>MAX_SEVERITY = 9</code>):</p>
+<p>$$|S| = 31 \times 11 \times 10 = 3{,}410 \text{ estados}$$</p>
+<hr />
+<h2>3. ¿Por qué Actor-Critic en lugar de DQN?</h2>
+<h3>3.1 Filosofía del Enfoque</h3>
+<p>DQN aprende una <strong>función de valor-acción</strong> $Q(s, a)$ y deriva la política
+de forma implícita como $\pi(s) = \arg\max_a Q(s, a)$.  Actor-Critic
+aprende <strong>explícitamente</strong> una política $\pi_\theta(a \mid s)$ junto con
+una función de valor de estado $V_\phi(s)$, combinando las ventajas de
+métodos basados en política y basados en valor.</p>
+<h3>3.2 Comparación</h3>
+<table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>DQN (<code>pes_dqn</code>)</th>
+<th>A2C (<code>pes_actor_critic</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Representación de la política</td>
+<td>Implícita: $\arg\max_a Q(s, a)$</td>
+<td>Explícita: $\pi_\theta(a \mid s)$</td>
+</tr>
+<tr>
+<td>Salida de la red</td>
+<td>Q-values para todas las acciones</td>
+<td>Actor: probabilidades; Critic: valor escalar</td>
+</tr>
+<tr>
+<td>Tipo de aprendizaje</td>
+<td>Off-policy (replay buffer)</td>
+<td>On-policy (sin replay buffer)</td>
+</tr>
+<tr>
+<td>Exploración</td>
+<td>ε-greedy sobre Q-values</td>
+<td>Muestreo de $\pi_\theta$ + ε-greedy overlay</td>
+</tr>
+<tr>
+<td>Estabilidad</td>
+<td>Target network</td>
+<td>Ventaja centrada (Advantage)</td>
+</tr>
+<tr>
+<td>Confianza meta-cognitiva</td>
+<td>Heurística (entropía de Q-values)</td>
+<td>Teóricamente fundamentada (entropía de $\pi$)</td>
+</tr>
+<tr>
+<td>Nº de redes</td>
+<td>2 (online + target)</td>
+<td>2 (Actor + Critic)</td>
+</tr>
+</tbody>
+</table>
+<h3>3.3 Ventaja Teórica de la Confianza en A2C</h3>
+<p>En <code>pes_dqn</code>, la "confianza" del agente se calcula como la entropía de
+los Q-values normalizados — una heurística, ya que los Q-values <strong>no son
+una distribución de probabilidad</strong>.</p>
+<p>En <code>pes_actor_critic</code>, la salida del Actor $\pi_\theta(a \mid s)$ <strong>es</strong> una
+distribución de probabilidad (softmax), por lo que la entropía tiene un
+significado teórico preciso:</p>
+<p>$$H(\pi_\theta(\cdot \mid s)) = -\sum_{a} \pi_\theta(a \mid s) \log \pi_\theta(a \mid s)$$</p>
+<ul>
+<li>$H$ bajo → el agente está <strong>seguro</strong> (la distribución se concentra en
+  pocas acciones).</li>
+<li>$H$ alto → el agente está <strong>inseguro</strong> (la distribución es casi uniforme).</li>
+</ul>
+<hr />
+<h2>4. Arquitectura de las Redes Neuronales</h2>
+<h3>4.1 Actor (Red de Política)</h3>
+<p>Implementada en <code>ext/ac_model.py</code> → <code>build_actor()</code>:</p>
+<div class="codehilite"><pre><span></span><code>Input  (3)  →  Dense(64, ReLU)  →  Dense(64, ReLU)  →  Dense(11, softmax)
+               hidden_units[0]     hidden_units[1]     action_dim
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="n">model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Actor&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,)))</span>
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">units</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hidden_units</span><span class="p">):</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
+        <span class="n">units</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;actor_hidden_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
+    <span class="n">action_dim</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;softmax&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;policy&quot;</span><span class="p">))</span>
+</code></pre></div>
+
+<p>La capa de salida <strong>softmax</strong> garantiza que $\sum_a \pi_\theta(a \mid s) = 1$
+y $\pi_\theta(a \mid s) \ge 0$, produciendo una distribución de
+probabilidad válida.</p>
+<p><strong>Parámetros</strong> (con <code>AC_ACTOR_HIDDEN_UNITS = [64, 64]</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Forma</th>
+<th>Parámetros</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>actor_hidden_0</code></td>
+<td>3 → 64</td>
+<td>$3 \times 64 + 64 = 256$</td>
+</tr>
+<tr>
+<td><code>actor_hidden_1</code></td>
+<td>64 → 64</td>
+<td>$64 \times 64 + 64 = 4{,}160$</td>
+</tr>
+<tr>
+<td><code>policy</code></td>
+<td>64 → 11</td>
+<td>$64 \times 11 + 11 = 715$</td>
+</tr>
+<tr>
+<td><strong>Total Actor</strong></td>
+<td></td>
+<td><strong>5 131</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>4.2 Critic (Red de Valor de Estado)</h3>
+<p>Implementada en <code>ext/ac_model.py</code> → <code>build_critic()</code>:</p>
+<div class="codehilite"><pre><span></span><code>Input  (3)  →  Dense(64, ReLU)  →  Dense(64, ReLU)  →  Dense(1, linear)
+               hidden_units[0]     hidden_units[1]     scalar value
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="n">model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Critic&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">state_dim</span><span class="p">,)))</span>
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">units</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hidden_units</span><span class="p">):</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
+        <span class="n">units</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;critic_hidden_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">))</span>
+</code></pre></div>
+
+<p>La capa de salida <strong>lineal</strong> permite que $V_\phi(s)$ tome cualquier valor
+real (las recompensas del entorno son negativas).</p>
+<p><strong>Parámetros</strong> (con <code>AC_CRITIC_HIDDEN_UNITS = [64, 64]</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Forma</th>
+<th>Parámetros</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>critic_hidden_0</code></td>
+<td>3 → 64</td>
+<td>$3 \times 64 + 64 = 256$</td>
+</tr>
+<tr>
+<td><code>critic_hidden_1</code></td>
+<td>64 → 64</td>
+<td>$64 \times 64 + 64 = 4{,}160$</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>64 → 1</td>
+<td>$64 \times 1 + 1 = 65$</td>
+</tr>
+<tr>
+<td><strong>Total Critic</strong></td>
+<td></td>
+<td><strong>4 481</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>4.3 Total de Parámetros</h3>
+<p>$$|Θ_\text{total}| = |Θ_\text{Actor}| + |Θ_\text{Critic}| = 5{,}131 + 4{,}481 = 9{,}612$$</p>
+<p>Comparado con DQN (5 131 parámetros), A2C usa ~1.87× más parámetros, pero
+la mitad (Critic) solo se necesita durante entrenamiento; en inferencia
+solo se usa el Actor.</p>
+<h3>4.4 Normalización del Estado</h3>
+<p>Antes de alimentar las redes, el estado entero se escala a $[0, 1]^3$:</p>
+<p>$$\hat{s} = \left(\frac{r}{30},\; \frac{t}{10},\; \frac{v}{9}\right)$$</p>
+<p>Implementada en <code>ext/ac_model.py</code> → <code>normalize_state()</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_resources</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>   <span class="c1"># resources / 30</span>
+    <span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_trials</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>      <span class="c1"># trial / 10</span>
+    <span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_severity</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>    <span class="c1"># severity / 9</span>
+<span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</code></pre></div>
+
+<hr />
+<h2>5. Fundamento Teórico: Policy Gradient y Advantage</h2>
+<h3>5.1 El Teorema del Gradiente de Política</h3>
+<p>El objetivo del Actor es maximizar el retorno esperado:</p>
+<p>$$J(\theta) = \mathbb{E}<em>{\tau \sim \pi</em>\theta} \left[ \sum_{t=0}^{T} \gamma^t r_t \right]$$</p>
+<p>El <strong>Teorema del Gradiente de Política</strong> (Sutton et al., 1999) establece
+que:</p>
+<p>$$\nabla_\theta J(\theta) = \mathbb{E}<em>{\pi</em>\theta} \left[ \nabla_\theta \log \pi_\theta(a_t \mid s_t) \cdot \Psi_t \right]$$</p>
+<p>donde $\Psi_t$ es una señal de refuerzo genérica.  En REINFORCE,
+$\Psi_t = G_t$ (retorno desde $t$), lo que produce alta varianza.</p>
+<h3>5.2 La Función de Ventaja (Advantage)</h3>
+<p>Actor-Critic reduce la varianza reemplazando $G_t$ por la <strong>ventaja</strong>
+(<em>advantage</em>):</p>
+<p>$$A(s_t, a_t) = Q(s_t, a_t) - V(s_t)$$</p>
+<p>La ventaja mide cuánto <strong>mejor (o peor)</strong> fue la acción $a_t$ respecto al
+valor promedio del estado $s_t$.  Usando la aproximación TD(0):</p>
+<p>$$\hat{A}(s_t, a_t) = r_t + \gamma V_\phi(s_{t+1}) \cdot (1 - d_t) - V_\phi(s_t)$$</p>
+<p>donde $d_t \in {0, 1}$ indica si el episodio terminó.</p>
+<p>Esta señal tiene <strong>media cero</strong> en expectativa, lo que reduce drásticamente
+la varianza del gradiente respecto a REINFORCE.</p>
+<h3>5.3 Intuición</h3>
+<ul>
+<li>Si $A &gt; 0$: la acción fue <strong>mejor</strong> que el promedio → aumentar
+  $\pi_\theta(a_t \mid s_t)$.</li>
+<li>Si $A &lt; 0$: la acción fue <strong>peor</strong> que el promedio → disminuir
+  $\pi_\theta(a_t \mid s_t)$.</li>
+<li>Si $A \approx 0$: la acción fue <strong>típica</strong> → cambio mínimo.</li>
+</ul>
+<hr />
+<h2>6. Funciones de Pérdida</h2>
+<h3>6.1 Pérdida del Critic (MSE sobre TD Target)</h3>
+<p>El Critic se entrena para minimizar el error entre su predicción y el
+<em>target</em> de diferencia temporal:</p>
+<p>$$y_t = r_t + \gamma \cdot V_\phi(s_{t+1}) \cdot (1 - d_t)$$</p>
+<p>$$\mathcal{L}<em t="1">\text{Critic} = \frac{1}{N} \sum</em>^{N} \left( V_\phi(s_t) - y_t \right)^2$$</p>
+<p><strong>Nota:</strong> $y_t$ se calcula con <code>tf.stop_gradient()</code> para que los gradientes
+del Critic no fluyan hacia los targets, asegurando estabilidad.</p>
+<h3>6.2 Pérdida del Actor (Policy Gradient + Entropía)</h3>
+<p>El Actor se actualiza siguiendo el gradiente de política con ventaja,
+<strong>más</strong> un bono de entropía que incentiva la exploración:</p>
+<p>$$\mathcal{L}<em t="1">\text{Actor} = -\frac{1}{N} \sum</em>^{N} \left[ \log \pi_\theta(a_t \mid s_t) \cdot \hat{A}<em>t \right] - c</em>\text{ent} \cdot H(\pi_\theta)$$</p>
+<p>donde:</p>
+<ul>
+<li>$\log \pi_\theta(a_t \mid s_t)$: log-probabilidad de la acción tomada.</li>
+<li>$\hat{A}<em>t = y_t - V</em>\phi(s_t)$: ventaja estimada (detached del Actor).</li>
+<li>$c_\text{ent}$: coeficiente de entropía (<code>AC_ENTROPY_COEFF</code>, default 0.01).</li>
+<li>$H(\pi_\theta) = -\sum_a \pi_\theta(a \mid s) \log \pi_\theta(a \mid s)$:
+  entropía de la política.</li>
+</ul>
+<p>El signo negativo delante del primer término convierte el <strong>ascenso</strong> de
+gradiente de política en una <strong>minimización</strong> compatible con
+<code>optimizer.apply_gradients()</code>.</p>
+<h3>6.3 Implementación</h3>
+<p><code>ext/ac_model.py</code> → <code>train_step_actor_critic()</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+<span class="k">def</span> <span class="nf">train_step_actor_critic</span><span class="p">(</span><span class="n">actor</span><span class="p">,</span> <span class="n">critic</span><span class="p">,</span> <span class="n">actor_optimizer</span><span class="p">,</span> <span class="n">critic_optimizer</span><span class="p">,</span>
+                            <span class="n">states</span><span class="p">,</span> <span class="n">actions</span><span class="p">,</span> <span class="n">rewards</span><span class="p">,</span> <span class="n">next_states</span><span class="p">,</span> <span class="n">dones</span><span class="p">,</span>
+                            <span class="n">discount</span><span class="p">,</span> <span class="n">entropy_coeff</span><span class="p">):</span>
+    <span class="c1"># --- Critic update ---</span>
+    <span class="n">next_values</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">critic</span><span class="p">(</span><span class="n">next_states</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">td_targets</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="n">discount</span> <span class="o">*</span> <span class="n">next_values</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span>
+    <span class="n">td_targets</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stop_gradient</span><span class="p">(</span><span class="n">td_targets</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">GradientTape</span><span class="p">()</span> <span class="k">as</span> <span class="n">critic_tape</span><span class="p">:</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">critic</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">critic_loss</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_mean</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">values</span> <span class="o">-</span> <span class="n">td_targets</span><span class="p">))</span>
+
+    <span class="n">critic_grads</span> <span class="o">=</span> <span class="n">critic_tape</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span>
+        <span class="n">critic_loss</span><span class="p">,</span> <span class="n">critic</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
+    <span class="n">critic_optimizer</span><span class="o">.</span><span class="n">apply_gradients</span><span class="p">(</span>
+        <span class="nb">zip</span><span class="p">(</span><span class="n">critic_grads</span><span class="p">,</span> <span class="n">critic</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">))</span>
+
+    <span class="c1"># --- Actor update ---</span>
+    <span class="n">advantages</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stop_gradient</span><span class="p">(</span><span class="n">td_targets</span> <span class="o">-</span> <span class="n">values</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">GradientTape</span><span class="p">()</span> <span class="k">as</span> <span class="n">actor_tape</span><span class="p">:</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="n">actor</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">action_mask</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">one_hot</span><span class="p">(</span><span class="n">actions</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">probs</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">chosen_probs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">probs</span> <span class="o">*</span> <span class="n">action_mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">log_probs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">chosen_probs</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
+        <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span>
+            <span class="n">probs</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">probs</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">actor_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">tf</span><span class="o">.</span><span class="n">reduce_mean</span><span class="p">(</span>
+            <span class="n">log_probs</span> <span class="o">*</span> <span class="n">advantages</span> <span class="o">+</span> <span class="n">entropy_coeff</span> <span class="o">*</span> <span class="n">entropy</span><span class="p">)</span>
+
+    <span class="n">actor_grads</span> <span class="o">=</span> <span class="n">actor_tape</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span>
+        <span class="n">actor_loss</span><span class="p">,</span> <span class="n">actor</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
+    <span class="n">actor_optimizer</span><span class="o">.</span><span class="n">apply_gradients</span><span class="p">(</span>
+        <span class="nb">zip</span><span class="p">(</span><span class="n">actor_grads</span><span class="p">,</span> <span class="n">actor</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">))</span>
+
+    <span class="n">mean_entropy</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_mean</span><span class="p">(</span><span class="n">entropy</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">actor_loss</span><span class="p">,</span> <span class="n">critic_loss</span><span class="p">,</span> <span class="n">mean_entropy</span>
+</code></pre></div>
+
+<p><strong>Notas de implementación</strong>:</p>
+<ul>
+<li><code>train_step_actor_critic</code> <strong>sí</strong> lleva <code>@tf.function</code> porque A2C no
+  usa experience replay; los episodios se procesan secuencialmente con
+  arquitecturas fijas, evitando el problema de re-tracing que afecta a DQN
+  con Optuna.</li>
+<li><code>tf.stop_gradient(td_targets)</code> evita que los gradientes del Critic
+  fluyan hacia los targets (estabilidad).</li>
+<li><code>tf.stop_gradient(td_targets - values)</code> evita que el gradiente del Actor
+  fluya hacia el Critic.</li>
+<li><code>+ 1e-8</code> previene $\log(0)$ en estados donde la política es casi
+  determinística.</li>
+</ul>
+<hr />
+<h2>7. Exploración: ε-Greedy Overlay + Muestreo de Política</h2>
+<h3>7.1 Política de Exploración</h3>
+<p>A diferencia de DQN (que usa ε-greedy puro sobre Q-values), A2C tiene
+exploración <strong>intrínseca</strong> dado que muestrea de $\pi_\theta$.  Sin embargo,
+para asegurar exploración suficiente al inicio del entrenamiento, se añade
+un <strong>overlay ε-greedy</strong>:</p>
+<p>$$a_t =
+\begin{cases}
+a \sim \pi_\theta(\cdot \mid s_t) &amp; \text{con probabilidad } 1 - \varepsilon \
+\text{acción aleatoria factible} &amp; \text{con probabilidad } \varepsilon
+\end{cases}$$</p>
+<h3>7.2 Decaimiento Lineal</h3>
+<p>$$\varepsilon_{i+1} = \max(\varepsilon_{\min},\; \varepsilon_i - \Delta)$$</p>
+<p>donde $\Delta = (\varepsilon_0 - \varepsilon_{\min}) / N_{\text{episodes}}$.</p>
+<p>Implementado en <code>ext/pandemic.py</code> → <code>A2CTraining()</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">reduction</span> <span class="o">=</span> <span class="p">(</span><span class="n">epsilon</span> <span class="o">-</span> <span class="n">min_eps</span><span class="p">)</span> <span class="o">/</span> <span class="n">episodes</span>
+
+<span class="c1"># Al final de cada episodio:</span>
+<span class="k">if</span> <span class="n">epsilon</span> <span class="o">&gt;</span> <span class="n">min_eps</span><span class="p">:</span>
+    <span class="n">epsilon</span> <span class="o">-=</span> <span class="n">reduction</span>
+</code></pre></div>
+
+<h3>7.3 Bono de Entropía</h3>
+<p>Adicionalmente, el término de entropía en $\mathcal{L}<em>\text{Actor}$ actúa
+como un <strong>regularizador de exploración</strong> a nivel de gradiente: si
+$c</em>\text{ent} &gt; 0$, el optimizador penaliza distribuciones demasiado
+concentradas, incentivando la diversificación de acciones aun cuando
+ε ya sea bajo.</p>
+<hr />
+<h2>8. Bucle de Entrenamiento Completo</h2>
+<p><code>ext/pandemic.py</code> → <code>A2CTraining()</code>:</p>
+<div class="codehilite"><pre><span></span><code>Para cada episodio i = 1 … N:
+    env.random_sequence()          ← secuencia aleatoria
+    state = env.reset()
+
+    batch_states, batch_actions, batch_rewards,
+    batch_next_states, batch_dones = [], [], [], [], []
+
+    Mientras no done:
+        1. Normalizar estado:     s_norm = normalize_state(state, 30, 10, 9)
+        2. Selección con ε-overlay:
+              - Con prob ε  → acción aleatoria factible
+              - Con prob 1-ε → a ~ π_θ(· | s_norm)
+        3. (Opcional) Meta-cognición: confidence = ac_agent_meta_cognitive(π(·|s), ...)
+        4. Paso del entorno:      s&#39;, r, done = env.step(action)
+        5. Almacenar transición en batch de episodio:
+              batch_states.append(s_norm)
+              batch_actions.append(action)
+              batch_rewards.append(r)
+              batch_next_states.append(s&#39;_norm)
+              batch_dones.append(done)
+
+    ── Fin del episodio ──
+    6. Convertir batch a tensores:
+         states_t, actions_t, rewards_t, next_t, dones_t = cast_to_tensors(batch)
+    7. Actualizar Actor y Critic:
+         actor_loss, critic_loss, entropy = train_step_actor_critic(
+             actor, critic, actor_opt, critic_opt,
+             states_t, actions_t, rewards_t, next_t, dones_t,
+             discount, entropy_coeff)
+    8. Decaer ε
+
+    Cada 10 000 episodios:
+        ─ Imprimir recompensa promedio
+
+    Retornar (ave_reward_list, actor, critic, conf_list)
+</code></pre></div>
+
+<h3>8.1 Diferencia Clave: On-Policy vs. Off-Policy</h3>
+<table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>DQN (off-policy)</th>
+<th>A2C (on-policy)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Buffer</td>
+<td>Replay buffer de 50 000 transiciones</td>
+<td>Sin buffer; batch por episodio</td>
+</tr>
+<tr>
+<td>Reutilización de datos</td>
+<td>Cada transición se muestrea múltiples veces</td>
+<td>Cada transición se usa exactamente una vez</td>
+</tr>
+<tr>
+<td>Actualización</td>
+<td>Cada 4 env steps (mini-batch del buffer)</td>
+<td>Al final de cada episodio (batch completo)</td>
+</tr>
+<tr>
+<td>Correlación temporal</td>
+<td>Eliminada por muestreo aleatorio</td>
+<td>Presente dentro del episodio</td>
+</tr>
+<tr>
+<td>Eficiencia de datos</td>
+<td>Alta (reutilización)</td>
+<td>Baja (un solo uso)</td>
+</tr>
+<tr>
+<td>Estabilidad del gradiente</td>
+<td>Target network</td>
+<td>Advantage centrada + entropía</td>
+</tr>
+</tbody>
+</table>
+<h3>8.2 Parámetro <code>compute_confidence</code></h3>
+<p>Al igual que <code>DQNTraining()</code>, <code>A2CTraining()</code> acepta <code>compute_confidence</code>
+(por defecto <code>False</code>).  Cuando está desactivado, se omite la llamada a
+<code>ac_agent_meta_cognitive()</code> durante entrenamiento, ahorrando cómputo.</p>
+<p>En A2C la meta-cognición <strong>no</strong> requiere un forward pass adicional: la
+distribución $\pi_\theta(a \mid s)$ ya se calculó para la selección de
+acción.  Sin embargo, la función <code>ac_agent_meta_cognitive()</code> realiza
+operaciones adicionales (enmascaramiento de acciones, cálculo de entropía,
+normalización) que se pueden omitir durante entrenamiento intensivo.</p>
+<hr />
+<h2>9. Optimización Bayesiana de Hiperparámetros</h2>
+<p><code>ext/optimize_ac.py</code> utiliza <strong>Optuna</strong> (TPE sampler) para buscar
+hiperparámetros óptimos del A2C.</p>
+<h3>9.1 Espacio de Búsqueda</h3>
+<table>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Rango</th>
+<th>Tipo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>actor_lr</code></td>
+<td>$[10^{-4},\; 10^{-2}]$</td>
+<td>log-uniforme</td>
+</tr>
+<tr>
+<td><code>critic_lr</code></td>
+<td>$[10^{-4},\; 10^{-2}]$</td>
+<td>log-uniforme</td>
+</tr>
+<tr>
+<td><code>discount_factor</code></td>
+<td>$[0.85,\; 0.99]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>entropy_coeff</code></td>
+<td>$[10^{-3},\; 10^{-1}]$</td>
+<td>log-uniforme</td>
+</tr>
+<tr>
+<td><code>epsilon_initial</code></td>
+<td>$[0.50,\; 0.90]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>epsilon_min</code></td>
+<td>$[0.02,\; 0.10]$</td>
+<td>uniforme</td>
+</tr>
+<tr>
+<td><code>num_episodes</code></td>
+<td>$[50\,000,\; 1\,000\,000]$</td>
+<td>entero (paso 50k)</td>
+</tr>
+<tr>
+<td><code>actor_hidden_dim</code></td>
+<td>$[32,\; 64]$</td>
+<td>entero (paso 32)</td>
+</tr>
+<tr>
+<td><code>critic_hidden_dim</code></td>
+<td>$[32,\; 64]$</td>
+<td>entero (paso 32)</td>
+</tr>
+<tr>
+<td><code>n_hidden_layers</code></td>
+<td>${1, 2}$</td>
+<td>categórico</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Diferencias frente al espacio de DQN:</strong></p>
+<ul>
+<li>A2C tiene <strong>dos learning rates</strong> (Actor y Critic) en lugar de uno solo.</li>
+<li>Se añade <code>entropy_coeff</code> — ausente en DQN.</li>
+<li>No existen <code>batch_size</code>, <code>replay_buffer_size</code>, ni <code>target_sync_freq</code>
+  (conceptos exclusivos de DQN off-policy).</li>
+</ul>
+<h3>9.2 Función Objetivo</h3>
+<p>Se entrena un agente A2C con los hiperparámetros sugeridos y se evalúa
+en las <strong>64 secuencias fijas</strong> (las mismas que usa <code>__main__.py</code>).  El score
+reportado a Optuna es el <strong>rendimiento normalizado medio</strong> (a maximizar),
+calculado con <code>calculate_normalised_final_severity_performance_metric()</code>.</p>
+<h3>9.3 Warm-Start</h3>
+<p>La búsqueda comienza con un <strong>trial semilla</strong> usando los valores por defecto
+de <code>CONFIG.py</code>, asegurando que al menos un trial alcance un rendimiento
+razonable:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">warm_start</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;actor_lr&quot;</span><span class="p">:</span> <span class="mf">3e-4</span><span class="p">,</span>
+    <span class="s2">&quot;critic_lr&quot;</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span>
+    <span class="s2">&quot;discount_factor&quot;</span><span class="p">:</span> <span class="mf">0.99</span><span class="p">,</span>
+    <span class="s2">&quot;entropy_coeff&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+    <span class="s2">&quot;epsilon_initial&quot;</span><span class="p">:</span> <span class="mf">0.679</span><span class="p">,</span>
+    <span class="s2">&quot;epsilon_min&quot;</span><span class="p">:</span> <span class="mf">0.085</span><span class="p">,</span>
+    <span class="s2">&quot;num_episodes&quot;</span><span class="p">:</span> <span class="mi">100000</span><span class="p">,</span>
+    <span class="s2">&quot;actor_hidden_dim&quot;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+    <span class="s2">&quot;critic_hidden_dim&quot;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+    <span class="s2">&quot;n_hidden_layers&quot;</span><span class="p">:</span> <span class="mi">2</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<hr />
+<h2>10. Inferencia en Tiempo de Experimento</h2>
+<h3>10.1 Carga del Modelo Actor</h3>
+<p><code>src/pygameMediator.py</code> → <code>provide_ac_agent_response()</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Solo se carga el <strong>Actor</strong> — el Critic no es necesario en inferencia.</p>
+<h3>10.2 Selección de Acción</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">s_norm</span> <span class="o">=</span> <span class="n">normalize_state</span><span class="p">([</span><span class="n">resources_left</span><span class="p">,</span> <span class="n">city_trial_no</span><span class="p">,</span> <span class="n">severity</span><span class="p">],</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+<span class="n">policy_probs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">s_norm</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:],</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="n">action</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">policy_probs</span><span class="p">))</span>
+</code></pre></div>
+
+<p>A diferencia de DQN (que toma $\arg\max$ de Q-values), aquí se toma
+$\arg\max$ de $\pi_\theta(a \mid s)$ — la acción más probable bajo la
+política aprendida.  Se aplica enmascaramiento de acciones infactibles
+(<code>action &gt; resources_left</code>) estableciendo su probabilidad a 0 antes del
+argmax.</p>
+<h3>10.3 Confianza Meta-Cognitiva</h3>
+<p>El vector $\pi_\theta(a \mid s)$ (11 probabilidades) se pasa a
+<code>ac_agent_meta_cognitive()</code> que calcula entropía y la normaliza:</p>
+<p>$$H(\pi_\theta(\cdot \mid s)) = -\sum_{a=0}^{10} \pi_\theta(a \mid s) \log \pi_\theta(a \mid s)$$</p>
+<p>$$\text{confidence} = \frac{H - H_\text{max}}{H_\text{min} - H_\text{max}}$$</p>
+<p>donde $H_\text{min}$ y $H_\text{max}$ se calculan sobre las acciones
+factibles únicamente.</p>
+<hr />
+<h2>11. Comparación con Algoritmos Anteriores</h2>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th><code>pes</code> (Q-tabular)</th>
+<th><code>pes_dqn</code> (DQN)</th>
+<th><code>pes_actor_critic</code> (A2C)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modelo</td>
+<td><code>numpy.ndarray</code> (q.npy)</td>
+<td>Red 5 131 params (.keras)</td>
+<td>Actor 5 131 + Critic 4 481 params</td>
+</tr>
+<tr>
+<td>Update</td>
+<td>$Q(s,a) \leftarrow Q + \alpha[r + \gamma \max Q - Q]$</td>
+<td>Huber loss + replay</td>
+<td>Policy gradient + MSE + entropía</td>
+</tr>
+<tr>
+<td>Datos</td>
+<td>Un paso → un update</td>
+<td>Replay buffer → mini-batch</td>
+<td>Batch de episodio → un update</td>
+</tr>
+<tr>
+<td>Política</td>
+<td>Implícita ($\arg\max Q$)</td>
+<td>Implícita ($\arg\max Q$)</td>
+<td>Explícita ($\pi_\theta$)</td>
+</tr>
+<tr>
+<td>Confianza</td>
+<td>Entropía de Q (heurística)</td>
+<td>Entropía de Q (heurística)</td>
+<td>Entropía de $\pi$ (teórica)</td>
+</tr>
+<tr>
+<td>Exploración</td>
+<td>ε-greedy</td>
+<td>ε-greedy</td>
+<td>Muestreo de $\pi$ + ε-overlay + entropía bonus</td>
+</tr>
+<tr>
+<td>Episodios típicos</td>
+<td>900 000</td>
+<td>100 000</td>
+<td>100 000+</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>12. Optimizaciones para CPU</h2>
+<h3>12.1 <code>@tf.function</code> Compilada</h3>
+<p><code>train_step_actor_critic</code> usa <code>@tf.function</code> para compilar el grafo de
+actualización de Actor y Critic.  Esto elimina el overhead de eager mode
+que sería particularmente costoso dado que A2C realiza una actualización
+por episodio (vs. cada 4 steps en DQN).</p>
+<h3>12.2 Eliminación del Forward Pass de Confianza</h3>
+<p>El parámetro <code>compute_confidence=False</code> (por defecto) omite el cálculo
+de meta-cognición durante entrenamiento.  En A2C esto no ahorra un
+forward pass adicional (a diferencia de DQN), pero sí evita el cómputo
+de entropía, enmascaramiento, y normalización por step.</p>
+<h3>12.3 Configuración de Hilos TensorFlow</h3>
+<p>Al importar <code>ext/ac_model.py</code> se configuran los pools de hilos de TF:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">tf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">threading</span><span class="o">.</span><span class="n">set_intra_op_parallelism_threads</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>   <span class="c1"># auto-detect</span>
+<span class="n">tf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">threading</span><span class="o">.</span><span class="n">set_inter_op_parallelism_threads</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Además, <code>OMP_NUM_THREADS</code> se configura en <code>__init__.py</code> al número de
+cores disponibles antes de importar TensorFlow.</p>
+<h3>12.4 Solo el Actor en Inferencia</h3>
+<p>Durante el experimento (<code>__main__.py</code>), solo se carga y ejecuta el Actor.
+El Critic se descarta tras el entrenamiento, reduciendo la memoria en
+inferencia a ~50 % del total.</p>
+<hr />
+<h2>13. Estructura de Archivos</h2>
+<div class="codehilite"><pre><span></span><code><span class="n">pes_actor_critic</span><span class="o">/</span><span class="w"></span>
+<span class="err">├──</span><span class="w"> </span><span class="n">__init__</span><span class="o">.</span><span class="n">py</span><span class="w">              </span><span class="c1"># Exporta constantes AC_*; configura OMP_NUM_THREADS</span><span class="w"></span>
+<span class="err">├──</span><span class="w"> </span><span class="n">__main__</span><span class="o">.</span><span class="n">py</span><span class="w">              </span><span class="c1"># Valida ac_actor.keras antes de ejecutar</span><span class="w"></span>
+<span class="err">├──</span><span class="w"> </span><span class="n">config</span><span class="o">/</span><span class="n">CONFIG</span><span class="o">.</span><span class="n">py</span><span class="w">         </span><span class="c1"># 8 constantes AC_*</span><span class="w"></span>
+<span class="err">├──</span><span class="w"> </span><span class="n">ext</span><span class="o">/</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">ac_model</span><span class="o">.</span><span class="n">py</span><span class="w">          </span><span class="c1"># build_actor, build_critic, normalize_state,</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">                        </span><span class="c1">#   train_step_actor_critic (@tf.function);</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">                        </span><span class="c1">#   configura tf.config.threading al importar</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">pandemic</span><span class="o">.</span><span class="n">py</span><span class="w">          </span><span class="c1"># Entorno Gym + A2CTraining(compute_confidence=False)</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">train_ac</span><span class="o">.</span><span class="n">py</span><span class="w">          </span><span class="c1"># Pipeline de entrenamiento autónomo</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">optimize_ac</span><span class="o">.</span><span class="n">py</span><span class="w">       </span><span class="c1"># Búsqueda Bayesiana con Optuna</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">tools</span><span class="o">.</span><span class="n">py</span><span class="w">             </span><span class="c1"># Entropía, gráficas (sin cambios)</span><span class="w"></span>
+<span class="err">├──</span><span class="w"> </span><span class="n">src</span><span class="o">/</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">pygameMediator</span><span class="o">.</span><span class="n">py</span><span class="w">    </span><span class="c1"># Carga ac_actor.keras, forward pass en experimento</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">exp_utils</span><span class="o">.</span><span class="n">py</span><span class="w">         </span><span class="c1"># Severidades, secuencias</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">log_utils</span><span class="o">.</span><span class="n">py</span><span class="w">         </span><span class="c1"># Logging dual</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">result_formatter</span><span class="o">.</span><span class="n">py</span><span class="w">  </span><span class="c1"># Gráficas matplotlib</span><span class="w"></span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">terminal_utils</span><span class="o">.</span><span class="n">py</span><span class="w">    </span><span class="c1"># UI de consola Rich</span><span class="w"></span>
+<span class="err">└──</span><span class="w"> </span><span class="n">doc</span><span class="o">/</span><span class="w"></span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">explained_ac</span><span class="o">.</span><span class="n">md</span><span class="w">              </span><span class="c1"># ← este documento</span><span class="w"></span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">how_to_train_and_test</span><span class="o">.</span><span class="n">md</span><span class="w">     </span><span class="c1"># Guía práctica de entrenamiento y pruebas</span><span class="w"></span>
+</code></pre></div>
+
+<hr />
+<h2>14. Formulario Resumen de Ecuaciones</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Ecuación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Objetivo del Actor</td>
+<td>$J(\theta) = \mathbb{E}<em>{\pi</em>\theta}\left[\sum_t \gamma^t r_t\right]$</td>
+</tr>
+<tr>
+<td>Gradiente de Política</td>
+<td>$\nabla_\theta J = \mathbb{E}\left[\nabla_\theta \log \pi_\theta(a \mid s) \cdot \hat{A}\right]$</td>
+</tr>
+<tr>
+<td>Ventaja (Advantage)</td>
+<td>$\hat{A}<em>t = r_t + \gamma V</em>\phi(s_{t+1})(1 - d_t) - V_\phi(s_t)$</td>
+</tr>
+<tr>
+<td>TD Target</td>
+<td>$y_t = r_t + \gamma V_\phi(s_{t+1})(1 - d_t)$</td>
+</tr>
+<tr>
+<td>Pérdida del Critic</td>
+<td>$\mathcal{L}<em>\text{C} = \frac{1}{N}\sum_t (V</em>\phi(s_t) - y_t)^2$</td>
+</tr>
+<tr>
+<td>Pérdida del Actor</td>
+<td>$\mathcal{L}<em>\text{A} = -\frac{1}{N}\sum_t [\log \pi</em>\theta(a_t \mid s_t) \hat{A}<em>t] - c</em>\text{ent} H(\pi_\theta)$</td>
+</tr>
+<tr>
+<td>Entropía</td>
+<td>$H(\pi) = -\sum_a \pi(a \mid s) \log \pi(a \mid s)$</td>
+</tr>
+<tr>
+<td>Decaimiento ε</td>
+<td>$\varepsilon_{i+1} = \max(\varepsilon_\min, \varepsilon_i - \Delta)$</td>
+</tr>
+<tr>
+<td>Normalización</td>
+<td>$\hat{s} = (r/30, t/10, v/9)$</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>15. Referencias</h2>
+<ol>
+<li>Sutton, R. S. et al. (1999). <em>Policy gradient methods for reinforcement
+   learning with function approximation</em>. NeurIPS.</li>
+<li>Mnih, V. et al. (2016). <em>Asynchronous methods for deep reinforcement
+   learning</em>. ICML.  (Introduce A3C; A2C es la variante síncrona.)</li>
+<li>Williams, R. J. (1992). <em>Simple statistical gradient-following
+   algorithms for connectionist reinforcement learning</em>. Machine Learning,
+   8(3-4), 229–256.  (REINFORCE.)</li>
+<li>Kingma, D. P. &amp; Ba, J. (2015). <em>Adam: A Method for Stochastic
+   Optimization</em>. ICLR 2015.</li>
+<li>Akiba, T. et al. (2019). <em>Optuna: A next-generation hyperparameter
+   optimization framework</em>. KDD '19.</li>
+</ol>

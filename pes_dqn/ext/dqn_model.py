@@ -213,7 +213,6 @@ def normalize_state(state, max_resources: int,
 # ---------------------------------------------------------------------------
 #  Compiled training step
 # ---------------------------------------------------------------------------
-@tf.function
 def train_step(online_model: tf.keras.Model,
                target_model: tf.keras.Model,
                optimizer: tf.keras.optimizers.Optimizer,
@@ -227,6 +226,12 @@ def train_step(online_model: tf.keras.Model,
 
     Uses the Huber loss (smooth L1) between the online Q-values at the
     selected actions and the TD targets computed from the *target* network.
+
+    This function is **not** decorated with ``@tf.function`` at the
+    module level because Optuna calls ``DQNTraining`` multiple times
+    with different model/optimizer instances.  Each trial wraps this
+    function via ``tf.function`` locally so the traced graph is
+    scoped to a single optimisation trial.
 
     Parameters
     ----------

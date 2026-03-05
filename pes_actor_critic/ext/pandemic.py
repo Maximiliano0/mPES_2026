@@ -1,24 +1,26 @@
 '''
-pes_dqn - Pandemic Experiment Scenario: Gym Environment and DQN Training
+pes_actor_critic - Pandemic Experiment Scenario: Gym Environment and A2C Training
 
 Provides the core simulation components:
 
 - **Pandemic** (gym.Env):  OpenAI Gym environment that models a pandemic
   resource-allocation problem.  State = (resources_left, trial_no, severity);
   action = resources to allocate (0-10).
-- **dqn_agent_meta_cognitive**:  Entropy-based meta-cognitive function that
-  computes confidence and simulated response times from Q-values.
+- **ac_agent_meta_cognitive**:  Actor-policy-based meta-cognitive function that
+  computes confidence and simulated response times from the Actor's π(a|s)
+  probability distribution (a theoretically grounded entropy measure).
 - **run_experiment**:  Runs multiple sequences through the environment using
   any action-selection function and collects performance metrics.
-- **DQNTraining**:  Deep Q-Network training loop with experience replay,
-  target network, epsilon-greedy exploration, and optional seed for
-  reproducibility.
+- **A2CTraining**:  Advantage Actor-Critic training loop with on-policy
+  updates, entropy regularisation, epsilon-greedy exploration overlay,
+  and optional seed for reproducibility.
 
 Network architecture
 --------------------
 ::
 
-    Input(3)  →  Dense(64, ReLU)  →  Dense(64, ReLU)  →  Dense(11, linear)
+    Actor:   Input(3)  →  Dense(64, ReLU)  →  Dense(64, ReLU)  →  Dense(11, softmax)
+    Critic:  Input(3)  →  Dense(64, ReLU)  →  Dense(64, ReLU)  →  Dense(1, linear)
 
 State normalisation: [resources/30, trial/10, severity/9] → [0, 1]³.
 '''
@@ -40,8 +42,8 @@ from .. import MAX_ALLOCATABLE_RESOURCES
 from .. import NUM_MAX_TRIALS
 
 from .tools import entropy_from_pdf
-from .dqn_model import (ReplayBuffer, build_q_network, normalize_state,
-                        train_step, sync_target_network)
+from .ac_model import (build_actor, build_critic, normalize_state,
+                       train_step_actor_critic)
 from ..src.exp_utils import get_updated_severity
 from ..src.exp_utils import calculate_normalised_final_severity_performance_metric
 
@@ -350,15 +352,7 @@ class Pandemic(Env):
 
         self.severity_evolution[self.severity_city_counter][:len(self.severities)] = self.severities
 
-        # if self.verbose:
-        #     print(f"\n[DEBUG] pandemic.step() - Trial {self.iteration}")
-        #     print(f"[DEBUG]   Action (resources allocated): {action}")
-        #     print(f"[DEBUG]   Severities before update: {['%.2f' % s for s in self.severities]}")
-
         self.severities = get_updated_severity(len(self.severities), self.resources, self.severities)
-
-        # if self.verbose:
-        #     print(f"[DEBUG]   Severities after update:  {['%.2f' % s for s in self.severities]}")
 
         self.severity_city_counter = self.severity_city_counter + 1
 
@@ -383,17 +377,26 @@ class Pandemic(Env):
         return [self.available_resources, self.iteration, int(new_severity)], reward, done, False, {}  # type: ignore[override]
 
 
-def dqn_agent_meta_cognitive(options, resources_left, response_timeout):
+def ac_agent_meta_cognitive(policy_probs, resources_left, response_timeout):
     """
-    Compute meta-cognitive confidence and response time estimates from DQN Q-values.
+    Compute meta-cognitive confidence and response time estimates from Actor policy output.
 
-    Evaluates the entropy of action Q-values to determine agent confidence
-    and maps that confidence to human-like response times (reaction hold and release times).
+    Unlike Q-Learning or DQN (which compute entropy over Q-values — a heuristic),
+    this function uses the Actor's π(a|s) output **directly**.  Since π(a|s) is
+    already a proper probability distribution, its entropy is a theoretically
+    grounded measure of decision uncertainty.
+
+    Confidence formula::
+
+        confidence = 1 - (H(π_feasible) / H_max)
+
+    where H_max = log₂(n_actions) and H(π_feasible) is the Shannon entropy of
+    the policy restricted to feasible actions (allocation ≤ resources_left).
 
     Parameters
     ----------
-    options : array-like
-        Q-values for available actions from the DQN forward pass.  Shape: ``(n_actions,)``.
+    policy_probs : array-like
+        Action probabilities from the Actor's softmax output.  Shape: ``(n_actions,)``.
     resources_left : int
         Number of resources remaining.
     response_timeout : float
@@ -402,9 +405,9 @@ def dqn_agent_meta_cognitive(options, resources_left, response_timeout):
     Returns
     -------
     response : int
-        The selected action (argmax of feasible Q-values).
+        The selected action (argmax of feasible probabilities).
     confidence : float
-        Normalised confidence score based on entropy (range: typically 0–1).
+        Normalised confidence score based on entropy (range: typically 0-1).
         Lower entropy → higher confidence.
     rt_hold : float
         Response time for button hold phase (in seconds).
@@ -413,38 +416,44 @@ def dqn_agent_meta_cognitive(options, resources_left, response_timeout):
 
     Notes
     -----
-    - Confidence is calculated as: ``(entropy - min_entropy) / (max_entropy - min_entropy)``
-    - Response times are sampled from normal distributions parameterised by confidence.
+    - Infeasible actions (allocation > resources_left) are set to a tiny value
+      before entropy computation and action selection.
+    - Confidence is computed as the normalised inverse of entropy based on the
+      min/max entropy reference distributions.
+    - Response times are sampled from normal distributions parameterised by
+      confidence.
     - Both *rt_hold* and *rt_release* are clipped to ``[0, response_timeout / 1000]``.
     """
 
+    # Ensure we work with a numpy copy
+    probs = numpy.array(policy_probs, dtype=numpy.float64).flatten()
+
     # Min entropy from a univalue distribution (0)
-    m_entropy = numpy.zeros((len(options),),)
+    m_entropy = numpy.zeros((len(probs),),)
     m_entropy[0] = 1
 
     # Max entropy from a uniform distribution (3.55....)
-    M_entropy = numpy.ones((len(options),),)
+    M_entropy = numpy.ones((len(probs),),)
 
-    # Calculate the entropy of the options distribution
-    _entrp1 = entropy_from_pdf(options)
+    # Calculate the entropy of the raw policy distribution
+    _entrp1 = entropy_from_pdf(probs)
 
-    o = [i for i in range(len(options))]
-    o = numpy.asarray(o, dtype=numpy.float32)
+    o = numpy.arange(len(probs), dtype=numpy.float32)
 
     # Set options that are not feasible (greater than resources left)
     # to a very small value to avoid them being selected
-    options[o > resources_left] = 0.00001
+    probs[o > resources_left] = 0.00001
 
     # available resources, trial, severity
-    dec_entropy = entropy_from_pdf(options)
+    dec_entropy = entropy_from_pdf(probs)
     M_entropy = entropy_from_pdf(M_entropy)
     m_entropy = entropy_from_pdf(m_entropy)
 
     # Calculate confidence as a normalized inverse of entropy
     confidence = (1. / (m_entropy - M_entropy)) * (dec_entropy - M_entropy)
 
-    # Select the action with the highest Q-value as the response
-    response = numpy.argmax(options)
+    # Select the action with the highest probability as the response
+    response = numpy.argmax(probs)
 
     # Map confidence to response times using a linear transformation
     def map_to_response_time(x): return x * (-2) + 1
@@ -539,56 +548,53 @@ def run_experiment(env, actionfunction, RandomSequences=True,
     return seqs, perfs, seq_ev
 
 
-def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
-                hidden_units, batch_size, replay_buffer_size, target_sync_freq,
-                train_freq=4, seed=None, compute_confidence=False):
+def A2CTraining(env, actor_lr, critic_lr, discount, entropy_coeff,
+                epsilon, min_eps, episodes,
+                actor_hidden, critic_hidden,
+                seed=None, compute_confidence=False):
     """
-    Train a Deep Q-Network agent on the Pandemic environment.
+    Train an Advantage Actor-Critic (A2C) agent on the Pandemic environment.
 
-    Uses experience replay, a frozen target network, and ε-greedy exploration
-    with linear decay.  The online network is updated every *train_freq* steps
-    via mini-batch gradient descent (Huber loss); the target network is
-    hard-copied from the online network every *target_sync_freq* gradient
-    steps.
+    Uses on-policy updates — each transition is used to update both the Actor
+    (policy network) and the Critic (value network) immediately within the
+    episode.  An ε-greedy overlay is maintained for additional exploration
+    during early training, with linear decay.
 
     Parameters
     ----------
     env : Pandemic
         Gym environment instance.
-    learning_rate : float
-        Adam optimiser learning rate.
+    actor_lr : float
+        Adam optimiser learning rate for the Actor.
+    critic_lr : float
+        Adam optimiser learning rate for the Critic.
     discount : float
         Discount factor γ ∈ (0, 1].
+    entropy_coeff : float
+        Weight for the entropy bonus in the Actor loss.
     epsilon : float
         Initial exploration rate ε₀.
     min_eps : float
         Minimum exploration rate ε_min.
     episodes : int
         Total number of training episodes.
-    hidden_units : list of int
-        Widths of the hidden dense layers (e.g. ``[64, 64]``).
-    batch_size : int
-        Mini-batch size for experience-replay training.
-    replay_buffer_size : int
-        Maximum number of transitions stored in the replay buffer.
-    target_sync_freq : int
-        Gradient steps between hard target-network updates.
-    train_freq : int, optional
-        Environment steps between gradient updates.  Default: 4.
+    actor_hidden : list of int
+        Widths of the hidden dense layers for the Actor (e.g. ``[64, 64]``).
+    critic_hidden : list of int
+        Widths of the hidden dense layers for the Critic (e.g. ``[64, 64]``).
     seed : int or None, optional
         Random seed for full reproducibility.  Default: ``None``.
     compute_confidence : bool, optional
-        When ``True``, run an extra forward pass every environment step
-        to record meta-cognitive confidence values.  **Disabling this
-        (default) halves the number of forward passes during training,
-        which roughly doubles training speed on CPU.**  Default: ``False``.
+        When ``True``, run an extra forward pass every step to record
+        meta-cognitive confidence values.  **Disabling this (default)
+        reduces computation during training.**  Default: ``False``.
 
     Returns
     -------
     ave_reward_list : list of float
         Average reward computed every 10 000 episodes.
-    model : tf.keras.Model
-        Trained online Q-network.
+    actor_model : tf.keras.Model
+        Trained Actor (policy) network.
     conf_list : list of float
         Meta-cognitive confidence values (one per environment step).
         Empty list when *compute_confidence* is ``False``.
@@ -597,12 +603,12 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
     -----
     - ε decays linearly from *epsilon* to *min_eps* over *episodes*.
     - The state vector is normalised to [0, 1]³ before being fed to the
-      network (see :func:`dqn_model.normalize_state`).
+      networks (see :func:`ac_model.normalize_state`).
     - The function prints average reward every 10 000 episodes to track
       convergence.
-    - Setting *compute_confidence* to ``False`` eliminates the second
-      forward pass per step that was previously used solely for
-      meta-cognitive observation.
+    - A2C performs on-policy updates: each transition (s, a, r, s', done)
+      is used **once** to update both Actor and Critic via
+      :func:`ac_model.train_step_actor_critic`.
     """
 
     # ----- Reproducibility -----
@@ -619,26 +625,16 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
     max_sev = env.severity_states - 1                  # 9
 
     # ----- Networks -----
-    online_model = build_q_network(state_dim, action_dim, hidden_units)
-    target_model = build_q_network(state_dim, action_dim, hidden_units)
+    actor_model = build_actor(state_dim, action_dim, actor_hidden)
+    critic_model = build_critic(state_dim, critic_hidden)
 
     # Build both networks with a dummy forward pass
     _dummy = tf.zeros((1, state_dim))
-    online_model(_dummy)
-    target_model(_dummy)
+    actor_model(_dummy)
+    critic_model(_dummy)
 
-    sync_target_network(online_model, target_model)
-
-    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-
-    # Per-trial JIT-compiled training step.
-    # A fresh tf.function wrapper is created for each call to DQNTraining
-    # so that the traced graph (and optimizer tf.Variables) do not leak
-    # between Optuna trials.
-    compiled_train_step = tf.function(train_step)
-
-    # ----- Replay buffer -----
-    buffer = ReplayBuffer(replay_buffer_size)
+    actor_optimizer = tf.keras.optimizers.Adam(learning_rate=actor_lr)
+    critic_optimizer = tf.keras.optimizers.Adam(learning_rate=critic_lr)
 
     # ----- Tracking -----
     reward_list: list[float] = []
@@ -646,8 +642,6 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
     conf_list: list[float] = []
 
     reduction = (epsilon - min_eps) / episodes
-    global_step = 0
-    train_steps = 0
 
     # ----- Training loop -----
     for i in range(episodes):
@@ -656,28 +650,34 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
         env.random_sequence()
         state = env.reset()
 
+        # Collect episode transitions for batched update
+        ep_states = []
+        ep_actions = []
+        ep_rewards = []
+        ep_next_states = []
+        ep_dones = []
+
         while not done:
             state_norm = normalize_state(state, max_res, max_tri, max_sev)
 
-            # ε-greedy action selection
+            # ε-greedy action selection using Actor policy
             if numpy.random.random() < 1 - epsilon and state[0] is not None:
-                q_vals = online_model(
+                probs = actor_model(
                     state_norm[numpy.newaxis, :], training=False
                 )[0].numpy()
-                action = int(numpy.argmax(q_vals))
+                action = int(numpy.argmax(probs))
             else:
                 action = numpy.random.randint(0, action_dim)
-                q_vals = None
+                probs = None
 
-            # Meta-cognitive confidence (observational only — CPU-heavy)
-            # Skipped by default to halve forward-pass count during training.
+            # Meta-cognitive confidence (observational only)
             if compute_confidence:
-                if q_vals is None:
-                    q_vals = online_model(
+                if probs is None:
+                    probs = actor_model(
                         state_norm[numpy.newaxis, :], training=False
                     )[0].numpy()
-                _, confidence, _, _ = dqn_agent_meta_cognitive(
-                    q_vals.copy(), state[0], 10000
+                _, confidence, _, _ = ac_agent_meta_cognitive(
+                    probs.copy(), state[0], 10000
                 )
                 conf_list.append(confidence)
 
@@ -685,31 +685,28 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
             state2, reward, done, _trunc, _info = env.step(action)
             state2_norm = normalize_state(state2, max_res, max_tri, max_sev)
 
-            buffer.push(state_norm, action, float(reward),
-                        state2_norm, bool(done))
-
-            # Gradient update every *train_freq* steps
-            global_step += 1
-            if (global_step % train_freq == 0
-                    and len(buffer) >= batch_size):
-                s_b, a_b, r_b, ns_b, d_b = buffer.sample(batch_size)
-                compiled_train_step(
-                    online_model, target_model, optimizer,
-                    tf.constant(s_b),
-                    tf.constant(a_b),
-                    tf.constant(r_b),
-                    tf.constant(ns_b),
-                    tf.constant(d_b),
-                    float(discount),
-                )
-                train_steps += 1
-
-                # Hard sync target network
-                if train_steps % target_sync_freq == 0:
-                    sync_target_network(online_model, target_model)
+            ep_states.append(state_norm)
+            ep_actions.append(action)
+            ep_rewards.append(float(reward))
+            ep_next_states.append(state2_norm)
+            ep_dones.append(float(done))
 
             tot_reward += reward
             state = state2
+
+        # ---------- End-of-episode batch update ----------
+        if len(ep_states) > 0:
+            train_step_actor_critic(
+                actor_model, critic_model,
+                actor_optimizer, critic_optimizer,
+                tf.constant(numpy.array(ep_states, dtype=numpy.float32)),
+                tf.constant(numpy.array(ep_actions, dtype=numpy.int32)),
+                tf.constant(numpy.array(ep_rewards, dtype=numpy.float32)),
+                tf.constant(numpy.array(ep_next_states, dtype=numpy.float32)),
+                tf.constant(numpy.array(ep_dones, dtype=numpy.float32)),
+                float(discount),
+                float(entropy_coeff),
+            )
 
         # ε-decay
         if epsilon > min_eps:
@@ -724,4 +721,4 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
             print(f"Episode {i + 1} Average Reward: {ave_reward:.4f}")
 
     env.close()
-    return ave_reward_list, online_model, conf_list
+    return ave_reward_list, actor_model, conf_list

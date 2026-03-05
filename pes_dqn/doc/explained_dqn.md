@@ -205,10 +205,9 @@ $$L_\delta(y, \hat{y}) =
 
 ### 7.2 Implementación
 
-`ext/dqn_model.py` → `train_step()` (decorada con `@tf.function`):
+`ext/dqn_model.py` → `train_step()`:
 
 ```python
-@tf.function
 def train_step(online_model, target_model, optimizer,
                states, actions, rewards, next_states, dones, discount):
     # TD targets
@@ -229,9 +228,79 @@ def train_step(online_model, target_model, optimizer,
 ```
 
 **Notas de implementación**:
-- `@tf.function` compila el grafo de TensorFlow para ejecución eficiente.
+- `train_step` **no** lleva `@tf.function` a nivel de módulo porque la
+  optimización bayesiana (Optuna) ejecuta múltiples trials con diferentes
+  instancias de modelo y optimizer.  `@tf.function` prohíbe crear nuevas
+  `tf.Variable` dentro de un grafo ya trazado, lo que provocaría un error
+  al iniciar el segundo trial.
+- En su lugar, `DQNTraining()` en `pandemic.py` envuelve la función con
+  `compiled_train_step = tf.function(train_step)` de forma **local** a
+  cada trial, asegurando que cada grafo sea independiente.
 - `tf.one_hot` + `tf.reduce_sum` selecciona los Q-values correspondientes
   a las acciones tomadas, sin indexación que rompa la diferenciabilidad.
+
+### 7.3 Optimizador Adam
+
+La actualización de pesos se delega al optimizador **Adam** (Adaptive Moment
+Estimation), propuesto por Kingma & Ba (2015).  Adam combina dos ideas:
+
+1. **Momento** (como SGD con momentum): mantiene una media exponencial del
+   gradiente para suavizar la dirección de actualización.
+2. **RMSProp**: mantiene una media exponencial del gradiente al cuadrado
+   para adaptar la tasa de aprendizaje por parámetro.
+
+#### Ecuaciones de actualización
+
+En cada paso $t$, dado el gradiente $g_t = \nabla_\theta L(\theta_{t-1})$:
+
+$$m_t = \beta_1 \, m_{t-1} + (1 - \beta_1) \, g_t$$
+
+$$v_t = \beta_2 \, v_{t-1} + (1 - \beta_2) \, g_t^2$$
+
+donde $m_t$ es la **media móvil del gradiente** (primer momento) y $v_t$ la
+**media móvil del gradiente al cuadrado** (segundo momento).
+
+Como $m_0 = 0$ y $v_0 = 0$, ambas estimaciones están sesgadas hacia cero al
+inicio.  Adam aplica **corrección de sesgo**:
+
+$$\hat{m}_t = \frac{m_t}{1 - \beta_1^t}, \qquad
+\hat{v}_t = \frac{v_t}{1 - \beta_2^t}$$
+
+Finalmente, la actualización de parámetros es:
+
+$$\theta_t = \theta_{t-1} - \alpha \, \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}$$
+
+#### Hiperparámetros
+
+| Símbolo | Nombre | Valor por defecto (Keras) | En `pes_dqn` |
+|---------|--------|--------------------------|--------------|
+| $\alpha$ | Learning rate | 0.001 | `learning_rate` en `train_dqn.py` y `optimize_dqn.py` |
+| $\beta_1$ | Decaimiento del 1er momento | 0.9 | Por defecto (Keras) |
+| $\beta_2$ | Decaimiento del 2do momento | 0.999 | Por defecto (Keras) |
+| $\epsilon$ | Constante de estabilidad | $10^{-7}$ | Por defecto (Keras) |
+
+#### ¿Por qué Adam para DQN?
+
+- **Tasa adaptativa por parámetro**: cada peso de la red recibe un learning
+  rate efectivo diferente.  Esto es crucial cuando el replay buffer produce
+  mini-batches con distribuciones de gradiente variables.
+- **Robustez ante hiperparámetros**: los valores por defecto de $\beta_1$ y
+  $\beta_2$ funcionan bien en la mayoría de los casos, reduciendo la
+  superficie de búsqueda de la optimización bayesiana.
+- **Convergencia rápida**: la corrección de sesgo acelera las primeras
+  iteraciones, lo que importa cuando el buffer aún es pequeño.
+
+#### Implementación
+
+```python
+# pandemic.py → DQNTraining()
+optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+```
+
+Solo se expone `learning_rate` como hiperparámetro ajustable.  Los demás
+parámetros de Adam ($\beta_1$, $\beta_2$, $\epsilon$) se dejan en sus
+valores por defecto de Keras, que coinciden con los propuestos en el paper
+original.
 
 ---
 
@@ -470,3 +539,5 @@ pes_dqn/
    8(3-4), 293–321.
 3. Akiba, T. et al. (2019). *Optuna: A next-generation hyperparameter
    optimization framework*. KDD '19.
+4. Kingma, D. P. & Ba, J. (2015). *Adam: A Method for Stochastic
+   Optimization*. ICLR 2015.

@@ -30,10 +30,11 @@ VENV="$PROJECT_DIR/linux_mpes_env/bin/activate"
 # ── Resolver paquete desde primer argumento ──────────────────────
 resolve_package() {
     case "${1:-}" in
-        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_base_line"    ;;
-        qlv2|QLv2|QLVAL2|ql|2)           echo "pes_qlv2"         ;;
-        dqn|DQN|3)                        echo "pes_dqn"          ;;
-        transformer|tr|4)                 echo "pes_transformer"  ;;
+        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_base_line"       ;;
+        qlv2|QLv2|QLVAL2|ql|2)           echo "pes_qlv2"            ;;
+        dqn|DQN|3)                        echo "pes_dqn"             ;;
+        ac|a2c|actor-critic|4)            echo "pes_actor_critic"    ;;
+        transformer|tr|5)                 echo "pes_transformer"     ;;
         *) return 1 ;;
     esac
 }
@@ -44,12 +45,13 @@ if [[ $# -lt 2 ]]; then
     echo ""
     echo "Uso: $0 <paquete> <n_trials> [fecha_resume]"
     echo ""
-    echo "  Paquetes: bayesian (pes_base_line), qlv2 (pes_qlv2), dqn (pes_dqn), transformer (pes_transformer)"
+    echo "  Paquetes: bayesian (pes_base_line), qlv2 (pes_qlv2), dqn (pes_dqn), ac (pes_actor_critic), transformer (pes_transformer)"
     echo ""
     echo "Ejemplos:"
     echo "  $0 bayesian 100"
     echo "  $0 qlv2 100"
     echo "  $0 dqn 30"
+    echo "  $0 ac 30"
     echo "  $0 transformer 30"
     echo "  $0 bayesian 100 2026-02-12"
     exit 1
@@ -57,7 +59,7 @@ fi
 
 PKG_NAME="$(resolve_package "$1")" || {
     echo "Error: Paquete desconocido: '$1'"
-    echo "  Opciones válidas: bayesian, qlv2, dqn, transformer"
+    echo "  Opciones válidas: bayesian, qlv2, dqn, ac, transformer"
     exit 1
 }
 N_TRIALS="$2"
@@ -65,10 +67,11 @@ N_TRIALS="$2"
 # ── Resolver módulo de optimización por paquete ──────────────────
 resolve_module() {
     case "$1" in
-        pes_base_line) echo "pes_base_line.ext.optimize_rl" ;;
-        pes_qlv2)      echo "pes_qlv2.ext.optimize_rl"     ;;
-        pes_dqn)       echo "pes_dqn.ext.optimize_dqn"     ;;
-        pes_transformer) echo "pes_transformer.ext.optimize_tr" ;;
+        pes_base_line)    echo "pes_base_line.ext.optimize_rl" ;;
+        pes_qlv2)         echo "pes_qlv2.ext.optimize_rl"     ;;
+        pes_dqn)          echo "pes_dqn.ext.optimize_dqn"     ;;
+        pes_actor_critic) echo "pes_actor_critic.ext.optimize_ac" ;;
+        pes_transformer)  echo "pes_transformer.ext.optimize_tr" ;;
     esac
 }
 OPT_MODULE="$(resolve_module "$PKG_NAME")"
@@ -88,8 +91,13 @@ fi
 
 LOGFILE="$LOG_DIR/bayesian_opt${LOG_SUFFIX}.log"
 
-# Evitar suspensión por GNOME al cerrar la tapa
+# Evitar suspensión, apagado y bloqueo de pantalla
 gsettings set org.gnome.settings-daemon.plugins.power lid-close-ac-action 'nothing'
+gsettings set org.gnome.settings-daemon.plugins.power lid-close-battery-action 'nothing'
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
+gsettings set org.gnome.desktop.session idle-delay 0
+gsettings set org.gnome.desktop.screensaver lock-enabled false
 
 # Lanzar optimización en segundo plano
 nohup python3 -m "${OPT_MODULE}" $ARGS > "$LOGFILE" 2>&1 &
@@ -97,14 +105,14 @@ OPT_PID=$!
 echo "Optimización lanzada  PID=$OPT_PID  trials=$N_TRIALS"
 echo "Log: $LOGFILE"
 
-# Inhibir suspensión mientras el proceso esté vivo
+# Inhibir suspensión y apagado mientras el proceso esté vivo
 nohup systemd-inhibit \
-    --what=idle:sleep:handle-lid-switch \
+    --what=idle:sleep:shutdown:handle-lid-switch \
     --who="mPES Bayesian Optimization ($PKG_NAME)" \
     --why="Running $N_TRIALS-trial Bayesian optimization" \
     --mode=block \
     tail --pid=$OPT_PID -f /dev/null > /dev/null 2>&1 &
-echo "Inhibidor de suspensión activo (se desactiva al terminar)"
+echo "Inhibidor de suspensión/apagado activo (se desactiva al terminar)"
 
 echo ""
 echo "Comandos útiles:"
