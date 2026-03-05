@@ -636,6 +636,25 @@ def A2CTraining(env, actor_lr, critic_lr, discount, entropy_coeff,
     actor_optimizer = tf.keras.optimizers.Adam(learning_rate=actor_lr)
     critic_optimizer = tf.keras.optimizers.Adam(learning_rate=critic_lr)
 
+    # Pre-build optimisers so their internal tf.Variables are created
+    # *outside* `@tf.function`.  Without this, the second Optuna trial
+    # would attempt to create new Variables inside the traced graph,
+    # raising "tf.function only supports singleton tf.Variables …".
+    actor_optimizer.build(actor_model.trainable_variables)
+    critic_optimizer.build(critic_model.trainable_variables)
+
+    # Per-trial JIT-compiled training step.
+    # A fresh tf.function wrapper is created for each call to A2CTraining
+    # so that the traced graph (and optimiser tf.Variables) do not leak
+    # between Optuna trials.
+    compiled_train_step = tf.function(train_step_actor_critic)
+
+    # Wrap scalar hyper-parameters as tf.constant so that tf.function
+    # treats them as symbolic tensor inputs instead of Python literals.
+    # Without this, each unique float value triggers a costly retrace.
+    discount_t = tf.constant(discount, dtype=tf.float32)
+    entropy_coeff_t = tf.constant(entropy_coeff, dtype=tf.float32)
+
     # ----- Tracking -----
     reward_list: list[float] = []
     ave_reward_list: list[float] = []
@@ -696,7 +715,7 @@ def A2CTraining(env, actor_lr, critic_lr, discount, entropy_coeff,
 
         # ---------- End-of-episode batch update ----------
         if len(ep_states) > 0:
-            train_step_actor_critic(
+            compiled_train_step(
                 actor_model, critic_model,
                 actor_optimizer, critic_optimizer,
                 tf.constant(numpy.array(ep_states, dtype=numpy.float32)),
@@ -704,8 +723,8 @@ def A2CTraining(env, actor_lr, critic_lr, discount, entropy_coeff,
                 tf.constant(numpy.array(ep_rewards, dtype=numpy.float32)),
                 tf.constant(numpy.array(ep_next_states, dtype=numpy.float32)),
                 tf.constant(numpy.array(ep_dones, dtype=numpy.float32)),
-                float(discount),
-                float(entropy_coeff),
+                discount_t,
+                entropy_coeff_t,
             )
 
         # ε-decay

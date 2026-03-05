@@ -248,7 +248,6 @@ gradiente de política en una **minimización** compatible con
 `ext/ac_model.py` → `train_step_actor_critic()`:
 
 ```python
-@tf.function
 def train_step_actor_critic(actor, critic, actor_optimizer, critic_optimizer,
                             states, actions, rewards, next_states, dones,
                             discount, entropy_coeff):
@@ -290,10 +289,20 @@ def train_step_actor_critic(actor, critic, actor_optimizer, critic_optimizer,
 
 **Notas de implementación**:
 
-- `train_step_actor_critic` **sí** lleva `@tf.function` porque A2C no
-  usa experience replay; los episodios se procesan secuencialmente con
-  arquitecturas fijas, evitando el problema de re-tracing que afecta a DQN
-  con Optuna.
+- `train_step_actor_critic` **no** lleva `@tf.function` a nivel de módulo
+  porque la optimización bayesiana (Optuna) ejecuta múltiples trials con
+  diferentes instancias de modelo y optimizador.  `@tf.function` prohíbe
+  crear nuevas `tf.Variable` dentro de un grafo ya trazado, lo que
+  provocaría un error al iniciar el segundo trial.
+- En su lugar, `A2CTraining()` en `pandemic.py` envuelve la función con
+  `compiled_train_step = tf.function(train_step_actor_critic)` de forma
+  **local** a cada trial, asegurando que cada grafo sea independiente.
+- Los optimizadores se pre-construyen con `optimizer.build()` antes del
+  loop de entrenamiento para que sus `tf.Variable` internas se creen
+  fuera del `@tf.function`.
+- `discount` y `entropy_coeff` se pasan como `tf.constant` (no como
+  `float` de Python) para evitar re-tracing cuando sus valores cambian
+  entre trials de Optuna.
 - `tf.stop_gradient(td_targets)` evita que los gradientes del Critic
   fluyan hacia los targets (estabilidad).
 - `tf.stop_gradient(td_targets - values)` evita que el gradiente del Actor
@@ -524,12 +533,18 @@ factibles únicamente.
 
 ## 12. Optimizaciones para CPU
 
-### 12.1 `@tf.function` Compilada
+### 12.1 `tf.function` por Trial (JIT Compilado)
 
-`train_step_actor_critic` usa `@tf.function` para compilar el grafo de
-actualización de Actor y Critic.  Esto elimina el overhead de eager mode
+`train_step_actor_critic` se envuelve con `tf.function` **localmente**
+dentro de cada llamada a `A2CTraining`, creando un grafo JIT-compilado
+fresco por trial de Optuna.  Esto elimina el overhead de eager mode
 que sería particularmente costoso dado que A2C realiza una actualización
-por episodio (vs. cada 4 steps en DQN).
+por episodio (vs. cada 4 steps en DQN), y a la vez evita conflictos
+de `tf.Variable` entre trials.
+
+Además, los hiperparámetros escalares (`discount`, `entropy_coeff`) se
+convierten a `tf.constant` antes del loop para que `tf.function` no
+retrace el grafo en cada trial con valores distintos.
 
 ### 12.2 Eliminación del Forward Pass de Confianza
 
@@ -567,7 +582,8 @@ pes_actor_critic/
 ├── config/CONFIG.py         # 8 constantes AC_*
 ├── ext/
 │   ├── ac_model.py          # build_actor, build_critic, normalize_state,
-│   │                        #   train_step_actor_critic (@tf.function);
+│   │                        #   train_step_actor_critic (sin @tf.function;
+│   │                        #   se envuelve por trial en pandemic.py);
 │   │                        #   configura tf.config.threading al importar
 │   ├── pandemic.py          # Entorno Gym + A2CTraining(compute_confidence=False)
 │   ├── train_ac.py          # Pipeline de entrenamiento autónomo

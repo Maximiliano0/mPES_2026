@@ -99,7 +99,7 @@ These defaults are set in `config/CONFIG.py` and `ext/train_ac.py`:
 
 On a modest CPU (e.g. Intel i3-6006U @ 2 GHz, 4 threads), approximately
 **20–40 minutes** for 100 000 episodes with CPU optimisations enabled
-(`@tf.function` compilation, no confidence computation during training,
+(`tf.function` per-trial compilation, no confidence computation during training,
 TensorFlow thread-pool tuning).  Training time scales linearly with
 episode count.
 
@@ -114,7 +114,9 @@ configuration:
 
 | Optimisation | Effect | Location |
 |-------------|--------|----------|
-| `@tf.function` compiled training | Eliminates eager overhead for per-episode updates | `ext/ac_model.py` |
+| `tf.function` per-trial compiled training | Eliminates eager overhead for per-episode updates | `ext/pandemic.py` |
+| `optimizer.build()` pre-initialisation | Creates optimiser variables outside `tf.function` graph | `ext/pandemic.py` |
+| `tf.constant` scalar hyper-parameters | Prevents costly retracing across Optuna trials | `ext/pandemic.py` |
 | Skip confidence computation | `compute_confidence=False` skips entropy/masking per step | `ext/pandemic.py` |
 | TF thread-pool tuning | `intra_op=0` (auto), `inter_op=2` for multi-core CPUs | `ext/ac_model.py` |
 | OMP_NUM_THREADS | Set to CPU core count before TF import | `__init__.py` |

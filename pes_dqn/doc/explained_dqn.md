@@ -236,6 +236,11 @@ def train_step(online_model, target_model, optimizer,
 - En su lugar, `DQNTraining()` en `pandemic.py` envuelve la función con
   `compiled_train_step = tf.function(train_step)` de forma **local** a
   cada trial, asegurando que cada grafo sea independiente.
+- El optimizador se pre-construye con `optimizer.build(online_model.trainable_variables)`
+  antes de entrar al loop, para que sus `tf.Variable` internas (momentos
+  de Adam) se creen fuera del `@tf.function`.
+- `discount` se pasa como `tf.constant` (no como `float` de Python) para
+  evitar re-tracing cuando su valor cambia entre trials de Optuna.
 - `tf.one_hot` + `tf.reduce_sum` selecciona los Q-values correspondientes
   a las acciones tomadas, sin indexación que rompa la diferenciabilidad.
 

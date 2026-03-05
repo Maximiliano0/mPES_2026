@@ -221,7 +221,7 @@ def train_step(online_model: tf.keras.Model,
                rewards: tf.Tensor,
                next_states: tf.Tensor,
                dones: tf.Tensor,
-               discount: float) -> tf.Tensor:
+               discount: tf.Tensor) -> tf.Tensor:
     """Execute a single gradient-descent step on a mini-batch.
 
     Uses the Huber loss (smooth L1) between the online Q-values at the
@@ -246,8 +246,10 @@ def train_step(online_model: tf.keras.Model,
     rewards : tf.Tensor, shape ``(B,)``
     next_states : tf.Tensor, shape ``(B, state_dim)``
     dones : tf.Tensor, shape ``(B,)``
-    discount : float
-        Discount factor γ.
+    discount : tf.Tensor
+        Scalar ``tf.Tensor`` with discount factor γ.  Passed as a
+        tensor (not a Python float) to prevent ``@tf.function``
+        retracing when the value changes across Optuna trials.
 
     Returns
     -------

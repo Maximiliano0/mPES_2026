@@ -11,8 +11,10 @@ in :pymod:`pandemic`:
 - **normalize_state**:  Scales raw integer state components to the [0, 1]
   range expected by the networks.
 - **train_step_actor_critic**:  Single gradient-descent update for both
-  Actor and Critic using the Advantage Actor-Critic objective
-  (compiled with ``@tf.function``).
+  Actor and Critic using the Advantage Actor-Critic objective.
+  Not decorated with ``@tf.function`` at module level — each
+  Optuna trial wraps it locally via ``tf.function`` to scope
+  the traced graph per trial.
 
 Architecture
 ------------
@@ -141,9 +143,8 @@ def normalize_state(state, max_resources: int,
 
 
 # ---------------------------------------------------------------------------
-#  Compiled training step (Actor-Critic)
+#  Training step (Actor-Critic)
 # ---------------------------------------------------------------------------
-@tf.function
 def train_step_actor_critic(
     actor: tf.keras.Model,
     critic: tf.keras.Model,
@@ -154,8 +155,8 @@ def train_step_actor_critic(
     rewards: tf.Tensor,
     next_states: tf.Tensor,
     dones: tf.Tensor,
-    discount: float,
-    entropy_coeff: float
+    discount: tf.Tensor,
+    entropy_coeff: tf.Tensor
 ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
     """Execute a single gradient-descent step for both Actor and Critic.
 
@@ -164,6 +165,13 @@ def train_step_actor_critic(
     - **Critic loss**: MSE between V(s) and the TD target  r + γ·V(s')·(1-done).
     - **Actor loss**: -log π(a|s) · A(s,a), where A(s,a) = r + γ·V(s') - V(s)
       is the advantage, plus an entropy bonus to encourage exploration.
+
+    This function is **not** decorated with ``@tf.function`` at the
+    module level because Optuna calls ``A2CTraining`` multiple times
+    with different model/optimiser instances.  Each trial wraps this
+    function via ``tf.function`` locally so the traced graph is
+    scoped to a single optimisation trial and no ``tf.Variable``
+    leaks between trials.
 
     Parameters
     ----------
@@ -180,10 +188,13 @@ def train_step_actor_critic(
     rewards : tf.Tensor, shape ``(B,)``
     next_states : tf.Tensor, shape ``(B, state_dim)``
     dones : tf.Tensor, shape ``(B,)``
-    discount : float
-        Discount factor γ.
-    entropy_coeff : float
-        Weight for the entropy bonus in the Actor loss.
+    discount : tf.Tensor
+        Scalar ``tf.Tensor`` with discount factor γ.  Passed as a
+        tensor (not a Python float) to avoid ``@tf.function``
+        retracing when the value changes across Optuna trials.
+    entropy_coeff : tf.Tensor
+        Scalar ``tf.Tensor`` with the entropy-bonus weight.  Passed
+        as a tensor for the same reason as *discount*.
 
     Returns
     -------

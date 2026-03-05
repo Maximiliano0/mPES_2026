@@ -631,11 +631,22 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
+    # Pre-build optimiser so its internal tf.Variables are created
+    # *outside* `@tf.function`.  Without this, the first call inside
+    # the traced graph would trigger variable creation that may
+    # conflict with TF's tracing semantics.
+    optimizer.build(online_model.trainable_variables)
+
     # Per-trial JIT-compiled training step.
     # A fresh tf.function wrapper is created for each call to DQNTraining
     # so that the traced graph (and optimizer tf.Variables) do not leak
     # between Optuna trials.
     compiled_train_step = tf.function(train_step)
+
+    # Wrap scalar hyper-parameter as tf.constant so that tf.function
+    # treats it as a symbolic tensor input instead of a Python literal.
+    # Without this, each unique float value triggers a costly retrace.
+    discount_t = tf.constant(discount, dtype=tf.float32)
 
     # ----- Replay buffer -----
     buffer = ReplayBuffer(replay_buffer_size)
@@ -700,7 +711,7 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
                     tf.constant(r_b),
                     tf.constant(ns_b),
                     tf.constant(d_b),
-                    float(discount),
+                    discount_t,
                 )
                 train_steps += 1
 

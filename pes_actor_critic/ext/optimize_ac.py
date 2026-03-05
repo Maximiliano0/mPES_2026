@@ -50,6 +50,7 @@ Note:
 ##########################
 ##  Imports externos    ##
 ##########################
+import gc
 import os
 import sys
 import time
@@ -194,6 +195,14 @@ def objective(trial: optuna.Trial) -> float:
         _best_artifacts['hidden_units'] = actor_hidden
         _best_artifacts['rewards'] = list(rewards)
         _best_artifacts['value'] = mean_perf
+
+    # ── Memory cleanup ──────────────────────────────────────────────
+    # Each Optuna trial builds new Keras models and tf.function traces.
+    # Without explicit cleanup TensorFlow retains stale graphs and
+    # variables, causing gradual memory growth over 100+ trials.
+    del actor_model, rewards, env, env_eval
+    tf.keras.backend.clear_session()
+    gc.collect()
 
     return mean_perf
 
