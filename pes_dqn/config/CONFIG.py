@@ -19,7 +19,7 @@ Sections
 - Reproducibility                (SEED = 42 for DQN training)
 - Runtime & Persistence          (verbose, save flags)
 
-Key differences from pes_base_line/config/CONFIG.py
+Key differences from pes_bline/config/CONFIG.py
 ----------------------------------------------------
 - Replaces tabular Q-Learning with a Deep Q-Network (DQN)
 - DQN_HIDDEN_UNITS, DQN_BATCH_SIZE, DQN_REPLAY_BUFFER_SIZE, etc.

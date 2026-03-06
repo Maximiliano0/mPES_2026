@@ -3,7 +3,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Last updated: 2026-02-26
 #
-#  Applies to all packages: pes, pes_base_line, pes_qlv2, pes_transformer, utils.
+#  Applies to all packages: pes, pes_bline, pes_qlv2, pes_trf, utils.
 #
 #  Verified: all four main packages score 10.00/10 with this configuration
 #  (pyright 0 errors, pylint 10.00/10 as of 2026-02-26).

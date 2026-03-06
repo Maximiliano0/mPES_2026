@@ -461,7 +461,7 @@ def dqn_agent_meta_cognitive(options, resources_left, response_timeout):
 
 def run_experiment(env, actionfunction, RandomSequences=True,
                    trials_per_sequence=None, sevs=None,
-                   NumberOfIterations=64):
+                   NumberOfIterations=64, verbose=True):
     """
     Execute a pandemic simulation experiment over multiple sequences.
 
@@ -486,6 +486,10 @@ def run_experiment(env, actionfunction, RandomSequences=True,
         ``RandomSequences=False``.  Shape: ``(NumberOfIterations, variable_length)``.
     NumberOfIterations : int, optional
         Number of sequences to simulate.  Default: 64.
+    verbose : bool, optional
+        When ``True``, print state and sequence information during the
+        experiment.  Set to ``False`` to suppress output (useful during
+        Bayesian optimisation).  Default: ``True``.
 
     Returns
     -------
@@ -509,7 +513,8 @@ def run_experiment(env, actionfunction, RandomSequences=True,
     seq_ev = []
     ITERATIONS = NumberOfIterations
     while seqid < ITERATIONS:
-        print(f'State: {state}')
+        if verbose:
+            print(f'State: {state}')
         action = actionfunction(env, state, seqid)
         state2, _reward, done, _truncated, _info = env.step(action)
 
@@ -533,7 +538,8 @@ def run_experiment(env, actionfunction, RandomSequences=True,
 
         state = state2
 
-    print(seqs)
+    if verbose:
+        print(seqs)
     env.close()
 
     return seqs, perfs, seq_ev
@@ -541,7 +547,8 @@ def run_experiment(env, actionfunction, RandomSequences=True,
 
 def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
                 hidden_units, batch_size, replay_buffer_size, target_sync_freq,
-                train_freq=4, seed=None, compute_confidence=False):
+                train_freq=4, seed=None, compute_confidence=False,
+                verbose=True):
     """
     Train a Deep Q-Network agent on the Pandemic environment.
 
@@ -582,6 +589,10 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
         to record meta-cognitive confidence values.  **Disabling this
         (default) halves the number of forward passes during training,
         which roughly doubles training speed on CPU.**  Default: ``False``.
+    verbose : bool, optional
+        When ``True``, print average reward every 10 000 episodes.
+        Set to ``False`` to suppress training output (useful during
+        Bayesian optimisation).  Default: ``True``.
 
     Returns
     -------
@@ -732,7 +743,8 @@ def DQNTraining(env, learning_rate, discount, epsilon, min_eps, episodes,
             ave_reward = float(numpy.mean(reward_list))
             ave_reward_list.append(ave_reward)
             reward_list = []
-            print(f"Episode {i + 1} Average Reward: {ave_reward:.4f}")
+            if verbose:
+                print(f"Episode {i + 1} Average Reward: {ave_reward:.4f}")
 
     env.close()
     return ave_reward_list, online_model, conf_list

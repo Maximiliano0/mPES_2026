@@ -86,7 +86,7 @@ except ImportError:
     notify = lambda *a, **kw: None   # no-op if utils is not on sys.path
 
 # Nombre del paquete para las notificaciones push
-_PKG_NAME = __package__.split('.')[0] if __package__ else 'mPES'
+_PKG_NAME = __package__.split('.', maxsplit=1)[0] if __package__ else 'mPES'
 
 
 ###################################
@@ -160,7 +160,8 @@ def objective(trial: optuna.Trial) -> float:
         target_sync_freq=target_sync_freq,
         train_freq=train_freq,
         seed=SEED,
-        compute_confidence=True,
+        compute_confidence=False,
+        verbose=False,
     )
 
     # --- Evaluate on fixed sequences ---
@@ -179,7 +180,8 @@ def objective(trial: optuna.Trial) -> float:
         q_vals[o > state[0]] = 0.00001
         return int(numpy.argmax(q_vals))
 
-    _, perfs, _ = run_experiment(env_eval, qf, False, _trials_per_sequence, _sevs)
+    _, perfs, _ = run_experiment(env_eval, qf, False, _trials_per_sequence, _sevs,
+                                  verbose=False)
     mean_perf = float(numpy.mean(perfs))
 
     # Store extra info for later analysis
@@ -272,6 +274,7 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
         pass
 
     fig, ax = plt.subplots(figsize=(12, 6))
+    assert isinstance(ax, plt.Axes)
     trial_numbers = [t.number + 1 for t in study.trials if t.value is not None]
     trial_values = [t.value for t in study.trials if t.value is not None]
 
@@ -303,6 +306,7 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
         values = list(importances.values())
 
         fig, ax = plt.subplots(figsize=(10, 5))
+        assert isinstance(ax, plt.Axes)
         ax.barh(names[::-1], values[::-1], color='#2ca02c', edgecolor='darkgreen', linewidth=0.5)
         ax.set_xlabel('Importance', fontsize=12, fontweight='bold')
         ax.set_title('DQN Hyperparameter Importance', fontsize=14, fontweight='bold', pad=20)
@@ -389,6 +393,7 @@ def main():
         direction='maximize',
         study_name=f'dqn_opt_{opt_date}',
         sampler=optuna.samplers.TPESampler(seed=42),
+        pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=2),
         storage=storage,
         load_if_exists=True,   # Resume from previous run if DB exists
     )
@@ -501,7 +506,7 @@ def main():
             target_sync_freq=bp['target_sync_freq'],
             train_freq=bp['train_freq'],
             seed=SEED,
-            compute_confidence=True,
+            compute_confidence=False,
         )
         best_rewards = numpy.array(best_rewards_list)
         success(f"Retrained model (deterministic — seed = {SEED})")

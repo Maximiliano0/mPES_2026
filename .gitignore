@@ -3,7 +3,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Last updated: 2026-02-26
 #
-#  Packages: PES · PES_Bayesian · PES_QLv2 · PES_Transformer · utils
+#  Packages: PES · PES_BLine · PES_QLv2 · pes_trf · utils
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # ── Virtual environments ────────────────────────────────────────────────────

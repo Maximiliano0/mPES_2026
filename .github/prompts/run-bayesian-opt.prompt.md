@@ -8,7 +8,7 @@ watcher that commits+pushes results when the process finishes.
 ## Inputs
 
 - `$PACKAGE` — the target package.
-  Valid values: `pes_base_line`, `pes_qlv2`, `pes_dqn`, `pes_actor_critic`, `pes_transformer`.
+  Valid values: `pes_bline`, `pes_qlv2`, `pes_dqn`, `pes_ac`, `pes_trf`.
 - `$N_TRIALS` — number of optimisation trials (default: **30**).
 - `$RESUME_DATE` *(optional)* — `YYYY-MM-DD` date string to resume a previous
   run stored under that date.
@@ -19,11 +19,11 @@ Each package has its own optimisation module:
 
 | Package | Module | Alias(es) |
 |---------|--------|-----------|
-| `pes_base_line` | `pes_base_line.ext.optimize_rl` | `bayesian`, `bay`, `1` |
+| `pes_bline` | `pes_bline.ext.optimize_rl` | `bayesian`, `bay`, `1` |
 | `pes_qlv2` | `pes_qlv2.ext.optimize_rl` | `qlv2`, `ql`, `2` |
 | `pes_dqn` | `pes_dqn.ext.optimize_dqn` | `dqn`, `3` |
-| `pes_actor_critic` | `pes_actor_critic.ext.optimize_ac` | `ac`, `a2c`, `actor-critic`, `4` |
-| `pes_transformer` | `pes_transformer.ext.optimize_tr` | `transformer`, `tr`, `5` |
+| `pes_ac` | `pes_ac.ext.optimize_ac` | `ac`, `a2c`, `actor-critic`, `4` |
+| `pes_trf` | `pes_trf.ext.optimize_tr` | `transformer`, `tr`, `5` |
 
 If the user provides an alias instead of the full package name, resolve it
 using the table above.

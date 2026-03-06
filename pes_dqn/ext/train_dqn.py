@@ -118,6 +118,7 @@ def main():
     success("Random player experiment completed")
 
     __fig, ax = plt.subplots(figsize=(12, 6))
+    assert isinstance(ax, plt.Axes)
     ax.plot(seqs1, color='#1f77b4', linewidth=2.5, marker='o', markersize=5, label='Random Player')
     ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
     ax.set_ylabel('Final Severity Achieved', fontsize=12, fontweight='bold')
@@ -135,6 +136,7 @@ def main():
     list_item("Saved: random_player_sequence_performance.png")
 
     __fig, ax = plt.subplots(figsize=(12, 6))
+    assert isinstance(ax, plt.Axes)
     ax.plot(perfs1, color='#ff7f0e', linewidth=2.5, marker='s', markersize=5, label='Random Player')
     ax.set_ylabel('Normalised Performance (0-1)', fontsize=12, fontweight='bold')
     ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
@@ -261,6 +263,7 @@ def main():
     info("Generating reward history visualization...")
 
     __fig, ax = plt.subplots(figsize=(12, 6))
+    assert isinstance(ax, plt.Axes)
     ax.plot(100 * (numpy.arange(len(rewards)) + 1), rewards, color='#2ca02c', linewidth=2.5, label='Average Reward')
     ax.fill_between(100 * (numpy.arange(len(rewards)) + 1), rewards, alpha=0.2, color='#2ca02c')
     ax.set_xlabel('Episodes', fontsize=12, fontweight='bold')
@@ -305,6 +308,7 @@ def main():
         info("Generating performance visualizations...")
 
         _fig, ax = plt.subplots(figsize=(12, 6))
+        assert isinstance(ax, plt.Axes)
         ax.plot(seqs, color='#d62728', linewidth=2.5, marker='o', markersize=5, label='DQN Agent')
         ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
         ax.set_ylabel('Final Severity Achieved', fontsize=12, fontweight='bold')
@@ -322,6 +326,7 @@ def main():
         list_item(f"Saved: dqn_agent_sequence_performance_{train_date}.png")
 
         _fig, ax = plt.subplots(figsize=(12, 6))
+        assert isinstance(ax, plt.Axes)
         ax.plot(perfs, color='#9467bd', linewidth=2.5, marker='s', markersize=5, label='DQN Agent')
         ax.set_ylabel('Normalised Performance (0-1)', fontsize=12, fontweight='bold')
         ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
@@ -343,6 +348,7 @@ def main():
         cumperfs = numpy.cumsum(perfs)
         Domain = numpy.arange(1, 1 + 64)
         _fig, ax = plt.subplots(figsize=(12, 6))
+        assert isinstance(ax, plt.Axes)
         ax.plot(cumperfs / Domain, color='#8c564b', linewidth=2.5, marker='^', markersize=5, label='DQN Agent')
         ax.set_ylabel('Cumulative Normalised Performance', fontsize=12, fontweight='bold')
         ax.set_xlabel('Trial', fontsize=12, fontweight='bold')
@@ -362,6 +368,7 @@ def main():
         list_item(f"Saved: dqn_agent_cumulative_performance_{train_date}.png")
 
         _fig, ax = plt.subplots(figsize=(14, 5))
+        assert isinstance(ax, plt.Axes)
         ax.scatter(
             numpy.asarray(
                 range(
@@ -403,6 +410,7 @@ def main():
         print(remapconfrl.shape)
 
         _fig, ax = plt.subplots(figsize=(14, 5))
+        assert isinstance(ax, plt.Axes)
         ax.scatter(
             numpy.asarray(
                 range(

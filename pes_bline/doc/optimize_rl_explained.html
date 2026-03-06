@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optimización Bayesiana de Hiperparámetros Q-Learning</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+  <script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {delimiters:[
+          {left:&apos;$$&apos;,right:&apos;$$&apos;,display:true},
+          {left:&apos;$&apos;,right:&apos;$&apos;,display:false}
+        ]})"></script>
+  <style>
+    :root { --bg:#ffffff; --fg:#1a1a2e; --accent:#0f3460; --code-bg:#f4f4f8;
+             --border:#ddd; --link:#1565c0; --table-stripe:#f9f9fc; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#1a1a2e; --fg:#e0e0e0; --accent:#64b5f6; --code-bg:#16213e;
+               --border:#333; --link:#90caf9; --table-stripe:#1e2a45; }
+    }
+    *,*::before,*::after { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+           line-height:1.7; color:var(--fg); background:var(--bg);
+           max-width:52em; margin:2em auto; padding:0 1.5em; }
+    h1 { border-bottom:3px solid var(--accent); padding-bottom:.3em; }
+    h2 { border-bottom:1px solid var(--border); padding-bottom:.2em; margin-top:2em; }
+    h3,h4 { margin-top:1.6em; }
+    a { color:var(--link); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    code { font-family:"JetBrains Mono","Fira Code",Consolas,monospace;
+           font-size:.92em; background:var(--code-bg); padding:.15em .35em;
+           border-radius:4px; }
+    pre { background:var(--code-bg); padding:1em 1.2em; border-radius:8px;
+          overflow-x:auto; border:1px solid var(--border); }
+    pre code { background:none; padding:0; font-size:.88em; }
+    table { border-collapse:collapse; width:100%; margin:1em 0; }
+    th,td { border:1px solid var(--border); padding:.55em .9em; text-align:left; }
+    th { background:var(--accent); color:#fff; }
+    tr:nth-child(even) { background:var(--table-stripe); }
+    blockquote { border-left:4px solid var(--accent); margin-left:0;
+                 padding:.4em 1em; color:#666; background:var(--code-bg);
+                 border-radius:0 6px 6px 0; }
+    .katex-display { overflow-x:auto; overflow-y:hidden; padding:.5em 0; }
+  </style>
+</head>
+<body>
+  <h1 id="optimizacion-bayesiana-de-hiperparametros-q-learning">Optimización Bayesiana de Hiperparámetros Q-Learning</h1>
+<h2 id="descripcion-general">Descripción general</h2>
+<p><code>optimize_rl.py</code> automatiza la búsqueda de los mejores hiperparámetros para el algoritmo
+Q-Learning del escenario pandémico.  En lugar de probar combinaciones a mano o recorrer
+una grilla exhaustiva, usa <strong>optimización Bayesiana</strong> (librería Optuna) para elegir de
+forma inteligente qué combinación de hiperparámetros evaluar en cada paso.</p>
+<hr />
+<h2 id="1-fundamento-teorico">1. Fundamento teórico</h2>
+<h3 id="11-el-problema">1.1 El problema</h3>
+<p>Q-Learning depende de cinco hiperparámetros cuyo valor óptimo se desconoce a priori:</p>
+<table>
+<thead>
+<tr>
+<th>Símbolo</th>
+<th>Parámetro</th>
+<th>Rango explorado</th>
+<th>Escala</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$\alpha$</td>
+<td><code>learning_rate</code></td>
+<td>$[0.10,\; 0.4]$</td>
+<td>logarítmica</td>
+</tr>
+<tr>
+<td>$\gamma$</td>
+<td><code>discount_factor</code></td>
+<td>$[0.80,\; 0.99]$</td>
+<td>lineal</td>
+</tr>
+<tr>
+<td>$\varepsilon_0$</td>
+<td><code>epsilon_initial</code></td>
+<td>$[0.4,\; 1.0]$</td>
+<td>lineal</td>
+</tr>
+<tr>
+<td>$\varepsilon_{\min}$</td>
+<td><code>epsilon_min</code></td>
+<td>$[0.05,\; 0.1]$</td>
+<td>lineal</td>
+</tr>
+<tr>
+<td>$N$</td>
+<td><code>num_episodes</code></td>
+<td>$[800\,000,\; 1\,000\,000]$</td>
+<td>paso = 100 000</td>
+</tr>
+</tbody>
+</table>
+<p>Probar todas las combinaciones (grid search) requiere un número exponencial de
+evaluaciones.  Cada evaluación implica <strong>entrenar una Q-table completa</strong> (con
+semilla fija <code>SEED</code> de <code>CONFIG.py</code> para reproducibilidad) y después evaluar sobre
+64 secuencias fijas, lo que puede tardar varios minutos por combinación
+dependiendo del <code>num_episodes</code> muestreado.</p>
+<h3 id="12-optimizacion-bayesiana">1.2 Optimización Bayesiana</h3>
+<p>La optimización Bayesiana resuelve el problema de "caja negra":</p>
+<p>$$\boldsymbol{\theta}^{*} = \arg\max_{\boldsymbol{\theta}\in\Theta}\; f(\boldsymbol{\theta})$$</p>
+<p>donde $\boldsymbol{\theta} = (\alpha,\gamma,\varepsilon_0,\varepsilon_{\min},N)$ y
+$f(\boldsymbol{\theta})$ es el rendimiento medio normalizado sobre 64 secuencias.</p>
+<p>El algoritmo sigue un ciclo de tres pasos en cada <em>trial</em> $t$:</p>
+<ol>
+<li><strong>Modelo sustituto (surrogate):</strong> Construir un modelo probabilístico
+   $p(f \mid \boldsymbol{\theta})$ a partir de los resultados de los trials
+   $1,\dots,t-1$ anteriores.</li>
+<li><strong>Función de adquisición:</strong> Elegir el $\boldsymbol{\theta}_t$ que maximice la
+   probabilidad de mejorar el mejor valor conocido (<em>expected improvement</em>).</li>
+<li><strong>Evaluación:</strong> Ejecutar $f(\boldsymbol{\theta}_t)$ (entrenar + evaluar) y agregar
+   el resultado al historial.</li>
+</ol>
+<p>Optuna usa el <strong>muestreador TPE (Tree-structured Parzen Estimator)</strong> como modelo
+sustituto.  En vez de modelar $p(f \mid \boldsymbol{\theta})$ directamente, modela
+dos distribuciones:</p>
+<p>$$\ell(\boldsymbol{\theta}) = p(\boldsymbol{\theta} \mid f &gt; f^{<em>}), \qquad
+  g(\boldsymbol{\theta}) = p(\boldsymbol{\theta} \mid f \leq f^{</em>})$$</p>
+<p>y elige el $\boldsymbol{\theta}$ que maximice la razón $\ell(\boldsymbol{\theta}) / g(\boldsymbol{\theta})$.</p>
+<p>Esto permite concentrar la exploración en zonas del espacio que estadísticamente
+producen mejor rendimiento, necesitando muchos menos trials que grid search.</p>
+<h3 id="13-funcion-objetivo">1.3 Función objetivo</h3>
+<p>El valor que se maximiza es el <strong>rendimiento medio normalizado</strong> de la Q-table
+entrenada, evaluado sobre las 64 secuencias fijas que constituyen el <em>benchmark</em>
+del escenario pandémico:</p>
+<p>$$f(\boldsymbol{\theta}) = \frac{1}{64}\sum_{i=1}^{64}\;
+  \text{perf}!\left(S^{(i)}<em>{\text{final}},\; S^{(i)}</em>{\text{inicial}}\right)$$</p>
+<p>donde $\text{perf}$ es la métrica de severidad final normalizada
+(<code>calculate_normalised_final_severity_performance_metric</code>), definida en
+<code>exp_utils.py</code> e invocada desde <code>run_experiment</code> en <code>pandemic.py</code>.  Un valor
+cercano a $1.0$ indica que el agente redujo la severidad al mínimo posible con
+los recursos disponibles.</p>
+<hr />
+<h2 id="2-estructura-del-codigo">2. Estructura del código</h2>
+<p>El archivo <code>optimize_rl.py</code> tiene cuatro secciones principales:</p>
+<div class="highlight"><pre><span></span><code>optimize_rl.py
+├── _best_artifacts             # Almacena la mejor Q-table en memoria
+├── _load_evaluation_data()     # Datos de evaluación (carga una vez)
+├── objective(trial)            # Función objetivo que Optuna llama
+├── _save_report(study, ...)    # Reportes y gráficos
+└── main()                      # Orquestación: CLI, estudio, guardado Q-table
+</code></pre></div>
+
+<h3 id="21-carga-de-datos-de-evaluacion">2.1 Carga de datos de evaluación</h3>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_load_evaluation_data</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">_trials_per_sequence</span><span class="p">,</span> <span class="n">_sevs</span><span class="p">,</span> <span class="n">_number_cities_prob</span><span class="p">,</span> <span class="n">_severity_prob</span>
+
+    <span class="n">_trials_per_sequence</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">INPUTS_PATH</span><span class="p">,</span> <span class="s1">&#39;sequence_lengths.csv&#39;</span><span class="p">),</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span>
+    <span class="p">)</span>
+    <span class="n">all_severities</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">INPUTS_PATH</span><span class="p">,</span> <span class="s1">&#39;initial_severity.csv&#39;</span><span class="p">),</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span>
+    <span class="p">)</span>
+    <span class="n">_sevs</span> <span class="o">=</span> <span class="n">convert_globalseq_to_seqs</span><span class="p">(</span><span class="n">_trials_per_sequence</span><span class="p">,</span> <span class="n">all_severities</span><span class="p">)</span>
+
+    <span class="n">val_cities</span><span class="p">,</span> <span class="n">count_cities</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+        <span class="n">_trials_per_sequence</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_number_cities_prob</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">val_cities</span><span class="p">,</span> <span class="n">count_cities</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">_trials_per_sequence</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">val_severity</span><span class="p">,</span> <span class="n">count_severity</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+        <span class="n">all_severities</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_severity_prob</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">val_severity</span><span class="p">,</span> <span class="n">count_severity</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_severities</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
+</code></pre></div>
+
+<p><strong>Propósito:</strong> Cargar los CSV de longitudes y severidades una sola vez al inicio del
+programa y precalcular las distribuciones de probabilidad.  Estos cuatro arrays globales
+se reutilizan en cada trial sin re-leerlos del disco.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Contenido</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_trials_per_sequence</code></td>
+<td>Vector con la longitud (número de ciudades) de cada una de las 64 secuencias.</td>
+</tr>
+<tr>
+<td><code>_sevs</code></td>
+<td>Lista de arrays con las severidades iniciales de cada ciudad en cada secuencia.</td>
+</tr>
+<tr>
+<td><code>_number_cities_prob</code></td>
+<td>Distribución empírica de longitudes de secuencia (para generar secuencias aleatorias durante el entrenamiento).</td>
+</tr>
+<tr>
+<td><code>_severity_prob</code></td>
+<td>Distribución empírica de severidades iniciales (ídem).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Relación con la teoría:</strong> Para que $f(\boldsymbol{\theta})$ sea comparable entre
+trials, la evaluación debe hacerse siempre sobre el mismo benchmark; por eso se
+cargan secuencias fijas.  Las distribuciones se usan durante el <em>entrenamiento</em> para
+que el agente vea secuencias representativas del mismo dominio.</p>
+<h3 id="22-funcion-objetivo">2.2 Función objetivo</h3>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">trial</span><span class="p">:</span> <span class="n">optuna</span><span class="o">.</span><span class="n">Trial</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="c1"># (1) Muestrear hiperparámetros</span>
+    <span class="n">learning_rate</span>    <span class="o">=</span> <span class="n">trial</span><span class="o">.</span><span class="n">suggest_float</span><span class="p">(</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">,</span>    <span class="mf">0.10</span><span class="p">,</span>  <span class="mf">0.4</span><span class="p">,</span>  <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">discount_factor</span>  <span class="o">=</span> <span class="n">trial</span><span class="o">.</span><span class="n">suggest_float</span><span class="p">(</span><span class="s1">&#39;discount_factor&#39;</span><span class="p">,</span>  <span class="mf">0.80</span><span class="p">,</span>  <span class="mf">0.99</span><span class="p">)</span>
+    <span class="n">epsilon_initial</span>  <span class="o">=</span> <span class="n">trial</span><span class="o">.</span><span class="n">suggest_float</span><span class="p">(</span><span class="s1">&#39;epsilon_initial&#39;</span><span class="p">,</span>  <span class="mf">0.40</span><span class="p">,</span>   <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">epsilon_min</span>      <span class="o">=</span> <span class="n">trial</span><span class="o">.</span><span class="n">suggest_float</span><span class="p">(</span><span class="s1">&#39;epsilon_min&#39;</span><span class="p">,</span>      <span class="mf">0.05</span><span class="p">,</span>   <span class="mf">0.10</span><span class="p">)</span>
+    <span class="n">num_episodes</span>     <span class="o">=</span> <span class="n">trial</span><span class="o">.</span><span class="n">suggest_int</span><span class="p">(</span><span class="s1">&#39;num_episodes&#39;</span><span class="p">,</span>       <span class="mi">800000</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">100000</span><span class="p">)</span>
+
+    <span class="c1"># (2) Entrenar Q-table (semilla fija para comparabilidad entre trials)</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Pandemic</span><span class="p">()</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">number_cities_prob</span> <span class="o">=</span> <span class="n">_number_cities_prob</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">severity_prob</span>      <span class="o">=</span> <span class="n">_severity_prob</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">rewards</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">QLearning</span><span class="p">(</span>
+        <span class="n">env</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">discount_factor</span><span class="p">,</span>
+        <span class="n">epsilon_initial</span><span class="p">,</span> <span class="n">epsilon_min</span><span class="p">,</span> <span class="n">num_episodes</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span>
+    <span class="p">)</span>
+
+    <span class="c1"># (3) Evaluar sobre 64 secuencias fijas</span>
+    <span class="n">env_eval</span> <span class="o">=</span> <span class="n">Pandemic</span><span class="p">()</span>
+    <span class="n">env_eval</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">qf</span><span class="p">(</span><span class="n">_env</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">_seqid</span><span class="p">):</span>
+        <span class="n">s0</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">s1</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">s2</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Mask infeasible actions (consistent with rl_agent_meta_cognitive)</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="n">Q</span><span class="p">[</span><span class="n">s0</span><span class="p">,</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">options</span><span class="p">[</span><span class="n">o</span> <span class="o">&gt;</span> <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">0.00001</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">perfs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">run_experiment</span><span class="p">(</span>
+        <span class="n">env_eval</span><span class="p">,</span> <span class="n">qf</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">_trials_per_sequence</span><span class="p">,</span> <span class="n">_sevs</span><span class="p">)</span>
+    <span class="n">mean_perf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">perfs</span><span class="p">))</span>
+
+    <span class="c1"># (4) Guardar métricas auxiliares</span>
+    <span class="n">trial</span><span class="o">.</span><span class="n">set_user_attr</span><span class="p">(</span><span class="s1">&#39;mean_perf&#39;</span><span class="p">,</span> <span class="n">mean_perf</span><span class="p">)</span>
+    <span class="n">trial</span><span class="o">.</span><span class="n">set_user_attr</span><span class="p">(</span><span class="s1">&#39;std_perf&#39;</span><span class="p">,</span>  <span class="nb">float</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">perfs</span><span class="p">)))</span>
+    <span class="n">trial</span><span class="o">.</span><span class="n">set_user_attr</span><span class="p">(</span><span class="s1">&#39;min_perf&#39;</span><span class="p">,</span>  <span class="nb">float</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">perfs</span><span class="p">)))</span>
+    <span class="n">trial</span><span class="o">.</span><span class="n">set_user_attr</span><span class="p">(</span><span class="s1">&#39;max_perf&#39;</span><span class="p">,</span>  <span class="nb">float</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">perfs</span><span class="p">)))</span>
+
+    <span class="c1"># (5) Preservar la mejor Q-table en memoria</span>
+    <span class="k">global</span> <span class="n">_best_artifacts</span>
+    <span class="k">if</span> <span class="n">mean_perf</span> <span class="o">&gt;</span> <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]:</span>
+        <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;Q&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;rewards&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rewards</span><span class="p">)</span>
+        <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_perf</span>
+
+    <span class="k">return</span> <span class="n">mean_perf</span>
+</code></pre></div>
+
+<p><strong>Correspondencia teoría ↔ código:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Concepto teórico</th>
+<th>Implementación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$\boldsymbol{\theta}$ muestreado por TPE</td>
+<td><code>trial.suggest_*()</code> — Optuna aplica el modelo sustituto para decidir qué valores probar.</td>
+</tr>
+<tr>
+<td>Evaluación $f(\boldsymbol{\theta})$</td>
+<td>Entrenar Q-table + evaluar con <code>run_experiment()</code> sobre 64 secuencias fijas.</td>
+</tr>
+<tr>
+<td>Resultado devuelto a Optuna</td>
+<td><code>return mean_perf</code> — Optuna lo usa para actualizar su modelo sustituto y elegir el próximo $\boldsymbol{\theta}$.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="detalle-de-trialsuggest_">Detalle de <code>trial.suggest_*</code></h4>
+<ul>
+<li>
+<p><code>suggest_float('learning_rate', 0.10, 0.4, log=True)</code>:
+  Muestrea $\alpha$ en escala logarítmica dentro de un rango
+  ($0.10$–$0.4$) determinado por corridas exploratorias previas.</p>
+</li>
+<li>
+<p><code>suggest_int('num_episodes', 800000, 1000000, step=100000)</code>:
+  Discretiza en múltiplos de 100 000 para reducir la dimensionalidad.
+  El rango alto ($800\text{k}$–$1\text{M}$) asegura convergencia
+  suficiente de la Q-table.</p>
+</li>
+</ul>
+<p><strong>Nota sobre la semilla:</strong> Todos los trials de entrenamiento usan <code>seed=SEED</code>
+(importado de <code>CONFIG.py</code>, valor por defecto 42).  Esto garantiza que las
+diferencias de rendimiento entre trials se deban exclusivamente a los
+hiperparámetros y no a variabilidad aleatoria del entrenamiento.</p>
+<h4 id="funcion-qf-politica-greedy-con-masking">Función <code>qf</code> (política greedy con masking)</h4>
+<p>Dentro de <code>objective</code>, se define una política greedy con enmascaramiento de acciones
+infactibles, consistente con <code>rl_agent_meta_cognitive</code> en <code>pandemic.py</code>
+(y, por extensión, con la versión en <code>pygameMediator.py</code> usada al ejecutar el
+experimento con <code>python3 -m pes_bline</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">qf</span><span class="p">(</span><span class="n">_env</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">_seqid</span><span class="p">):</span>
+    <span class="n">s0</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">s1</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">s2</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">Q</span><span class="p">[</span><span class="n">s0</span><span class="p">,</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">o</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">options</span><span class="p">[</span><span class="n">o</span> <span class="o">&gt;</span> <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">0.00001</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Esta función se pasa a <code>run_experiment()</code> como la <em>action function</em>.  Evalúa la
+Q-table <strong>sin epsilon</strong>: siempre elige la acción con mayor Q-valor entre las
+acciones factibles (las que no exceden los recursos disponibles <code>state[0]</code>).</p>
+<p><strong>Masking de acciones infactibles:</strong> Las acciones cuyo índice supera los recursos
+disponibles se reducen a <code>0.00001</code>, garantizando que <code>argmax</code> seleccione solo
+acciones factibles.  Esto replica el comportamiento de <code>rl_agent_meta_cognitive</code>
+en <code>pygameMediator.py</code>, asegurando que la métrica obtenida durante la optimización
+sea <strong>consistente</strong> con el rendimiento observado al ejecutar <code>python3 -m pes_bline</code>.</p>
+<p>Los <code>min(...)</code> aseguran que los índices de estado no excedan las dimensiones de la
+Q-table <code>(31, 11, 10, 11)</code> = (recursos, trial, severidad, acciones).</p>
+<h4 id="preservacion-de-la-mejor-q-table">Preservación de la mejor Q-table</h4>
+<p>Al final de cada trial, si el <code>mean_perf</code> supera el mejor valor previo, se guarda
+una copia de la Q-table en <code>_best_artifacts</code>.  Esto evita el problema de re-entrenar
+desde cero al final: Q-Learning es estocástico (inicialización aleatoria,
+exploración $\varepsilon$-greedy, secuencias de entrenamiento aleatorias), por lo que
+un re-entrenamiento con los mismos hiperparámetros puede producir una Q-table diferente
+y potencialmente peor.</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">global</span> <span class="n">_best_artifacts</span>
+    <span class="k">if</span> <span class="n">mean_perf</span> <span class="o">&gt;</span> <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]:</span>
+        <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;Q&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;rewards&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rewards</span><span class="p">)</span>
+        <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_perf</span>
+</code></pre></div>
+
+<h3 id="23-persistencia-con-sqlite">2.3 Persistencia con SQLite</h3>
+<div class="highlight"><pre><span></span><code><span class="n">db_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">opt_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;optuna_study_</span><span class="si">{</span><span class="n">opt_date</span><span class="si">}</span><span class="s1">.db&#39;</span><span class="p">)</span>
+<span class="n">storage</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;sqlite:///</span><span class="si">{</span><span class="n">db_path</span><span class="si">}</span><span class="s1">&#39;</span>
+
+<span class="n">study</span> <span class="o">=</span> <span class="n">optuna</span><span class="o">.</span><span class="n">create_study</span><span class="p">(</span>
+    <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;maximize&#39;</span><span class="p">,</span>
+    <span class="n">study_name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;qlearning_opt_</span><span class="si">{</span><span class="n">opt_date</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="n">sampler</span><span class="o">=</span><span class="n">optuna</span><span class="o">.</span><span class="n">samplers</span><span class="o">.</span><span class="n">TPESampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">),</span>
+    <span class="n">storage</span><span class="o">=</span><span class="n">storage</span><span class="p">,</span>
+    <span class="n">load_if_exists</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p>Cada trial completado se persiste en un archivo SQLite.  Si el proceso se interrumpe
+(suspensión de la máquina, error, etc.), al re-ejecutar el mismo comando Optuna detecta
+los trials ya completados y continúa desde donde se detuvo:</p>
+<div class="highlight"><pre><span></span><code><span class="n">completed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">study</span><span class="o">.</span><span class="n">trials</span>
+                 <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">optuna</span><span class="o">.</span><span class="n">trial</span><span class="o">.</span><span class="n">TrialState</span><span class="o">.</span><span class="n">COMPLETE</span><span class="p">])</span>
+<span class="n">remaining</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_trials</span> <span class="o">-</span> <span class="n">completed</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Relación con la teoría:</strong> El modelo sustituto del TPE se reconstruye a partir del
+historial almacenado; no hay pérdida de información respecto a correr todo de corrido.</p>
+<h3 id="24-proteccion-contra-underflow-numerico">2.4 Protección contra underflow numérico</h3>
+<div class="highlight"><pre><span></span><code><span class="n">_prev_err</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">seterr</span><span class="p">(</span><span class="n">under</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">study</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="n">objective</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="n">remaining</span><span class="p">,</span>
+                   <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">_progress_callback</span><span class="p">])</span>
+<span class="k">finally</span><span class="p">:</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">seterr</span><span class="p">(</span><span class="o">**</span><span class="n">_prev_err</span><span class="p">)</span>
+</code></pre></div>
+
+<p>El módulo <code>pes_bline</code> configura <code>numpy.seterr(all='raise', under='ignore')</code> en
+su <code>__init__.py</code> para detectar errores numéricos durante la simulación.  Aunque el
+<em>underflow</em> ya se ignora a nivel de paquete, el muestreador TPE calcula internamente
+<code>numpy.exp(x)</code> donde $x$ puede ser muy negativo ($x &lt; -700$), produciendo un
+<em>underflow</em> a $0.0$ que es matemáticamente inofensivo (simplemente indica
+probabilidades ínfimas).</p>
+<p>El <code>try/finally</code> funciona como protección adicional (<em>belt-and-suspenders</em>): captura
+el estado actual de <code>numpy.seterr</code> antes de la optimización y lo restaura al
+terminar, asegurando robustez incluso si la configuración de errores cambiara en
+versiones futuras del paquete.</p>
+<h3 id="25-guardado-de-q-table-y-reportes">2.5 Guardado de Q-table y reportes</h3>
+<p>Una vez completada la optimización, <code>main()</code> realiza dos pasos finales:</p>
+<ol>
+<li><strong>Usar la Q-table preservada</strong> — Si <code>_best_artifacts</code> contiene la Q-table del
+   mejor trial (corrida completa sin interrupción), se usa directamente sin
+   re-entrenar.  Solo si se reanudó un estudio previo y la Q-table no está en
+   memoria se aplica re-entrenamiento como fallback (usando la misma <code>SEED</code> de
+   CONFIG para obtener resultados idénticos):</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;Q&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">best</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+    <span class="n">best_Q</span> <span class="o">=</span> <span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;Q&#39;</span><span class="p">]</span>
+    <span class="n">best_rewards</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">_best_artifacts</span><span class="p">[</span><span class="s1">&#39;rewards&#39;</span><span class="p">])</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># Fallback: retrain (solo si se resumió y la Q-table original no está en memoria)</span>
+    <span class="n">best_rewards</span><span class="p">,</span> <span class="n">best_Q</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">QLearning</span><span class="p">(</span><span class="n">env_final</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+</code></pre></div>
+
+<ol>
+<li><strong>Generar reportes</strong> mediante <code>_save_report()</code>:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Archivo generado</th>
+<th>Contenido</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>optimization_results_&lt;fecha&gt;.txt</code></td>
+<td>Tabla de todos los trials ordenados por rendimiento, mejores hiperparámetros, estadísticas.</td>
+</tr>
+<tr>
+<td><code>optimization_history_&lt;fecha&gt;.png</code></td>
+<td>Gráfico de convergencia: rendimiento de cada trial y curva de mejor acumulado (<em>running best</em>).</td>
+</tr>
+<tr>
+<td><code>hyperparameter_importances_&lt;fecha&gt;.png</code></td>
+<td>Gráfico de barras con la importancia relativa de cada hiperparámetro (calculada por Optuna con <em>fANOVA</em>).</td>
+</tr>
+<tr>
+<td><code>q_best_&lt;fecha&gt;.npy</code></td>
+<td>Q-table entrenada con los mejores hiperparámetros.</td>
+</tr>
+<tr>
+<td><code>rewards_best_&lt;fecha&gt;.npy</code></td>
+<td>Historia de recompensas del mejor entrenamiento.</td>
+</tr>
+</tbody>
+</table>
+<p>El gráfico de importancia responde directamente a la pregunta: <em>¿cuál hiperparámetro
+afecta más al rendimiento?</em>  Esto orienta futuros ajustes manuales o refinamientos
+del espacio de búsqueda.</p>
+<h3 id="26-notificaciones-push">2.6 Notificaciones push</h3>
+<p>El módulo incluye soporte opcional de <strong>notificaciones push</strong> a través de
+<code>utils.notify</code>.  Si el módulo <code>utils</code> está disponible en <code>sys.path</code>, se envían
+notificaciones en dos momentos:</p>
+<ol>
+<li>
+<p><strong>Progreso cada 10 trials</strong> — El callback <code>_progress_callback</code> invoca
+   <code>notify()</code> cada vez que <code>done % 10 == 0</code>, informando trials completados,
+   mejor valor hasta el momento, tiempo transcurrido y rendimiento del último
+   trial.</p>
+</li>
+<li>
+<p><strong>Error durante la optimización</strong> — El bloque <code>if __name__ == '__main__'</code>
+   envuelve <code>main()</code> en un <code>try/except</code>: si ocurre cualquier excepción, se
+   envía una notificación con prioridad <code>urgent</code> y el traceback completo antes
+   de re-lanzar la excepción.</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="c1"># Notificación de progreso (cada 10 trials)</span>
+<span class="k">if</span> <span class="n">done</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">done</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">notify</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">_PKG_NAME</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">done</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_trials</span><span class="si">}</span><span class="s2"> trials&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;Se completaron </span><span class="si">{</span><span class="n">done</span><span class="si">}</span><span class="s2"> de </span><span class="si">{</span><span class="n">n_trials</span><span class="si">}</span><span class="s2"> trials.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Mejor valor hasta ahora: </span><span class="si">{</span><span class="n">best_val</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Último trial: value=</span><span class="si">{</span><span class="n">trial</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Tiempo transcurrido: </span><span class="si">{</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">s (</span><span class="si">{</span><span class="n">elapsed</span> <span class="o">/</span> <span class="mi">60</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> min)&quot;</span><span class="p">,</span>
+        <span class="n">tags</span><span class="o">=</span><span class="s2">&quot;chart_with_upwards_trend&quot;</span>
+    <span class="p">)</span>
+</code></pre></div>
+
+<p>Si <code>utils.notify</code> no está disponible (por ejemplo, al ejecutar fuera del
+workspace mPES), el import falla silenciosamente y <code>notify</code> se reemplaza por
+una función no-op (<code>lambda *a, **kw: None</code>).</p>
+<hr />
+<h2 id="3-diagrama-de-flujo">3. Diagrama de flujo</h2>
+<div class="highlight"><pre><span></span><code>main()
+  │
+  ├─ parsear argumentos: n_trials, --resume YYYY-MM-DD
+  ├─ _load_evaluation_data()
+  │
+  ├─ crear/cargar estudio Optuna (SQLite)
+  │       │
+  │       │  ┌──────────────────────────────────────────┐
+  │       └──►  study.optimize(objective, n_trials)     │
+  │           │                                         │
+  │           │  ┌─ trial n ────────────────────────┐   │
+  │           │  │ TPE elige θ = (α, γ, ε₀, ε_min, N) │
+  │           │  │ QLearning(env, θ) → Q-table      │   │
+  │           │  │ run_experiment(Q, 64 seqs) → perf│   │
+  │           │  │ return mean(perf)                │   │
+  │           │  └─────────────────────────────────┘   │
+  │           │  repetir hasta completar n_trials       │
+  │           └──────────────────────────────────────────┘
+  │
+  ├─ imprimir mejores hiperparámetros
+  ├─ usar Q-table preservada (o retrain si --resume)
+  └─ _save_report() → .txt, .png, .npy
+</code></pre></div>
+
+<hr />
+<h2 id="4-uso">4. Uso</h2>
+<h3 id="41-ejecucion-basica">4.1 Ejecución básica</h3>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span> /home/mecatronica/Documentos/maximiliano/mPES
+<span class="nb">source</span> linux_mpes_env/bin/activate
+
+<span class="c1"># 50 trials (valor por defecto)</span>
+python3 -m pes_bline.ext.optimize_rl
+
+<span class="c1"># 100 trials</span>
+python3 -m pes_bline.ext.optimize_rl <span class="m">100</span>
+</code></pre></div>
+
+<h3 id="42-ejecucion-en-segundo-plano-recomendada">4.2 Ejecución en segundo plano (recomendada)</h3>
+<div class="highlight"><pre><span></span><code>nohup python3 -m pes_bline.ext.optimize_rl <span class="m">100</span> <span class="se">\</span>
+  &gt; pes_bline/inputs/bayesian_opt.log <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">&amp;</span>
+</code></pre></div>
+
+<p>Para evitar suspensión de la máquina ver
+<a href="bayesian_optimization_guide.md">bayesian_optimization_guide.md</a> § 2.</p>
+<h3 id="43-reanudar-una-corrida-interrumpida">4.3 Reanudar una corrida interrumpida</h3>
+<p><strong>Mismo día</strong> — re-ejecutar el mismo comando; Optuna detecta los trials previos en el
+SQLite y continúa:</p>
+<div class="highlight"><pre><span></span><code>python3 -m pes_bline.ext.optimize_rl <span class="m">100</span>
+</code></pre></div>
+
+<p><strong>Día diferente</strong> — usar <code>--resume</code> con la fecha original del SQLite:</p>
+<div class="highlight"><pre><span></span><code>python3 -m pes_bline.ext.optimize_rl <span class="m">100</span> --resume <span class="m">2026</span>-02-12
+</code></pre></div>
+
+<h3 id="44-salida-esperada">4.4 Salida esperada</h3>
+<div class="highlight"><pre><span></span><code>══════════════════════════════════════════════════════════════════════
+  BAYESIAN OPTIMISATION — Q-LEARNING HYPERPARAMETERS
+══════════════════════════════════════════════════════════════════════
+
+ℹ Output directory: .../2026-02-12_BAYESIAN_OPT
+ℹ Target number of trials: 100
+
+── Loading Evaluation Data ──
+  ● Sequence lengths shape: (64,)
+  ● Sequences loaded: 64
+
+── Running Bayesian Optimisation ──
+ℹ Search space:
+  ● learning_rate    ∈ [0.10, 0.4]   (log scale)
+  ● discount_factor  ∈ [0.80, 0.99]
+  ● epsilon_initial  ∈ [0.4, 1.0]
+  ● epsilon_min      ∈ [0.05, 0.1]
+  ● num_episodes     ∈ [800000, 1000000]  (step=100000)
+
+  Trial   1/100  |  value=0.7563  |  best=0.7563  |  elapsed=19s
+  Trial   2/100  |  value=0.6941  |  best=0.7563  |  elapsed=76s
+  ...
+  Trial 100/100  |  value=0.8201  |  best=0.8482  |  elapsed=2934s
+
+✓ Optimisation finished in 2934.2s (48.9 min)
+
+── Best Hyperparameters Found ──
+  ● learning_rate             = 0.3597
+  ● discount_factor           = 0.8651
+  ● epsilon_initial           = 0.6791
+  ● epsilon_min               = 0.0848
+  ● num_episodes              = 900000
+ℹ Mean normalised performance: 0.848200
+</code></pre></div>
+
+<h3 id="45-archivos-de-salida">4.5 Archivos de salida</h3>
+<p>Todos se guardan en <code>pes_bline/inputs/&lt;FECHA&gt;_BAYESIAN_OPT/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>optuna_study_&lt;fecha&gt;.db</code></td>
+<td>Base de datos SQLite con todo el historial de Optuna (permite reanudar).</td>
+</tr>
+<tr>
+<td><code>q_best_&lt;fecha&gt;.npy</code></td>
+<td>Q-table <code>(31,11,10,11)</code> del mejor trial de la optimización. Lista para copiar a <code>inputs/q.npy</code> y usar en el experimento.</td>
+</tr>
+<tr>
+<td><code>rewards_best_&lt;fecha&gt;.npy</code></td>
+<td>Historia de recompensas promedio del mejor entrenamiento (cada 10 000 episodios).</td>
+</tr>
+<tr>
+<td><code>optimization_results_&lt;fecha&gt;.txt</code></td>
+<td>Reporte textual completo: mejores parámetros, estadísticas, tabla de todos los trials.</td>
+</tr>
+<tr>
+<td><code>optimization_history_&lt;fecha&gt;.png</code></td>
+<td>Gráfico de convergencia (rendimiento por trial + curva de mejor acumulado).</td>
+</tr>
+<tr>
+<td><code>hyperparameter_importances_&lt;fecha&gt;.png</code></td>
+<td>Importancia relativa de cada hiperparámetro (fANOVA).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-relacion-con-q-learning">5. Relación con Q-Learning</h2>
+<p>La ecuación de actualización de Q-Learning usada en <code>pandemic.py</code> es:</p>
+<p>$$Q(s, a) \;\leftarrow\; Q(s, a) + \alpha\left[r + \gamma\max_{a'}Q(s', a') - Q(s, a)\right]$$</p>
+<p>donde:</p>
+<ul>
+<li>$s = (\text{recursos},\; \text{trial},\; \text{severidad})$ — estado discretizado.</li>
+<li>$a \in {0, 1, \ldots, 10}$ — recursos asignados a la ciudad actual.</li>
+<li>$r$ — recompensa inmediata del entorno.</li>
+<li>$\alpha$ — tasa de aprendizaje (<code>learning_rate</code>).</li>
+<li>$\gamma$ — factor de descuento (<code>discount_factor</code>).</li>
+</ul>
+<p>La política de exploración es $\varepsilon$-greedy con decaimiento lineal:</p>
+<p>$$\varepsilon_t = \max!\left(\varepsilon_{\min},\;\; \varepsilon_0 - t\cdot\frac{\varepsilon_0 - \varepsilon_{\min}}{N}\right)$$</p>
+<p>La optimización Bayesiana actúa <strong>un nivel por encima</strong> de Q-Learning: no modifica
+el algoritmo, sino que busca los valores de $(\alpha, \gamma, \varepsilon_0,
+\varepsilon_{\min}, N)$ que maximicen el rendimiento de la política resultante.
+Es decir, es una <strong>meta-optimización</strong> (optimización de la optimización).</p>
+<p>Todos los trials de entrenamiento usan la misma semilla (<code>SEED</code> de <code>CONFIG.py</code>)
+para que las diferencias de rendimiento reflejen exclusivamente los hiperparámetros.</p>
+<div class="highlight"><pre><span></span><code>┌────────────────────────────────────────────────────┐
+│  Nivel externo: Optimización Bayesiana (Optuna)    │
+│  Decide θ = (α, γ, ε₀, ε_min, N)                  │
+│                                                    │
+│  ┌──────────────────────────────────────────────┐  │
+│  │  Nivel interno: Q-Learning (seed=SEED)       │  │
+│  │  Entrena Q-table con θ durante N episodios   │  │
+│  │  Q(s,a) ← Q(s,a) + α[r + γ·max Q - Q]      │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                    │
+│  Evaluar Q-table → f(θ) = rendimiento medio        │
+│  Devolver f(θ) a Optuna                            │
+└────────────────────────────────────────────────────┘
+</code></pre></div>
+
+<hr />
+<h2 id="6-flujo-de-trabajo-completo">6. Flujo de trabajo completo</h2>
+<p>La optimización Bayesiana es el <strong>primer paso</strong> de un flujo de tres etapas:</p>
+<div class="highlight"><pre><span></span><code>1. Optimización Bayesiana         python3 -m pes_bline.ext.optimize_rl [N]
+   └─ Buscar mejores (α, γ, ε₀, ε_min, N)
+   └─ Guardar Q-table y reporte en inputs/&lt;fecha&gt;_BAYESIAN_OPT/
+
+2. Entrenamiento definitivo       python3 -m pes_bline.ext.train_rl [episodes]
+   └─ Usa hiperparámetros fijos en train_rl.py (copiados del mejor trial)
+   └─ Guarda Q-table y gráficos en inputs/&lt;fecha&gt;_RL_TRAIN/
+
+3. Experimento                    python3 -m pes_bline
+   └─ Lee inputs/q.npy y inputs/rewards.npy
+   └─ Ejecuta el agente RL sobre 8 bloques × 8 secuencias
+</code></pre></div>
+
+<h3 id="61-transferencia-de-hiperparametros">6.1 Transferencia de hiperparámetros</h3>
+<p>Después de ejecutar la optimización, los mejores hiperparámetros deben copiarse
+manualmente a <code>ext/train_rl.py</code> (variables <code>learning_rate</code>, <code>discount_factor</code>,
+<code>epsilon_initial</code>, <code>epsilon_min</code> y <code>num_episodes</code>).</p>
+<p>Actualmente <code>train_rl.py</code> usa los valores del trial #40:</p>
+<table>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>learning_rate</code></td>
+<td>0.35965545888114453</td>
+</tr>
+<tr>
+<td><code>discount_factor</code></td>
+<td>0.8650520580454709</td>
+</tr>
+<tr>
+<td><code>epsilon_initial</code></td>
+<td>0.6791201210873763</td>
+</tr>
+<tr>
+<td><code>epsilon_min</code></td>
+<td>0.08483331103075126</td>
+</tr>
+<tr>
+<td><code>num_episodes</code></td>
+<td>900 000</td>
+</tr>
+</tbody>
+</table>
+<h3 id="62-transferencia-de-q-table-al-experimento">6.2 Transferencia de Q-table al experimento</h3>
+<p>Para que <code>python3 -m pes_bline</code> use la Q-table entrenada, ésta debe copiarse
+a la raíz de <code>inputs/</code>:</p>
+<div class="highlight"><pre><span></span><code>cp pes_bline/inputs/&lt;fecha&gt;_RL_TRAIN/q_&lt;fecha&gt;.npy  pes_bline/inputs/q.npy
+cp pes_bline/inputs/&lt;fecha&gt;_RL_TRAIN/rewards_&lt;fecha&gt;.npy  pes_bline/inputs/rewards.npy
+</code></pre></div>
+
+<p><code>__main__.py</code> valida la existencia de <code>q.npy</code> y <code>rewards.npy</code> antes de iniciar
+el experimento; si no los encuentra, muestra un error indicando que se debe
+ejecutar <code>train_rl.py</code> primero.</p>
+</body>
+</html>

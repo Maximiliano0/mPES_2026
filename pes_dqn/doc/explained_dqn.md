@@ -6,7 +6,7 @@ Este documento conecta la **teoría de Deep Q-Networks (DQN)** con su
 **implementación concreta** en el paquete `pes_dqn`.  Para cada concepto
 teórico se indica la variable, función o línea de código correspondiente.
 
-`pes_dqn` reemplaza la tabla Q tabular de `pes` / `pes_base_line` por una
+`pes_dqn` reemplaza la tabla Q tabular de `pes` / `pes_bline` por una
 **red neuronal** que aproxima la función $Q(s, a)$.  Conserva el mismo
 entorno Gym (`Pandemic`), el mismo espacio de estados y acciones, y la
 misma integración con la UI de Pygame.
@@ -18,7 +18,7 @@ misma integración con la UI de Pygame.
 El MDP subyacente es idéntico al del paquete base:
 
 | Componente | Símbolo | Implementación |
-|------------|---------|----------------|
+| ------------ | --------- | ---------------- |
 | Estados | $S$ | `(resources_left, trial_no, severity)` — 3 dimensiones discretas |
 | Acciones | $A$ | `{0, 1, 2, …, 10}` — recursos a asignar |
 | Transiciones | $P(s' \mid s, a)$ | Determinísticas: `env.step(action)` en `pandemic.py` |
@@ -34,8 +34,8 @@ $$|S| = 31 \times 11 \times 10 = 3{,}410 \text{ estados}$$
 ## 3. ¿Por qué DQN en lugar de Q-tabular?
 
 | Aspecto | Q-tabular (`pes`) | DQN (`pes_dqn`) |
-|---------|-------------------|-----------------|
-| Representación de $Q$ | Tabla $|S| \times |A|$ (37 510 celdas) | Red neuronal (~5 131 parámetros) |
+| --------- | ------------------- | ----------------- |
+| Representación de $Q$ | Tabla $\lvert S\rvert \times \lvert A\rvert$ (37 510 celdas) | Red neuronal (~5 131 parámetros) |
 | Generalización | Ninguna — cada celda se actualiza de forma independiente | La red interpola entre estados similares |
 | Escalabilidad | Crece exponencialmente con dimensiones | Crece linealmente con parámetros de red |
 | Muestra de datos | On-policy (un paso, un update) | Off-policy con experience replay |
@@ -49,7 +49,7 @@ $$|S| = 31 \times 11 \times 10 = 3{,}410 \text{ estados}$$
 
 Implementada en `ext/dqn_model.py` → `build_q_network()`:
 
-```
+```text
 Input  (3)  →  Dense(64, ReLU)  →  Dense(64, ReLU)  →  Dense(11, linear)
                hidden_units[0]     hidden_units[1]     action_dim
 ```
@@ -67,7 +67,7 @@ model.add(tf.keras.layers.Dense(
 **Parámetros** (con `DQN_HIDDEN_UNITS = [64, 64]`):
 
 | Capa | Forma | Parámetros |
-|------|-------|------------|
+| ------ | ------- | ------------ |
 | `hidden_0` | 3 → 64 | $3 \times 64 + 64 = 256$ |
 | `hidden_1` | 64 → 64 | $64 \times 64 + 64 = 4{,}160$ |
 | `q_values` | 64 → 11 | $64 \times 11 + 11 = 715$ |
@@ -143,7 +143,7 @@ class ReplayBuffer:
 **Ventaja frente a `deque` + `random.sample`**:
 
 | Operación | `deque` (anterior) | NumPy (actual) |
-|-----------|-------------------|----------------|
+| ----------- | ------------------- | ---------------- |
 | `push` | Crear tupla + append | Asignación directa a array |
 | `sample(32)` | `random.sample` O(n) + `zip` + `numpy.array` | `randint` + advanced indexing O(batch) |
 | Memoria | Objetos Python dispersos | Arrays contiguos (cache-friendly) |
@@ -151,7 +151,7 @@ class ReplayBuffer:
 **Configuración** (`config/CONFIG.py`):
 
 | Constante | Valor por defecto | Descripción |
-|-----------|-------------------|-------------|
+| ----------- | ------------------- | ------------- |
 | `DQN_REPLAY_BUFFER_SIZE` | 50 000 | Capacidad máxima del buffer |
 | `DQN_BATCH_SIZE` | 32 | Tamaño de mini-batch |
 
@@ -185,7 +185,7 @@ donde $\theta^-$ son los pesos congelados.
 **Configuración**:
 
 | Constante | Valor por defecto | Descripción |
-|-----------|-------------------|-------------|
+| ----------- | ------------------- | ------------- |
 | `DQN_TARGET_SYNC_FREQ` | 1 000 | Gradient steps entre sincronizaciones |
 
 ---
@@ -278,7 +278,7 @@ $$\theta_t = \theta_{t-1} - \alpha \, \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsil
 #### Hiperparámetros
 
 | Símbolo | Nombre | Valor por defecto (Keras) | En `pes_dqn` |
-|---------|--------|--------------------------|--------------|
+| --------- | -------- | -------------------------- | -------------- |
 | $\alpha$ | Learning rate | 0.001 | `learning_rate` en `train_dqn.py` y `optimize_dqn.py` |
 | $\beta_1$ | Decaimiento del 1er momento | 0.9 | Por defecto (Keras) |
 | $\beta_2$ | Decaimiento del 2do momento | 0.999 | Por defecto (Keras) |
@@ -367,7 +367,19 @@ Para cada episodio i = 1 … N:
     Retornar (ave_reward_list, online_model, conf_list)
 ```
 
-### 9.1 Parámetro `compute_confidence`
+### 9.1 Parámetro `verbose`
+
+`DQNTraining()` acepta un parámetro opcional `verbose` (por defecto `True`).
+Cuando está desactivado (`verbose=False`), se suprimen los mensajes
+periódicos de progreso que normalmente se imprimen cada 10 000 episodios.
+Esto es especialmente útil durante la optimización bayesiana, donde
+decenas de trials consecutivos generarían ruido excesivo en la terminal.
+
+De forma análoga, `run_experiment()` también acepta `verbose` (por defecto
+`True`).  Cuando `verbose=False`, se omiten las impresiones del estado
+inicial y de los valores de severidad por secuencia.
+
+### 9.2 Parámetro `compute_confidence`
 
 `DQNTraining()` acepta un parámetro opcional `compute_confidence` (por
 defecto `False`).  Cuando está desactivado, se **elimina** el segundo
@@ -390,7 +402,7 @@ resultando en una mejora de velocidad de ~1.5–2× en CPUs modestas
 **Parámetros configurables** (`config/CONFIG.py`):
 
 | Constante | Valor por defecto | Descripción |
-|-----------|-------------------|-------------|
+| ----------- | ------------------- | ------------- |
 | `DQN_HIDDEN_UNITS` | `[64, 64]` | Capas ocultas de la red |
 | `DQN_BATCH_SIZE` | 32 | Mini-batch de replay |
 | `DQN_REPLAY_BUFFER_SIZE` | 50 000 | Capacidad del buffer |
@@ -409,17 +421,18 @@ hiperparámetros óptimos del DQN.
 ### 10.1 Espacio de Búsqueda
 
 | Parámetro | Rango | Tipo |
-|-----------|-------|------|
-| `learning_rate` | $[10^{-4},\; 10^{-2}]$ | log-uniforme |
-| `discount_factor` | $[0.80,\; 0.99]$ | uniforme |
-| `epsilon_initial` | $[0.4,\; 1.0]$ | uniforme |
-| `epsilon_min` | $[0.01,\; 0.10]$ | uniforme |
-| `num_episodes` | $[50\,000,\; 200\,000]$ | entero (paso 25k) |
-| `hidden_dim` | $[32,\; 128]$ | entero (paso 32) |
-| `n_hidden_layers` | $\{1, 2, 3\}$ | categórico |
-| `batch_size` | $\{16, 32, 64\}$ | categórico |
-| `replay_buffer_size` | $[20\,000,\; 100\,000]$ | entero (paso 10k) |
-| `target_sync_freq` | $[500,\; 2\,000]$ | entero (paso 500) |
+| ----------- | ------- | ------ |
+| `learning_rate` | $[5 \times 10^{-4},\; 5 \times 10^{-3}]$ | log-uniforme |
+| `discount_factor` | $[0.85,\; 0.95]$ | uniforme |
+| `epsilon_initial` | $[0.50,\; 0.90]$ | uniforme |
+| `epsilon_min` | $[0.02,\; 0.10]$ | uniforme |
+| `num_episodes` | $[50\,000,\; 300\,000]$ | entero (paso 25k) |
+| `hidden_dim` | $[32,\; 64]$ | entero (paso 32) |
+| `n_hidden_layers` | $\{1, 2\}$ | entero |
+| `batch_size` | $\{32, 64\}$ | categórico |
+| `replay_buffer_size` | $[20\,000,\; 50\,000]$ | entero (paso 10k) |
+| `target_sync_freq` | $[500,\; 1\,500]$ | entero (paso 500) |
+| `train_freq` | $\{2, 4\}$ | categórico |
 
 ### 10.2 Función Objetivo
 
@@ -430,7 +443,27 @@ calculado con `calculate_normalised_final_severity_performance_metric()`.
 Se aplica enmascaramiento de acciones infactibles (`actions > resources_left`)
 para que la métrica coincida con el comportamiento del agente en el experimento.
 
-### 10.3 Artefactos
+Durante la evaluación, tanto `DQNTraining()` como `run_experiment()` se
+invocan con `verbose=False` para suprimir las impresiones de consola por
+episodio/secuencia, evitando ruido en la salida de terminal durante
+decenas de trials consecutivos.
+
+### 10.3 Poda Temprana (MedianPruner)
+
+El estudio de Optuna incorpora un **MedianPruner** configurado con
+`n_startup_trials=5` y `n_warmup_steps=2`.  Este pruner descarta trials
+cuyo rendimiento intermedio es inferior a la mediana de trials anteriores,
+acelerando la búsqueda al evitar completar trials prometedoramente malos:
+
+```python
+study = optuna.create_study(
+    ...
+    pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=2),
+    ...
+)
+```
+
+### 10.4 Artefactos
 
 Los mejores pesos del modelo se almacenan durante la búsqueda y al
 finalizar se reconstruye la red y se guarda como `dqn_model.keras`.
@@ -464,7 +497,7 @@ paquete tabular.
 ## 12. Comparación con Algoritmo Original (pes)
 
 | Componente | `pes` (Q-tabular) | `pes_dqn` (DQN) |
-|------------|-------------------|-----------------|
+| ------------ | ------------------- | ----------------- |
 | Modelo | `numpy.ndarray` (q.npy) | `tf.keras.Model` (.keras) |
 | Update | $Q(s,a) \leftarrow Q(s,a) + \alpha[r + \gamma \max Q(s') - Q(s,a)]$ | Gradient descent con Huber loss |
 | Datos | Un paso → un update | Replay buffer (NumPy arrays) → mini-batch |

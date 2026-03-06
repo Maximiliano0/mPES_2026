@@ -249,14 +249,14 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
 
         # 1. Overall Performance Trend
         ax1 = fig.add_subplot(gs[0, :2])
+        assert isinstance(ax1, plt.Axes)
         ax1.plot(range(1, len(performances) + 1), performances, 'b-o', linewidth=2, markersize=4, alpha=0.7)
         ax1.axhline(
             y=stats['overall_mean'],
             color='r',
             linestyle='--',
             linewidth=2,
-            label=f"Mean: {
-                stats['overall_mean']:.3f}")
+            label=f"Mean: {stats['overall_mean']:.3f}")
         ax1.fill_between(range(1, len(performances) + 1),
                          stats['overall_mean'] - stats['overall_std'],
                          stats['overall_mean'] + stats['overall_std'],
@@ -270,6 +270,7 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
 
         # 2. Distribution Histogram
         ax2 = fig.add_subplot(gs[0, 2])
+        assert isinstance(ax2, plt.Axes)
         ax2.hist(performances, bins=15, color='skyblue', edgecolor='black', alpha=0.7)
         ax2.axvline(x=stats['overall_mean'], color='red', linestyle='--', linewidth=2, label='Mean')
         ax2.axvline(x=stats['overall_median'], color='green', linestyle='--', linewidth=2, label='Median')
@@ -280,6 +281,7 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
 
         # 3. Box Plot by Block
         ax3 = fig.add_subplot(gs[1, 0])
+        assert isinstance(ax3, plt.Axes)
         if len(normalized_all_perf) > 0:
             # Create proper boxplot data
             bp = ax3.boxplot(normalized_all_perf, labels=[f'B{i + 1}' for i in range(len(normalized_all_perf))],
@@ -293,6 +295,7 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
 
         # 4. Cumulative Mean
         ax4 = fig.add_subplot(gs[1, 1])
+        assert isinstance(ax4, plt.Axes)
         cumulative_mean = numpy.cumsum(performances) / numpy.arange(1, len(performances) + 1)
         ax4.plot(range(1, len(cumulative_mean) + 1), cumulative_mean, 'g-o', linewidth=2, markersize=4)
         ax4.set_xlabel('Sequence Number', fontsize=10, fontweight='bold')
@@ -303,6 +306,7 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
 
         # 5. Block-wise Mean Comparison
         ax5 = fig.add_subplot(gs[1, 2])
+        assert isinstance(ax5, plt.Axes)
         block_means = [numpy.mean(block) for block in normalized_all_perf]
         if len(block_means) > 0:
             ax5.bar(range(1, len(block_means) + 1), block_means, color='steelblue', alpha=0.7)
@@ -314,6 +318,7 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
 
         # 6. Statistics Summary Table
         ax6 = fig.add_subplot(gs[2, :])
+        assert isinstance(ax6, plt.Axes)
         ax6.axis('tight')
         ax6.axis('off')
 

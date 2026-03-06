@@ -369,10 +369,14 @@ def main():
             TimeElapsed = (datetime.datetime.now(tz=datetime.timezone.utc) - ExperimentStartTime).total_seconds()
             HoursElapsed = max(0, TimeElapsed / 60 / 60 // 1)
             MinutesElapsed = max(0, (TimeElapsed - HoursElapsed * 60 * 60) / 60 // 1)
-            HoursElapsed_str = f'{
-                HoursElapsed:.0f} hours, and ' if HoursElapsed > 1 else '1 hour, and ' if HoursElapsed == 1 else ''
-            MinutesElapsed_str = f'{
-                MinutesElapsed:.0f} minutes' if MinutesElapsed != 1 else '1 minute' if MinutesElapsed == 1 else ''
+            HoursElapsed_str = (
+                f'{HoursElapsed:.0f} hours, and ' if HoursElapsed > 1
+                else '1 hour, and ' if HoursElapsed == 1 else ''
+            )
+            MinutesElapsed_str = (
+                f'{MinutesElapsed:.0f} minutes' if MinutesElapsed != 1
+                else '1 minute' if MinutesElapsed == 1 else ''
+            )
             TimeElapsed_str = f'Time elapsed: {HoursElapsed_str}{MinutesElapsed_str}'
 
             # Calculate time left based on speed so far and sequences remaining
@@ -382,13 +386,19 @@ def main():
                 TimeLeft = SeqsLeft * TimePerSeq
                 HoursLeft = max(0, TimeLeft / 60 / 60 // 1)
                 MinutesLeft = max(0, (TimeLeft - HoursLeft * 60 * 60) / 60 // 1)
-                HoursLeft_str = f'{
-                    HoursLeft:.0f} hours, and ' if HoursLeft > 1 else '1 hour, and ' if HoursLeft == 1 else ''
-                MinutesLeft_str = f'{
-                    MinutesLeft:.0f} minutes' if MinutesLeft != 1 else '1 minute' if MinutesLeft == 1 else ''
+                HoursLeft_str = (
+                    f'{HoursLeft:.0f} hours, and ' if HoursLeft > 1
+                    else '1 hour, and ' if HoursLeft == 1 else ''
+                )
+                MinutesLeft_str = (
+                    f'{MinutesLeft:.0f} minutes' if MinutesLeft != 1
+                    else '1 minute' if MinutesLeft == 1 else ''
+                )
                 TimeLeft_str = f'Estimated time left: {HoursLeft_str}{MinutesLeft_str}'
-                _EndOfBlock_str = f'End of block {CurrentBlockIndex}   ({
-                    NUM_BLOCKS - CurrentBlockIndex} blocks to go)\nTake rest if needed.'
+                _EndOfBlock_str = (
+                    f'End of block {CurrentBlockIndex}   '
+                    f'({NUM_BLOCKS - CurrentBlockIndex} blocks to go)\nTake rest if needed.'
+                )
             else:
                 _EndOfBlock_str = ' '
                 TimeLeft_str = ' '
@@ -416,10 +426,9 @@ def main():
                 resources_to_allocate = AVAILABLE_RESOURCES_PER_SEQUENCE
 
                 log_utils.tee(
-                    f"  └─ Secuencia {
-                        AbsoluteSequenceIndex + 1}/{total_number_of_sequences} (Mapa #{
-                        int(CurrentSequenceMapIndex)}) - Progreso: {
-                        CurrentSequenceIndex + 1}/{NUM_SEQUENCES}"
+                    f"  └─ Secuencia {AbsoluteSequenceIndex + 1}/{total_number_of_sequences}"
+                    f" (Mapa #{int(CurrentSequenceMapIndex)})"
+                    f" - Progreso: {CurrentSequenceIndex + 1}/{NUM_SEQUENCES}"
                 )
 
                 _ScreenMessage = (f"Map Number #{AbsoluteSequenceIndex + 1} / {total_number_of_sequences}\n\n\n"
@@ -487,8 +496,9 @@ def main():
                     log_utils.tee()   # will print an empty line
 
                     log_utils.tee(
-                        f'Current trial: {trial_no +
-                                          1} out of {NumTrials__blocks_x_sequences__2darray[CurrentBlockIndex, CurrentSequenceIndex]:.0f} in sequence',
+                        f'Current trial: {trial_no + 1} out of '
+                        f'{NumTrials__blocks_x_sequences__2darray[CurrentBlockIndex, CurrentSequenceIndex]:.0f}'
+                        f' in sequence',
                         f'({AbsoluteTrialCount} out of {TOTAL_NUM_TRIALS_IN_BLOCK * NUM_BLOCKS} overall)'
                     )
 

@@ -321,7 +321,7 @@ Para espacios de estados grandes o continuos, se puede aproximar $Q$ con:
 - **Redes neuronales** (Deep Q-Network / DQN)
 - **Funciones lineales** con features
 - **Tiles coding** (discretización adaptativa)
-- **Transformers** (como en `pes_transformer`)
+- **Transformers** (como en `pes_trf`)
 
 ### 8.3 ¿Por qué tabular funciona en PES?
 

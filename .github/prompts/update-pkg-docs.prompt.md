@@ -11,16 +11,16 @@ When invoking this prompt, specify the **target package** name. Examples:
 
 ```
 @update-pkg-docs pes
-@update-pkg-docs pes_base_line
+@update-pkg-docs pes_bline
 @update-pkg-docs pes_qlv2
 @update-pkg-docs pes_dqn
-@update-pkg-docs pes_actor_critic
-@update-pkg-docs pes_transformer
+@update-pkg-docs pes_ac
+@update-pkg-docs pes_trf
 ```
 
 Throughout this prompt, `<PKG>` refers to the package name provided by the
-user (e.g. `pes`, `pes_base_line`, `pes_qlv2`, `pes_dqn`, `pes_actor_critic`,
-`pes_transformer`).
+user (e.g. `pes`, `pes_bline`, `pes_qlv2`, `pes_dqn`, `pes_ac`,
+`pes_trf`).
 
 ## Scope
 

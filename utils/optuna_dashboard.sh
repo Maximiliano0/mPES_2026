@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# optuna_dashboard.sh — Lanza Optuna Dashboard para pes_base_line o pes_qlv2
+# optuna_dashboard.sh — Lanza Optuna Dashboard para pes_bline o pes_qlv2
 #
 # Uso:
 #   ./optuna_dashboard.sh                   # Menú interactivo
-#   ./optuna_dashboard.sh bayesian          # Directo a pes_base_line
+#   ./optuna_dashboard.sh bayesian          # Directo a pes_bline
 #   ./optuna_dashboard.sh qlv2              # Directo a pes_qlv2
-#   ./optuna_dashboard.sh bayesian 9090     # pes_base_line en puerto 9090
+#   ./optuna_dashboard.sh bayesian 9090     # pes_bline en puerto 9090
 #
 # Requisitos:
 #   - Entorno virtual activado (linux_mpes_env)
@@ -23,7 +23,7 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"      # mPES/ (raíz del workspace)
 DEFAULT_PORT=8080
 
 # ── Rutas relativas a los directorios de inputs de cada proyecto ─────────────
-BAYESIAN_INPUTS="pes_base_line/inputs"
+BAYESIAN_INPUTS="pes_bline/inputs"
 QLV2_INPUTS="pes_qlv2/inputs"
 
 # ── Colores para la salida en terminal ───────────────────────────────────────
@@ -112,9 +112,9 @@ show_menu() {
 
     # Mostrar opciones con estado
     if [[ -n "${bayesian_db}" ]]; then
-        echo -e "  ${GREEN}1)${RESET} pes_base_line   ${BLUE}→${RESET} $(basename "${bayesian_db}")"
+        echo -e "  ${GREEN}1)${RESET} pes_bline   ${BLUE}→${RESET} $(basename "${bayesian_db}")"
     else
-        echo -e "  ${RED}1)${RESET} pes_base_line   ${RED}(sin estudios)${RESET}"
+        echo -e "  ${RED}1)${RESET} pes_bline   ${RED}(sin estudios)${RESET}"
     fi
 
     if [[ -n "${qlv2_db}" ]]; then

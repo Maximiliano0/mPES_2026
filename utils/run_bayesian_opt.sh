@@ -2,8 +2,8 @@
 # ------------------------------------------------------------------
 #  Lanzar optimización Bayesiana
 #
-#  Script compartido para pes_base_line, pes_qlv2, pes_dqn
-#  y pes_transformer.  Todas las rutas se resuelven de forma
+#  Script compartido para pes_bline, pes_qlv2, pes_dqn
+#  y pes_trf.  Todas las rutas se resuelven de forma
 #  relativa a la ubicación de este script (utils/ → mPES/).
 #
 #  Funcionalidades:
@@ -14,10 +14,10 @@
 #
 #  Uso:
 #    chmod +x run_bayesian_opt.sh
-#    ./run_bayesian_opt.sh bayesian 100              # pes_base_line, corrida nueva
+#    ./run_bayesian_opt.sh bayesian 100              # pes_bline, corrida nueva
 #    ./run_bayesian_opt.sh qlv2 100                  # pes_qlv2, corrida nueva
 #    ./run_bayesian_opt.sh dqn 30                    # pes_dqn, corrida nueva
-#    ./run_bayesian_opt.sh transformer 30            # pes_transformer, corrida nueva
+#    ./run_bayesian_opt.sh transformer 30            # pes_trf, corrida nueva
 #    ./run_bayesian_opt.sh bayesian 100 2026-02-12   # reanudar desde fecha
 # ------------------------------------------------------------------
 set -euo pipefail
@@ -30,11 +30,11 @@ VENV="$PROJECT_DIR/linux_mpes_env/bin/activate"
 # ── Resolver paquete desde primer argumento ──────────────────────
 resolve_package() {
     case "${1:-}" in
-        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_base_line"       ;;
+        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_bline"       ;;
         qlv2|QLv2|QLVAL2|ql|2)           echo "pes_qlv2"            ;;
         dqn|DQN|3)                        echo "pes_dqn"             ;;
-        ac|a2c|actor-critic|4)            echo "pes_actor_critic"    ;;
-        transformer|tr|5)                 echo "pes_transformer"     ;;
+        ac|a2c|actor-critic|4)            echo "pes_ac"    ;;
+        transformer|tr|5)                 echo "pes_trf"     ;;
         *) return 1 ;;
     esac
 }
@@ -45,7 +45,7 @@ if [[ $# -lt 2 ]]; then
     echo ""
     echo "Uso: $0 <paquete> <n_trials> [fecha_resume]"
     echo ""
-    echo "  Paquetes: bayesian (pes_base_line), qlv2 (pes_qlv2), dqn (pes_dqn), ac (pes_actor_critic), transformer (pes_transformer)"
+    echo "  Paquetes: bayesian (pes_bline), qlv2 (pes_qlv2), dqn (pes_dqn), ac (pes_ac), transformer (pes_trf)"
     echo ""
     echo "Ejemplos:"
     echo "  $0 bayesian 100"
@@ -67,11 +67,11 @@ N_TRIALS="$2"
 # ── Resolver módulo de optimización por paquete ──────────────────
 resolve_module() {
     case "$1" in
-        pes_base_line)    echo "pes_base_line.ext.optimize_rl" ;;
+        pes_bline)    echo "pes_bline.ext.optimize_rl" ;;
         pes_qlv2)         echo "pes_qlv2.ext.optimize_rl"     ;;
         pes_dqn)          echo "pes_dqn.ext.optimize_dqn"     ;;
-        pes_actor_critic) echo "pes_actor_critic.ext.optimize_ac" ;;
-        pes_transformer)  echo "pes_transformer.ext.optimize_tr" ;;
+        pes_ac) echo "pes_ac.ext.optimize_ac" ;;
+        pes_trf)  echo "pes_trf.ext.optimize_tr" ;;
     esac
 }
 OPT_MODULE="$(resolve_module "$PKG_NAME")"

@@ -10,11 +10,11 @@ When invoking this prompt, specify the target package name. Examples:
 
 ```
 @pkg-scope pes
-@pkg-scope pes_base_line
+@pkg-scope pes_bline
 @pkg-scope pes_qlv2
 @pkg-scope pes_dqn
-@pkg-scope pes_actor_critic
-@pkg-scope pes_transformer
+@pkg-scope pes_ac
+@pkg-scope pes_trf
 @pkg-scope utils
 ```
 
@@ -31,11 +31,11 @@ any other package in this workspace.
 | Package | Algorithm | Key files |
 |---------|-----------|-----------|
 | `pes` | Tabular Q-Learning (baseline) | `ext/pandemic.py`, `ext/train_rl.py` |
-| `pes_base_line` | Q-Learning + Bayesian optimisation (Optuna) | `ext/optimize_rl.py` |
+| `pes_bline` | Q-Learning + Bayesian optimisation (Optuna) | `ext/optimize_rl.py` |
 | `pes_qlv2` | Double Q-Learning, ε-decay warm-up, PBRS | `ext/pandemic.py`, `ext/optimize_rl.py` |
 | `pes_dqn` | Deep Q-Network (experience replay + target net) | `ext/dqn_model.py`, `ext/train_dqn.py`, `ext/optimize_dqn.py` |
-| `pes_actor_critic` | Advantage Actor-Critic (A2C, actor + critic nets) | `ext/ac_model.py`, `ext/train_ac.py`, `ext/optimize_ac.py` |
-| `pes_transformer` | Causal Transformer encoder + RL | `ext/transformer_model.py`, `ext/train_transformer.py`, `ext/optimize_tr.py` |
+| `pes_ac` | Advantage Actor-Critic (A2C, actor + critic nets) | `ext/ac_model.py`, `ext/train_ac.py`, `ext/optimize_ac.py` |
+| `pes_trf` | Causal Transformer encoder + RL | `ext/transformer_model.py`, `ext/train_transformer.py`, `ext/optimize_tr.py` |
 | `utils` | Shared helpers (notifications, shell scripts) | `notify.py` |
 
 ## Discovery — Build the Package Map
