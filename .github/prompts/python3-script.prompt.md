@@ -1,6 +1,6 @@
 # Python 3 Script Template
 
-> Last updated: 2026-03-04
+> Last updated: 2026-03-06
 
 Generate a new Python 3 script following the mPES project conventions.
 
@@ -51,10 +51,24 @@ The generated script MUST follow this structure, in order:
 
 ## Quality gates
 
-After generating the script, run:
+After generating the script, activate the correct virtual environment for the
+current OS and run:
 
-1. `source linux_mpes_env/bin/activate && pyright <PACKAGE_DIR>/` → 0 errors
-2. `source linux_mpes_env/bin/activate && pylint --rcfile=.pylintrc <PACKAGE_DIR>/` → 10.00/10
+**Linux / macOS:**
+```bash
+source linux_mpes_env/bin/activate
+pyright <PACKAGE_DIR>/
+pylint --rcfile=.pylintrc <PACKAGE_DIR>/
+```
+
+**Windows (PowerShell):**
+```powershell
+win_mpes_env\Scripts\Activate.ps1
+pyright <PACKAGE_DIR>/
+pylint --rcfile=.pylintrc <PACKAGE_DIR>/
+```
+
+Targets: pyright → 0 errors, pylint → 10.00/10.
 
 ## Example skeleton
 

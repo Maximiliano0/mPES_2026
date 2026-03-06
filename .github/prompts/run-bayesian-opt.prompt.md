@@ -1,9 +1,12 @@
 # Run Bayesian Optimisation
 
-> Last updated: 2026-03-04
+> Last updated: 2026-03-06
 
 Launch the Bayesian optimisation for a given package **and** start the
 watcher that commits+pushes results when the process finishes.
+
+Both a **Linux (Bash)** and a **Windows (PowerShell)** workflow are provided.
+Detect the current OS and follow the appropriate path.
 
 ## Inputs
 
@@ -28,22 +31,43 @@ Each package has its own optimisation module:
 If the user provides an alias instead of the full package name, resolve it
 using the table above.
 
-## Workflow
+## Quick Launch (recommended)
 
-All commands run from the **workspace root** (`mPES/`) using **relative
-paths** only.  Never use absolute paths.
+Both platforms have a ready-made script in `utils/`:
 
-### Step 0 — Validate environment
+**Linux:**
+```bash
+./utils/run_bayesian_opt.sh dqn 110
+./utils/run_bayesian_opt.sh ac 100
+./utils/run_bayesian_opt.sh bayesian 100 2026-02-12   # resume
+```
+
+**Windows (PowerShell):**
+```powershell
+.\utils\run_bayesian_opt.ps1 dqn 110
+.\utils\run_bayesian_opt.ps1 ac 100
+.\utils\run_bayesian_opt.ps1 bayesian 100 2026-02-12  # resume
+```
+
+These scripts handle environment activation, power settings, background
+launch, and the watcher automatically. The sections below describe the
+manual step-by-step process for reference.
+
+---
+
+## Manual Workflow — Linux (Bash)
+
+All commands run from the **workspace root** using **relative paths** only.
+
+### Step 0 — Activate the virtual environment
 
 ```bash
 source linux_mpes_env/bin/activate
 ```
 
-Confirm the virtual environment activated successfully before proceeding.
+### Step 1 — Resolve package and module
 
-### Step 1 — Resolve the optimisation module
-
-Using the table above, derive two variables:
+Using the table above, derive:
 
 - `PKG` — full package name (e.g. `pes_dqn`).
 - `OPT_MODULE` — Python module path (e.g. `pes_dqn.ext.optimize_dqn`).
@@ -55,10 +79,7 @@ LOG_DIR="${PKG}/inputs"
 mkdir -p "$LOG_DIR"
 ```
 
-### Step 3 — Prevent system suspension and shutdown
-
-Disable GNOME lid-close suspension, screen blanking, automatic suspend,
-and idle-triggered shutdown so the laptop stays awake and running:
+### Step 3 — Prevent system suspension
 
 ```bash
 # Lid close → do nothing (AC and battery)
@@ -74,31 +95,20 @@ gsettings set org.gnome.desktop.session idle-delay 0
 gsettings set org.gnome.desktop.screensaver lock-enabled false
 ```
 
-> **Note:** these settings persist across sessions.  The prompt does **not**
-> restore them automatically — the user should revert them manually after
-> the optimisation finishes if desired.
+> **Note:** these settings persist across sessions. Revert them manually
+> after the optimisation finishes if desired.
 
 ### Step 4 — Launch the optimisation
 
-Build the command arguments:
-
-```
+```bash
 ARGS="$N_TRIALS"                          # fresh run
 ARGS="$N_TRIALS --resume $RESUME_DATE"    # resumed run (if date provided)
-```
 
-Then launch in background with `nohup`:
-
-```bash
 nohup python3 -m "$OPT_MODULE" $ARGS > "$LOG_DIR/bayesian_opt.log" 2>&1 &
 OPT_PID=$!
 ```
 
-Report the PID and log path to the user.
-
-### Step 5 — Launch the suspend and shutdown inhibitor
-
-Keep the system awake and block shutdown while the optimisation is running:
+### Step 5 — Launch the suspend/shutdown inhibitor
 
 ```bash
 nohup systemd-inhibit \
@@ -109,45 +119,112 @@ nohup systemd-inhibit \
     tail --pid=$OPT_PID -f /dev/null > /dev/null 2>&1 &
 ```
 
-This inhibit lock is automatically released when `$OPT_PID` exits.
-
 ### Step 6 — Launch the watcher
-
-Start the watch-and-push script so it monitors the optimisation PID and
-auto-commits results when the process finishes:
 
 ```bash
 nohup utils/watch_and_push.sh "$PKG" $OPT_PID > "$LOG_DIR/watcher.log" 2>&1 &
 WATCHER_PID=$!
 ```
 
-### Step 7 — Report to the user
+### Step 7 — Monitoring commands
 
-Print a summary:
-
-```
-Optimisation launched
-  Package:     $PKG
-  Module:      $OPT_MODULE
-  Trials:      $N_TRIALS
-  PID:         $OPT_PID
-  Watcher PID: $WATCHER_PID
-  Log:         $LOG_DIR/bayesian_opt.log
-  Watcher log: $LOG_DIR/watcher.log
+```bash
+grep 'Trial' $LOG_DIR/bayesian_opt.log | tail -10   # progress
+tail -f $LOG_DIR/bayesian_opt.log                     # live
+kill -0 $OPT_PID && echo "running" || echo "done"    # alive?
 ```
 
-And useful monitoring commands:
+---
 
+## Manual Workflow — Windows (PowerShell)
+
+All commands run from the **workspace root** using **relative paths** only.
+
+### Step 0 — Set environment variables
+
+```powershell
+$env:VIRTUAL_ENV       = Join-Path $PWD 'win_mpes_env'
+$env:PYTHONIOENCODING  = 'utf-8'
+$env:TF_ENABLE_ONEDNN_OPTS = '0'
 ```
-  Progress:    grep 'Trial' $LOG_DIR/bayesian_opt.log | tail -10
-  Live:        tail -f $LOG_DIR/bayesian_opt.log
-  Alive?:      kill -0 $OPT_PID && echo "running" || echo "done"
+
+These are **required** to avoid the `__init__.py` "Press ENTER" prompt,
+`UnicodeEncodeError` on cp1252, and oneDNN log noise.
+
+### Step 1 — Resolve package and module
+
+Same table as above. Derive `$PkgName` and `$OptModule`.
+
+### Step 2 — Prepare the log directory
+
+```powershell
+$LogDir = Join-Path $PWD "$PkgName\inputs"
+if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
 ```
+
+### Step 3 — Prevent system suspension
+
+```powershell
+powercfg /change standby-timeout-ac 0
+powercfg /change standby-timeout-dc 0
+powercfg /change hibernate-timeout-ac 0
+powercfg /change hibernate-timeout-dc 0
+powercfg /change monitor-timeout-ac 0
+powercfg /change monitor-timeout-dc 0
+```
+
+> **Note:** these settings persist. Revert them manually after the
+> optimisation finishes if desired.
+
+### Step 4 — Launch the optimisation
+
+```powershell
+$Python = Join-Path $PWD 'win_mpes_env\Scripts\python.exe'
+$pyArgs = @('-m', $OptModule, "$NTrials")
+if ($ResumeDate) { $pyArgs += @('--resume', $ResumeDate) }
+
+$optProc = Start-Process -FilePath $Python `
+    -ArgumentList $pyArgs `
+    -WorkingDirectory $PWD `
+    -RedirectStandardOutput (Join-Path $LogDir 'bayesian_opt.log') `
+    -RedirectStandardError  (Join-Path $LogDir 'bayesian_opt_err.log') `
+    -PassThru -WindowStyle Hidden
+$OptPid = $optProc.Id
+```
+
+The process runs independently — **no need to keep the terminal open**.
+
+### Step 5 — Launch the watcher
+
+```powershell
+$Watcher = Join-Path $PWD 'utils\watch_and_push.ps1'
+Start-Process powershell `
+    -ArgumentList @('-ExecutionPolicy', 'Bypass', '-File', $Watcher, $PkgName, "$OptPid") `
+    -WorkingDirectory $PWD `
+    -RedirectStandardOutput (Join-Path $LogDir 'watcher.log') `
+    -RedirectStandardError  (Join-Path $LogDir 'watcher_err.log') `
+    -PassThru -WindowStyle Hidden
+```
+
+### Step 6 — Monitoring commands
+
+```powershell
+Select-String 'Trial' (Join-Path $LogDir 'bayesian_opt.log') | Select-Object -Last 10   # progress
+Get-Content (Join-Path $LogDir 'bayesian_opt.log') -Wait -Tail 20                        # live
+Get-Process -Id $OptPid -ErrorAction SilentlyContinue                                     # alive?
+Get-Content (Join-Path $LogDir 'bayesian_opt_err.log') -Tail 20                           # errors
+```
+
+---
 
 ## Rules
 
 - **Relative paths only** — all paths must be relative to the workspace root.
-  Never use absolute paths (no `/home/…`).
+  Never use absolute paths (no `/home/…` or `C:\Users\…`).
+- **OS detection** — always determine the current OS and use the appropriate
+  workflow. Never hard-code a single virtual environment name.
+- **Environment variables** — on Windows, always set `VIRTUAL_ENV`,
+  `PYTHONIOENCODING=utf-8`, and `TF_ENABLE_ONEDNN_OPTS=0` before launching.
 - Always activate `linux_mpes_env` before running any command.
 - Run all commands from the workspace root directory.
 - If `$PACKAGE` is not in the module map, stop and ask the user for

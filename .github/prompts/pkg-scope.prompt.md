@@ -1,6 +1,6 @@
 # Package Scope — `<PKG>`
 
-> Last updated: 2026-03-04
+> Last updated: 2026-03-06
 
 Restrict the chat to a **single package** in the mPES workspace.
 
@@ -36,7 +36,7 @@ any other package in this workspace.
 | `pes_dqn` | Deep Q-Network (experience replay + target net) | `ext/dqn_model.py`, `ext/train_dqn.py`, `ext/optimize_dqn.py` |
 | `pes_ac` | Advantage Actor-Critic (A2C, actor + critic nets) | `ext/ac_model.py`, `ext/train_ac.py`, `ext/optimize_ac.py` |
 | `pes_trf` | Causal Transformer encoder + RL | `ext/transformer_model.py`, `ext/train_transformer.py`, `ext/optimize_tr.py` |
-| `utils` | Shared helpers (notifications, shell scripts) | `notify.py` |
+| `utils` | Shared helpers (notifications, shell scripts) | `notify.py`, `run_bayesian_opt.sh`, `run_bayesian_opt.ps1` |
 
 ## Discovery — Build the Package Map
 

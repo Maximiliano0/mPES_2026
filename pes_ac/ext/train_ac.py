@@ -28,11 +28,13 @@ import os
 import sys
 import numpy
 import warnings
-import matplotlib.pyplot as plt
 from datetime import datetime
 
 # Force TensorFlow to use CPU by default before any TF import happens.
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
+
+import tensorflow as tf  # noqa: E402, F401  (must precede matplotlib on Windows)
+import matplotlib.pyplot as plt  # noqa: E402
 
 ##########################
 ##  Imports internos    ##

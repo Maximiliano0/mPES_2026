@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions
 
-> Last updated: 2026-03-04
+> Last updated: 2026-03-06
 
 ## Project Overview
 
@@ -17,7 +17,7 @@ variant sharing the same experiment framework.
 | `pes_dqn` | Deep Q-Network (experience replay + target net) | `ext/dqn_model.py`, `ext/train_dqn.py`, `ext/optimize_dqn.py` |
 | `pes_ac` | Advantage Actor-Critic (A2C, separate actor + critic nets) | `ext/ac_model.py`, `ext/train_ac.py`, `ext/optimize_ac.py` |
 | `pes_trf` | Causal Transformer encoder + RL | `ext/transformer_model.py`, `ext/train_transformer.py`, `ext/optimize_tr.py` |
-| `utils` | Shared helpers (notifications, shell scripts) | `notify.py` |
+| `utils` | Shared helpers (notifications, shell scripts) | `notify.py`, `run_bayesian_opt.sh`, `run_bayesian_opt.ps1` |
 
 ### Common package layout
 
@@ -37,13 +37,68 @@ variant sharing the same experiment framework.
     ├── result_formatter.py # Matplotlib result plots
     └── terminal_utils.py  # Rich console output (header, section, info…)
 ```
-## Virtual Environment
 
-Always activate `linux_mpes_env` before running any tool:
+## Cross-Platform Setup
+
+This project runs on **two machines**:
+
+| Machine | OS | Virtual env | Python |
+|---------|----|-------------|--------|
+| Windows | Windows 10 | `win_mpes_env` | 3.10 |
+| Linux | Ubuntu / GNOME | `linux_mpes_env` | 3.12 |
+
+### Virtual environment activation
+
+Detect the OS and activate the correct virtual environment:
+
+**Linux / macOS:**
 ```bash
 source linux_mpes_env/bin/activate
 ```
-Python 3.12 · dependencies listed in `requirements.txt`.
+
+**Windows (PowerShell):**
+```powershell
+win_mpes_env\Scripts\Activate.ps1
+```
+
+**Windows (cmd):**
+```cmd
+win_mpes_env\Scripts\activate.bat
+```
+
+> **Tip:** When writing scripts or commands, always use OS detection or
+> provide both variants. Never hard-code a single virtual environment name.
+
+### Environment variables (required for deep-learning packages)
+
+These must be set **before** launching optimisation or training processes:
+
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `VIRTUAL_ENV` | Path to active venv | Prevents `__init__.py` "Press ENTER" prompt |
+| `PYTHONIOENCODING` | `utf-8` | Avoids `UnicodeEncodeError` on redirected output (Windows cp1252) |
+| `TF_ENABLE_ONEDNN_OPTS` | `0` | Suppresses oneDNN info messages |
+
+### Path conventions
+
+- Use `os.path.join()` in Python code — never hard-code `/` or `\`.
+- In shell scripts, provide **both** `.sh` (Bash) and `.ps1` (PowerShell) variants.
+- All paths in scripts must be **relative** to the workspace root.
+
+### Key dependencies (both environments)
+
+| Package | Version |
+|---------|---------|
+| TensorFlow | 2.16.2 |
+| Keras | 3.3.3 |
+| numpy | 1.26.4 |
+| matplotlib | 3.8.2 |
+| scipy | 1.11.4 |
+| optuna | 4.7.0 |
+| gym | 0.26.1 |
+| pygame | 2.5.2 |
+
+Full list in `requirements.txt`.
 
 ## Code Style
 

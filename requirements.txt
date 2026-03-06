@@ -1,7 +1,10 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 #  mPES — Python dependencies
 # ═══════════════════════════════════════════════════════════════════════════════
-#  Generated: 2026-02-26   (pip freeze from linux_mpes_env, Python 3.12)
+#  Updated: 2026-03-06
+#
+#  Cross-platform: Linux (linux_mpes_env, Python 3.12)
+#                  Windows (win_mpes_env, Python 3.10)
 #
 #  Install:  pip install -r requirements.txt
 # ═══════════════════════════════════════════════════════════════════════════════

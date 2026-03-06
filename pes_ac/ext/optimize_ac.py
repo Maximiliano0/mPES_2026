@@ -57,13 +57,13 @@ import time
 import numpy
 import warnings
 import optuna
-import matplotlib.pyplot as plt
 from datetime import datetime
 
-# Force TensorFlow to use CPU
+# Force TensorFlow to use CPU — must be set before import
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 
 import tensorflow as tf  # noqa: E402  (after env var)
+import matplotlib.pyplot as plt  # noqa: E402  (must be after TF on Windows)
 
 ##########################
 ##  Imports internos    ##

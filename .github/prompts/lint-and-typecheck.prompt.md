@@ -1,6 +1,6 @@
 # Lint & Type-Check (Fix Loop)
 
-> Last updated: 2026-03-04
+> Last updated: 2026-03-06
 
 Run the mandatory quality gates on a package and **iteratively fix every
 issue in source code** until both tools report zero problems.
@@ -21,10 +21,24 @@ while issues remain:
     2. Run pylint   → read output → fix every issue in source
 ```
 
+### Step 0 — Activate the virtual environment
+
+Detect the current OS and activate the correct environment:
+
+**Linux / macOS:**
+```bash
+source linux_mpes_env/bin/activate
+```
+
+**Windows (PowerShell):**
+```powershell
+win_mpes_env\Scripts\Activate.ps1
+```
+
 ### Step 1 — Pyright (static type checking)
 
 ```bash
-source linux_mpes_env/bin/activate && pyright $PACKAGE_DIR/
+pyright $PACKAGE_DIR/
 ```
 
 - Read the full output. For **each** error, warning, or information:
@@ -37,7 +51,7 @@ source linux_mpes_env/bin/activate && pyright $PACKAGE_DIR/
 ### Step 2 — Pylint (linting with project standard)
 
 ```bash
-source linux_mpes_env/bin/activate && pylint --rcfile=.pylintrc $PACKAGE_DIR/
+pylint --rcfile=.pylintrc $PACKAGE_DIR/
 ```
 
 - Read the full output. For **each** reported message:
@@ -77,8 +91,8 @@ Both targets must be met **simultaneously** before the task is considered done.
 
 ## Rules
 
-- Always activate the virtual environment first (`source linux_mpes_env/bin/activate`).
-- Run checks from the **workspace root** (`mPES/`), never from inside a package.
+- Always activate the virtual environment first (see Step 0).
+- Run checks from the **workspace root**, never from inside a package.
 - Fix issues **in source code** — do not suppress, silence, or work around them.
 - Do **not** add `# pylint: disable=` for rules that are **enforced** in `.pylintrc`.
 - Do **not** add `# type: ignore` comments.

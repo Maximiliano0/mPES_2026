@@ -520,7 +520,8 @@ def run_experiment(env, actionfunction, RandomSequences=True,
 
         if done:
             env.done = True
-            env.render()
+            if verbose:
+                env.render()
             seqs.append(numpy.sum(env.severities))
             perf = calculate_normalised_final_severity_performance_metric(env.severities,
                                                                           env.initial_severities)

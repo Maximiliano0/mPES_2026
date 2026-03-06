@@ -59,12 +59,12 @@ import os
 import sys
 import numpy
 import warnings
-import matplotlib.pyplot as plt
 from datetime import datetime
 
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 
-import tensorflow as tf
+import tensorflow as tf  # noqa: E402  (must precede matplotlib on Windows)
+import matplotlib.pyplot as plt  # noqa: E402
 
 from .. import INPUTS_PATH
 from ..config.CONFIG import SEED
