@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# optuna_dashboard.sh — Lanza Optuna Dashboard para pes_bline o pes_qlv2
+# optuna_dashboard.sh — Lanza Optuna Dashboard para cualquier paquete mPES
 #
 # Uso:
 #   ./optuna_dashboard.sh                   # Menú interactivo
 #   ./optuna_dashboard.sh bayesian          # Directo a pes_bline
 #   ./optuna_dashboard.sh qlv2              # Directo a pes_qlv2
+#   ./optuna_dashboard.sh dqn              # Directo a pes_dqn
+#   ./optuna_dashboard.sh ac               # Directo a pes_ac
+#   ./optuna_dashboard.sh transformer      # Directo a pes_trf
 #   ./optuna_dashboard.sh bayesian 9090     # pes_bline en puerto 9090
 #
 # Requisitos:
@@ -22,9 +25,28 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"      # mPES/ (raíz del workspace)
 # ── Puerto por defecto ───────────────────────────────────────────────────────
 DEFAULT_PORT=8080
 
-# ── Rutas relativas a los directorios de inputs de cada proyecto ─────────────
-BAYESIAN_INPUTS="pes_bline/inputs"
-QLV2_INPUTS="pes_qlv2/inputs"
+# ── Paquetes y sus directorios de inputs ─────────────────────────────────────
+# Orden: alias → directorio de inputs relativo al proyecto
+declare -A PKG_INPUTS=(
+    [pes_bline]="pes_bline/inputs"
+    [pes_qlv2]="pes_qlv2/inputs"
+    [pes_dqn]="pes_dqn/inputs"
+    [pes_ac]="pes_ac/inputs"
+    [pes_trf]="pes_trf/inputs"
+)
+
+# ── Resolver alias → nombre de paquete ───────────────────────────────────────
+resolve_package() {
+    case "${1:-}" in
+        bayesian|Bayesian|BAYESIAN|bay|1) echo "pes_bline" ;;
+        qlv2|QLv2|QLVAL2|ql|2)           echo "pes_qlv2"  ;;
+        dqn|DQN|3)                        echo "pes_dqn"   ;;
+        ac|a2c|actor-critic|4)            echo "pes_ac"    ;;
+        transformer|tr|5)                 echo "pes_trf"   ;;
+        pes_bline|pes_qlv2|pes_dqn|pes_ac|pes_trf) echo "$1" ;;
+        *) return 1 ;;
+    esac
+}
 
 # ── Colores para la salida en terminal ───────────────────────────────────────
 GREEN='\033[0;32m'
@@ -105,36 +127,33 @@ show_menu() {
     echo -e "${BOLD}════════════════════════════════════════════════════════════${RESET}"
     echo ""
 
-    # Detectar estudios disponibles
-    local bayesian_db qlv2_db
-    bayesian_db=$(find_latest_db "${PROJECT_DIR}/${BAYESIAN_INPUTS}")
-    qlv2_db=$(find_latest_db "${PROJECT_DIR}/${QLV2_INPUTS}")
-
-    # Mostrar opciones con estado
-    if [[ -n "${bayesian_db}" ]]; then
-        echo -e "  ${GREEN}1)${RESET} pes_bline   ${BLUE}→${RESET} $(basename "${bayesian_db}")"
-    else
-        echo -e "  ${RED}1)${RESET} pes_bline   ${RED}(sin estudios)${RESET}"
-    fi
-
-    if [[ -n "${qlv2_db}" ]]; then
-        echo -e "  ${GREEN}2)${RESET} pes_qlv2       ${BLUE}→${RESET} $(basename "${qlv2_db}")"
-    else
-        echo -e "  ${RED}2)${RESET} pes_qlv2       ${RED}(sin estudios)${RESET}"
-    fi
+    # Detectar estudios disponibles para cada paquete
+    local idx=1
+    declare -A MENU_DB=()
+    declare -A MENU_PKG=()
+    for pkg in pes_bline pes_qlv2 pes_dqn pes_ac pes_trf; do
+        local db
+        db=$(find_latest_db "${PROJECT_DIR}/${PKG_INPUTS[$pkg]}")
+        MENU_PKG[$idx]="$pkg"
+        MENU_DB[$idx]="$db"
+        if [[ -n "${db}" ]]; then
+            echo -e "  ${GREEN}${idx})${RESET} ${pkg}   ${BLUE}→${RESET} $(basename "${db}")"
+        else
+            echo -e "  ${RED}${idx})${RESET} ${pkg}   ${RED}(sin estudios)${RESET}"
+        fi
+        idx=$((idx + 1))
+    done
 
     echo -e "  ${YELLOW}q)${RESET} Salir"
     echo ""
-    read -rp "  Selección [1/2/q]: " choice
+    read -rp "  Selección [1-5/q]: " choice
 
     case "${choice}" in
-        1)
-            [[ -n "${bayesian_db}" ]] || die "No se encontró ningún estudio en ${BAYESIAN_INPUTS}"
-            launch_dashboard "${bayesian_db}"
-            ;;
-        2)
-            [[ -n "${qlv2_db}" ]] || die "No se encontró ningún estudio en ${QLV2_INPUTS}"
-            launch_dashboard "${qlv2_db}"
+        [1-5])
+            local sel_db="${MENU_DB[$choice]}"
+            local sel_pkg="${MENU_PKG[$choice]}"
+            [[ -n "${sel_db}" ]] || die "No se encontró ningún estudio en ${PKG_INPUTS[$sel_pkg]}"
+            launch_dashboard "${sel_db}"
             ;;
         q|Q)
             echo -e "  ${BLUE}Hasta luego.${RESET}"
@@ -157,24 +176,15 @@ check_dependencies
 PROJECT="${1:-}"
 PORT="${2:-${DEFAULT_PORT}}"
 
-case "${PROJECT}" in
-    # Argumento directo: bayesian
-    bayesian|Bayesian|BAYESIAN|bay|1)
-        db=$(find_latest_db "${PROJECT_DIR}/${BAYESIAN_INPUTS}")
-        [[ -n "${db}" ]] || die "No se encontró ningún estudio en ${BAYESIAN_INPUTS}"
-        launch_dashboard "${db}" "${PORT}"
-        ;;
-    # Argumento directo: qlv2
-    qlv2|QLv2|QLVAL2|ql|2)
-        db=$(find_latest_db "${PROJECT_DIR}/${QLV2_INPUTS}")
-        [[ -n "${db}" ]] || die "No se encontró ningún estudio en ${QLV2_INPUTS}"
-        launch_dashboard "${db}" "${PORT}"
-        ;;
+if [[ -z "${PROJECT}" ]]; then
     # Sin argumentos: menú interactivo
-    "")
-        show_menu
-        ;;
-    *)
-        die "Proyecto desconocido: '${PROJECT}'\n   Uso: $0 [bayesian|qlv2] [puerto]"
-        ;;
-esac
+    show_menu
+else
+    # Argumento directo: resolver paquete
+    PKG_NAME="$(resolve_package "$PROJECT")" || {
+        die "Proyecto desconocido: '${PROJECT}'\n   Uso: $0 [bayesian|qlv2|dqn|ac|transformer] [puerto]"
+    }
+    db=$(find_latest_db "${PROJECT_DIR}/${PKG_INPUTS[$PKG_NAME]}")
+    [[ -n "${db}" ]] || die "No se encontró ningún estudio en ${PKG_INPUTS[$PKG_NAME]}"
+    launch_dashboard "${db}" "${PORT}"
+fi

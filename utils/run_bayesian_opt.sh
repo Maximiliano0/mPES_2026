@@ -2,8 +2,8 @@
 # ------------------------------------------------------------------
 #  Lanzar optimización Bayesiana
 #
-#  Script compartido para pes_bline, pes_qlv2, pes_dqn
-#  y pes_trf.  Todas las rutas se resuelven de forma
+#  Script compartido para pes_bline, pes_qlv2, pes_dqn,
+#  pes_ac y pes_trf.  Todas las rutas se resuelven de forma
 #  relativa a la ubicación de este script (utils/ → mPES/).
 #
 #  Funcionalidades:
@@ -17,6 +17,7 @@
 #    ./run_bayesian_opt.sh bayesian 100              # pes_bline, corrida nueva
 #    ./run_bayesian_opt.sh qlv2 100                  # pes_qlv2, corrida nueva
 #    ./run_bayesian_opt.sh dqn 30                    # pes_dqn, corrida nueva
+#    ./run_bayesian_opt.sh ac 30                     # pes_ac, corrida nueva
 #    ./run_bayesian_opt.sh transformer 30            # pes_trf, corrida nueva
 #    ./run_bayesian_opt.sh bayesian 100 2026-02-12   # reanudar desde fecha
 # ------------------------------------------------------------------

@@ -3,8 +3,8 @@
 #  Vigila las optimizaciones bayesianas activas.
 #  Cuando cada una termina, hace git add + commit + push a la rama actual.
 #
-#  Script compartido para pes_bline, pes_qlv2, pes_dqn
-#  y pes_trf.  Todas las rutas se resuelven de forma
+#  Script compartido para pes_bline, pes_qlv2, pes_dqn,
+#  pes_ac y pes_trf.  Todas las rutas se resuelven de forma
 #  relativa a la ubicación de este script (utils/ → mPES/).
 #
 #  Lógica:
