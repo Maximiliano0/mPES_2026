@@ -59,10 +59,8 @@ htmlcov/
 Thumbs.db
 
 # ── Data / binary outputs (generated per run, not tracked) ─────────────────
-*.npy
 *.h5
 *.keras
-*.db
 
 # ── PID / lock files ──────────────────────────────────────────────────────
 *.pid
