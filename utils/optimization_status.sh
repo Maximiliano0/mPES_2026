@@ -63,14 +63,62 @@ get_opt_module() {
         pes_trf) echo "optimize_tr"  ;;
     esac
 }
+# ── Mapeo paquete → prefijo study_name de Optuna ────────────────
+get_study_prefix() {
+    case "$1" in
+        pes_ql)  echo "qlearning_opt" ;;
+        pes_dql) echo "qlearning_opt" ;;
+        pes_dqn) echo "dqn_opt"       ;;
+        pes_ac)  echo "a2c_opt"       ;;
+        pes_trf) echo "transformer_opt" ;;
+    esac
+}
+
+# ── Consultar Optuna DB para progreso real ───────────────────────
+# Uso: query_optuna_db <pkg>
+# Imprime: completed|running|best_value|best_trial_num|study_name
+query_optuna_db() {
+    local pkg="$1" db_dir db_file prefix
+    prefix=$(get_study_prefix "$pkg")
+    # Find most recent BAYESIAN_OPT directory
+    db_dir=$(find "$PROJECT_DIR/$pkg/inputs" -maxdepth 1 -type d -name '*_BAYESIAN_OPT' 2>/dev/null | sort -r | head -n1)
+    [[ -z "$db_dir" ]] && return 1
+    db_file=$(find "$db_dir" -maxdepth 1 -name 'optuna_study_*.db' 2>/dev/null | sort -r | head -n1)
+    [[ -z "$db_file" || ! -f "$db_file" ]] && return 1
+    # Extract date from db filename
+    local db_date
+    db_date=$(basename "$db_file" | grep -oP '\d{4}-\d{2}-\d{2}')
+    local study_name="${prefix}_${db_date}"
+    # Query with sqlite3 (fast, no Python import overhead)
+    if command -v sqlite3 &>/dev/null; then
+        local completed running best_val best_num n_target_from_log
+        completed=$(sqlite3 "$db_file" "SELECT COUNT(*) FROM trial_values tv JOIN trials t ON tv.trial_id=t.trial_id WHERE t.state='COMPLETE';" 2>/dev/null)
+        running=$(sqlite3 "$db_file" "SELECT COUNT(*) FROM trials WHERE state='RUNNING';" 2>/dev/null)
+        best_val=$(sqlite3 "$db_file" "SELECT MAX(tv.value) FROM trial_values tv JOIN trials t ON tv.trial_id=t.trial_id WHERE t.state='COMPLETE';" 2>/dev/null)
+        best_num=$(sqlite3 "$db_file" "SELECT t.trial_id FROM trial_values tv JOIN trials t ON tv.trial_id=t.trial_id WHERE t.state='COMPLETE' ORDER BY tv.value DESC LIMIT 1;" 2>/dev/null)
+        echo "${completed:-0}|${running:-0}|${best_val:-?}|${best_num:-?}|${study_name}"
+        return 0
+    fi
+    return 1
+}
+# ── Barra de progreso compacta (ancho fijo 20 chars) ─────────────
+# Uso: draw_bar <pct>   (0-100, entero)
+draw_bar() {
+    local pct="${1:-0}" bar_w=20 filled empty bar_str=""
+    filled=$(( bar_w * pct / 100 ))
+    empty=$(( bar_w - filled ))
+    local i
+    for (( i=0; i<filled; i++ )); do bar_str+="━"; done
+    for (( i=0; i<empty;  i++ )); do bar_str+="─"; done
+    echo -e "${GREEN}${bar_str:0:$filled}${GRAY}${bar_str:$filled}${RESET}"
+}
 
 # ── Cabecera ─────────────────────────────────────────────────────
 echo ""
-echo -e "  ${CYAN}╔══════════════════════════════════════════════════════════════╗${RESET}"
-echo -e "  ${CYAN}║           ESTADO DE OPTIMIZACIONES BAYESIANAS               ║${RESET}"
-echo -e "  ${CYAN}╚══════════════════════════════════════════════════════════════╝${RESET}"
-echo ""
-echo -e "  ${GRAY}Fecha: $(date '+%Y-%m-%d %H:%M:%S')    Directorio: $PROJECT_DIR${RESET}"
+echo -e "  ${CYAN}╔════════════════════════════════════════════════╗${RESET}"
+echo -e "  ${CYAN}║     ESTADO DE OPTIMIZACIONES BAYESIANAS       ║${RESET}"
+echo -e "  ${CYAN}╚════════════════════════════════════════════════╝${RESET}"
+echo -e "  ${GRAY}$(date '+%Y-%m-%d %H:%M:%S')  $PROJECT_DIR${RESET}"
 echo ""
 
 FOUND_ANY=false
@@ -89,8 +137,18 @@ for pkg in "${ALL_PACKAGES[@]}"; do
         opt_pid=$(echo "$opt_line" | awk '{print $2}')
     fi
 
-    # Buscar PID del watcher
-    watch_line=$(ps aux 2>/dev/null | grep "watch_and_push.*$pkg" | grep -v grep | head -n1)
+    # Buscar PID del watcher (match both full name and alias)
+    get_watcher_aliases() {
+        case "$1" in
+            pes_ql)  echo "pes_ql|bayesian|bay"  ;;
+            pes_dql) echo "pes_dql|dql|ql"       ;;
+            pes_dqn) echo "pes_dqn|dqn"          ;;
+            pes_ac)  echo "pes_ac|ac|a2c"        ;;
+            pes_trf) echo "pes_trf|transformer|tr" ;;
+        esac
+    }
+    watcher_pattern=$(get_watcher_aliases "$pkg")
+    watch_line=$(ps aux 2>/dev/null | grep -E "watch_and_push.*($watcher_pattern)" | grep -v grep | head -n1)
     if [[ -n "$watch_line" ]]; then
         watcher_pid=$(echo "$watch_line" | awk '{print $2}')
     fi
@@ -144,13 +202,12 @@ for pkg in "${ALL_PACKAGES[@]}"; do
 
     # ── Encabezado del paquete ───────────────────────────────────
     if $has_process && $opt_is_zombie; then
-        echo -e "  ${RED}⚠${RESET} ${YELLOW}$pkg${RESET}  ${RED}[$opt_status]${RESET}"
+        echo -e "  ${RED}⚠ $pkg${RESET}  ${RED}[$opt_status]${RESET}"
     elif $has_process; then
-        echo -e "  ${GREEN}●${RESET} ${YELLOW}$pkg${RESET}  ${GREEN}[EN CURSO]${RESET}"
+        echo -e "  ${GREEN}● $pkg${RESET}  ${GREEN}[EN CURSO]${RESET}"
     else
-        echo -e "  ${GRAY}○${RESET} ${YELLOW}$pkg${RESET}  ${GRAY}[FINALIZADO]${RESET}"
+        echo -e "  ${GRAY}○ $pkg${RESET}  ${GRAY}[FINALIZADO]${RESET}"
     fi
-    echo -e "  ${GRAY}$(printf '─%.0s' {1..60})${RESET}"
 
     # ── PID info ─────────────────────────────────────────────────
     if $has_process; then
@@ -199,7 +256,7 @@ for pkg in "${ALL_PACKAGES[@]}"; do
             best=$(echo "$last_trial" | grep -oP 'best=\K[\d.]+')
             elapsed=$(echo "$last_trial" | grep -oP 'elapsed=\K\d+')
 
-            pct=$(awk "BEGIN {printf \"%.1f\", ($done_n/$total_n)*100}")
+            pct=$(awk "BEGIN {printf \"%d\", ($done_n/$total_n)*100}")
 
             hrs=$((elapsed / 3600))
             mins=$(( (elapsed % 3600) / 60 ))
@@ -209,18 +266,11 @@ for pkg in "${ALL_PACKAGES[@]}"; do
                 el_str="${mins}m"
             fi
 
-            # Barra de progreso
-            bar_len=30
-            filled=$(awk "BEGIN {printf \"%d\", $bar_len * $pct / 100}")
-            empty=$((bar_len - filled))
-            bar=$(printf '█%.0s' $(seq 1 "$filled" 2>/dev/null) 2>/dev/null)
-            bar_empty=$(printf '░%.0s' $(seq 1 "$empty" 2>/dev/null) 2>/dev/null)
+            # Barra de progreso compacta (20 chars)
+            bar_str=$(draw_bar "$pct")
 
-            echo ""
-            echo -e "    ${GRAY}Progreso: ${RESET} ${GREEN}${bar}${bar_empty}${RESET}  $done_n/$total_n ($pct%)"
-            echo -e "    ${GRAY}Mejor valor:     ${RESET} ${CYAN}$best${RESET}"
-            echo -e "    ${GRAY}Último valor:    ${RESET} $value"
-            echo -e "    ${GRAY}Tiempo:          ${RESET} $el_str (${elapsed}s)"
+            echo -e "    ${bar_str}  ${BOLD}${done_n}/${total_n}${RESET} ${GRAY}(${pct}%)${RESET}"
+            echo -e "    ${GRAY}Mejor:${RESET}  ${CYAN}${best}${RESET}   ${GRAY}Último:${RESET} ${value}   ${GRAY}Tiempo:${RESET} ${el_str}"
 
             # ETA
             if [[ "$done_n" -gt 0 ]]; then
@@ -233,34 +283,59 @@ for pkg in "${ALL_PACKAGES[@]}"; do
                 else
                     eta_str="~${rem_mins}m"
                 fi
-                echo -e "    ${GRAY}ETA restante:    ${RESET} ${YELLOW}$eta_str (~${avg}s/trial)${RESET}"
+                echo -e "    ${GRAY}ETA:${RESET}    ${YELLOW}$eta_str${RESET} ${GRAY}(~${avg}s/trial)${RESET}"
             fi
         else
-            # Sin trials aún
-            resume_line=$(grep -E 'Starting fresh|Resuming' "$log_file" | tail -n1)
-            echo ""
-            if [[ -n "$resume_line" ]]; then
-                echo -e "    ${GRAY}Progreso: ${RESET} $(echo "$resume_line" | sed 's/^[[:space:]]*//')"
+            # Log vacío o sin trials — consultar DB directamente
+            db_info=$(query_optuna_db "$pkg" 2>/dev/null)
+            if [[ -n "$db_info" ]]; then
+                IFS='|' read -r db_completed db_running db_best db_best_num db_study <<< "$db_info"
+                if [[ "$db_completed" -gt 0 ]] 2>/dev/null; then
+                    db_total="${n_target:-?}"
+                    if [[ "$db_total" == "?" ]]; then
+                        # Fallback: try all logs for target
+                        for lf in "$log_dir"/bayesian_opt*.log; do
+                            [[ -f "$lf" ]] || continue
+                            t=$(grep -oP 'Target number of trials:\s*\K\d+' "$lf" 2>/dev/null | tail -n1)
+                            [[ -n "$t" ]] && db_total="$t" && break
+                        done
+                    fi
+                    if [[ "$db_total" != "?" ]]; then
+                        db_pct=$(awk "BEGIN {printf \"%d\", ($db_completed/$db_total)*100}")
+                        bar_str=$(draw_bar "$db_pct")
+                        echo -e "    ${bar_str}  ${BOLD}${db_completed}/${db_total}${RESET} ${GRAY}(${db_pct}%) — desde DB${RESET}"
+                    else
+                        echo -e "    ${BOLD}${db_completed}${RESET} ${GRAY}trials completados — desde DB${RESET}"
+                    fi
+                    echo -e "    ${GRAY}Mejor:${RESET}  ${CYAN}${db_best}${RESET} ${GRAY}(trial #${db_best_num})${RESET}   ${GRAY}En curso:${RESET} ${db_running}"
+                else
+                    resume_line=$(grep -E 'Starting fresh|Resuming' "$log_file" | tail -n1)
+                    if [[ -n "$resume_line" ]]; then
+                        echo -e "    ${GRAY}$(echo "$resume_line" | sed 's/^[[:space:]]*//')${RESET}"
+                    else
+                        echo -e "    ${YELLOW}Inicializando... (trial en curso)${RESET}"
+                    fi
+                    echo -e "    ${GRAY}Target: $n_target trials${RESET}"
+                fi
             else
-                echo -e "    ${GRAY}Progreso: ${RESET} ${YELLOW}Inicializando... (trial #1 en curso)${RESET}"
+                echo -e "    ${YELLOW}Inicializando... (trial en curso)${RESET}"
+                echo -e "    ${GRAY}Target: $n_target trials${RESET}"
             fi
-            echo -e "    ${GRAY}Target trials:   ${RESET} $n_target"
         fi
 
         # ── Log path ────────────────────────────────────────────
         rel_log="${log_file#$PROJECT_DIR/}"
-        echo -e "    ${GRAY}Log:              $rel_log${RESET}"
+        echo -e "    ${GRAY}Log: $rel_log${RESET}"
     fi
 
     # ── Errores ──────────────────────────────────────────────────
     if [[ -n "$err_file" && -f "$err_file" ]]; then
         err_count=$(grep -c '\S' "$err_file" 2>/dev/null)
         if [[ "$err_count" -gt 0 ]]; then
-            echo -e "    ${GRAY}Errores/Warnings:${RESET} ${YELLOW}$err_count línea(s) en stderr${RESET}"
-            # Últimas 3 líneas no vacías
+            echo -e "    ${YELLOW}⚠ $err_count línea(s) en stderr${RESET}"
             grep '\S' "$err_file" | tail -n3 | while IFS= read -r line; do
-                trimmed="${line:0:80}"
-                [[ ${#line} -gt 80 ]] && trimmed="${trimmed}..."
+                trimmed="${line:0:70}"
+                [[ ${#line} -gt 70 ]] && trimmed="${trimmed}…"
                 echo -e "      ${YELLOW}$trimmed${RESET}"
             done
         fi
@@ -275,9 +350,7 @@ if ! $FOUND_ANY; then
 fi
 
 # ── Comandos útiles ──────────────────────────────────────────────
-echo -e "  ${GRAY}────────────────────────────────────────────────────────────${RESET}"
-echo -e "  ${GRAY}Comandos útiles:${RESET}"
-echo -e "  ${GRAY}  Tiempo real:  tail -f <pkg>/inputs/bayesian_opt.log${RESET}"
-echo -e "  ${GRAY}  Vivo?:        ps -p <PID> -o pid,comm,time,rss${RESET}"
-echo -e "  ${GRAY}  Errores:      tail -20 <pkg>/inputs/bayesian_opt_err.log${RESET}"
+echo -e "  ${GRAY}── Comandos ──────────────────────────────────────${RESET}"
+echo -e "  ${GRAY}  tail -f <pkg>/inputs/bayesian_opt.log${RESET}"
+echo -e "  ${GRAY}  tail -20 <pkg>/inputs/bayesian_opt_err.log${RESET}"
 echo ""

@@ -1,0 +1,6 @@
+nohup: no se tendrá en cuenta la entrada
+[watch_and_push] Paquete: pes_dqn
+[watch_and_push] Vigilando PIDs: 35425
+[watch_and_push] Proyecto: /home/mecatronica/Documentos/maximiliano/mPES
+[watch_and_push] Rama: dqn_and_ac
+[watch_and_push] PID 35425 -> pes_dqn.ext.optimize_dqn 110 --resume 2026-03-07

@@ -100,8 +100,8 @@ gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-typ
 gsettings set org.gnome.desktop.session idle-delay 0
 gsettings set org.gnome.desktop.screensaver lock-enabled false
 
-# Lanzar optimización en segundo plano
-nohup python3 -m "${OPT_MODULE}" $ARGS > "$LOGFILE" 2>&1 &
+# Lanzar optimización en segundo plano (PYTHONUNBUFFERED para flush inmediato)
+nohup env PYTHONUNBUFFERED=1 python3 -m "${OPT_MODULE}" $ARGS > "$LOGFILE" 2>&1 &
 OPT_PID=$!
 echo "Optimización lanzada  PID=$OPT_PID  trials=$N_TRIALS"
 echo "Log: $LOGFILE"
