@@ -77,12 +77,12 @@ def build_actor(state_dim: int, action_dim: int,
         Keras ``Sequential`` model with softmax output.
     """
     model = tf.keras.Sequential(name="Actor")
-    model.add(tf.keras.layers.Input(shape=(state_dim,)))
+    model.add(tf.keras.layers.Input(shape=(int(state_dim),)))
     for idx, units in enumerate(hidden_units):
         model.add(tf.keras.layers.Dense(
-            units, activation="relu", name=f"actor_hidden_{idx}"))
+            int(units), activation="relu", name=f"actor_hidden_{idx}"))
     model.add(tf.keras.layers.Dense(
-        action_dim, activation="softmax", name="policy"))
+        int(action_dim), activation="softmax", name="policy"))
     return model
 
 
@@ -106,10 +106,10 @@ def build_critic(state_dim: int,
         Keras ``Sequential`` model with single linear output.
     """
     model = tf.keras.Sequential(name="Critic")
-    model.add(tf.keras.layers.Input(shape=(state_dim,)))
+    model.add(tf.keras.layers.Input(shape=(int(state_dim),)))
     for idx, units in enumerate(hidden_units):
         model.add(tf.keras.layers.Dense(
-            units, activation="relu", name=f"critic_hidden_{idx}"))
+            int(units), activation="relu", name=f"critic_hidden_{idx}"))
     model.add(tf.keras.layers.Dense(1, activation="linear", name="value"))
     return model
 

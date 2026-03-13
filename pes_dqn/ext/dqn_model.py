@@ -174,12 +174,12 @@ def build_q_network(state_dim: int, action_dim: int,
         a custom training loop with ``tf.GradientTape``).
     """
     model = tf.keras.Sequential(name="DQN")
-    model.add(tf.keras.layers.Input(shape=(state_dim,)))
+    model.add(tf.keras.layers.Input(shape=(int(state_dim),)))
     for idx, units in enumerate(hidden_units):
         model.add(tf.keras.layers.Dense(
-            units, activation="relu", name=f"hidden_{idx}"))
+            int(units), activation="relu", name=f"hidden_{idx}"))
     model.add(tf.keras.layers.Dense(
-        action_dim, activation="linear", name="q_values"))
+        int(action_dim), activation="linear", name="q_values"))
     return model
 
 

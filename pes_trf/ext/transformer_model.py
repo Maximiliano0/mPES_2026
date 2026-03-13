@@ -205,6 +205,10 @@ class PandemicTransformer(keras.Model):
     def __init__(self, d_model=64, n_heads=4, n_layers=2, d_ff=128,
                  max_seq_len=10, n_actions=11, dropout_rate=0.1, **kwargs):
         super().__init__(**kwargs)
+        d_model = int(d_model)
+        n_actions = int(n_actions)
+        d_ff = int(d_ff)
+        max_seq_len = int(max_seq_len)
         self.d_model = d_model
         self.n_actions = n_actions
         self.max_seq_len = max_seq_len
