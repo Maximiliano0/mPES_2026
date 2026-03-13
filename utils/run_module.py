@@ -68,8 +68,6 @@ def main():
 
     try:
         runpy.run_module(module, run_name='__main__', alter_sys=True)
-    except SystemExit:
-        raise
     except Exception:
         import traceback
         traceback.print_exc()

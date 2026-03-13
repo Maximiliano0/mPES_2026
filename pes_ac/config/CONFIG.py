@@ -116,6 +116,10 @@ AC_DISCOUNT = 0.99                               # Discount factor γ for return
 AC_MODEL_ACTOR_FILE = 'ac_actor.keras'           # Saved Actor model filename
 AC_MODEL_CRITIC_FILE = 'ac_critic.keras'         # Saved Critic model filename
 
+# ==================== BAYESIAN OPTIMISATION (META-COGNITION) ====================
+OPT_PERF_WEIGHT = 0.7     # Weight for mean normalised performance in combined objective
+OPT_CONF_WEIGHT = 0.3     # Weight for mean meta-cognitive confidence in combined objective
+
 # ==================== RUNTIME & PERSISTENCE ====================
 VERBOSE = True             # Enable detailed console logging and initialization messages
 SAVE_RESULTS = True        # Save experiment results to JSON/TXT files after each sequence

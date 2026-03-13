@@ -20,6 +20,31 @@ Handles package setup including:
 ## External Imports ##
 ######################
 import os
+
+# TensorFlow/CUDA log suppression — must precede any transitive TF import.
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ.setdefault('CUDA_VISIBLE_DEVICES', '-1')
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+# Match OpenMP thread pool to host CPU count for CPU-based TF training.
+os.environ.setdefault('OMP_NUM_THREADS', str(os.cpu_count() or 4))
+
+# Quiet-import TF: suppress native-library stderr (cudart_stub.cc) emitted
+# before absl::InitializeLog().  The module is cached in sys.modules, so
+# subsequent ``import tensorflow`` calls in the package are free.
+_devnull = os.open(os.devnull, os.O_WRONLY)
+_old_stderr_fd = os.dup(2)
+os.dup2(_devnull, 2)
+os.close(_devnull)
+try:
+    import tensorflow  # noqa: F401
+finally:
+    os.dup2(_old_stderr_fd, 2)
+    os.close(_old_stderr_fd)
+
+# Configure GPU memory growth when available (e.g. Colab Pro+)
+for _gpu in tensorflow.config.list_physical_devices('GPU'):
+    tensorflow.config.experimental.set_memory_growth(_gpu, True)
+
 import sys
 import warnings
 import numpy
@@ -125,26 +150,6 @@ DQN_MODEL_FILE = CONFIG.DQN_MODEL_FILE
 # sev_n = * β * sev_(n-1) - α * a  --> a is allocated resources, sev is severity
 RESPONSE_MULTIPLIER = PANDEMIC_PARAMETER  # α (Alpha)
 SEVERITY_MULTIPLIER = 1 + PANDEMIC_PARAMETER  # β (Beta)
-
-###########################
-### Tensorflow Issue    ###
-###########################
-# The experiment uses tensorflow, which has a nasty habit of dumping lots of
-# warning messages for missing nvidia libraries etc. The following environmental
-# variable disables these. ( '0': all logs are shown; '1': filter out INFOs and
-# below; '2': filter out WARNs; '3': filter out ERRORs, etc )
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
-# Force TensorFlow to use CPU by default.
-os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
-
-###################################
-### CPU training optimisation   ###
-###################################
-# Set OpenMP thread count *before* TensorFlow is imported so that the
-# thread pool matches the host CPU (e.g. Intel i3-6006U → 4 threads).
-# The actual TF threading configuration is applied in ext/dqn_model.py
-# (tf.config.threading.set_intra_op_parallelism_threads / inter_op).
-os.environ.setdefault("OMP_NUM_THREADS", str(os.cpu_count() or 4))
 
 # Set some nice numpy printing defaults and error handling
 numpy.set_printoptions(threshold=sys.maxsize, precision=3, suppress=True,

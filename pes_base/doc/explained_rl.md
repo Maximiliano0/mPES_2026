@@ -38,14 +38,14 @@ self.available_resources_states = self.max_resources + 1     # = 31
 self.max_seq_length = NUM_MAX_TRIALS                         # = 10
 self.trial_no_states = self.max_seq_length + 1               # = 11
 
-# Severidad: 0 a 10
-self.max_severity = MAX_SEVERITY                             # = 10
-self.severity_states = self.max_severity + 1                 # = 11
+# Severidad: 0 a 9
+self.max_severity = MAX_SEVERITY                             # = 9
+self.severity_states = self.max_severity + 1                 # = 10
 ```
 
 **Cardinalidad del espacio de estados**:
 
-$$|S| = 31 \times 11 \times 11 = 3{,}751 \text{ estados}$$
+$$|S| = 31 \times 11 \times 10 = 3{,}410 \text{ estados}$$
 
 **Significado de cada dimensión**:
 
@@ -53,7 +53,7 @@ $$|S| = 31 \times 11 \times 11 = 3{,}751 \text{ estados}$$
 |-----------|-------|---------------|
 | `resources_left` | 0–30 | Recursos restantes en la secuencia actual |
 | `trial_no` | 0–10 | Índice del trial actual dentro de la secuencia |
-| `severity` | 0–10 | Severidad inicial de la ciudad entrante (entera) |
+| `severity` | 0–9 | Severidad inicial de la ciudad entrante (entera) |
 
 ### 2.3 Espacio de Acciones
 
@@ -93,7 +93,7 @@ else:
     new_severity = self.new_city()
     self.severities.append(new_severity)
 
-return [self.available_resources, self.iteration, int(new_severity)], reward, done, ...
+return [self.available_resources, self.iteration, int(new_severity)], reward, done, False, {}
 ```
 
 ### 2.5 Función de Recompensa
@@ -171,11 +171,11 @@ num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 1000000
 Q = numpy.random.uniform(low=-1, high=1,
                           size=(env.available_resources_states,   # 31
                                 env.trial_no_states,              # 11
-                                env.severity_states,              # 11
+                                env.severity_states,              # 10
                                 env.action_space.n))              # 11
 ```
 
-- **Shape**: `(31, 11, 11, 11)` = **41,261 entradas**
+- **Shape**: `(31, 11, 10, 11)` = **37,510 entradas**
 - **Inicialización**: Valores aleatorios uniformes en $[-1, 1]$
 - **Tipo**: `float64`
 
@@ -257,7 +257,7 @@ for i in range(episodes):            # 1,000,000 episodios
     done = False
     tot_reward, reward = 0, 0
     env.random_sequence()             # Generar secuencia aleatoria
-    state = env.reset()               # → [max_resources, 0, severity_0]
+    state, _ = env.reset()               # → [max_resources, 0, severity_0]
 
     while done != True:
         # 1. Selección de acción (ε-greedy)
@@ -377,7 +377,7 @@ Directorio: `inputs/<fecha>_RL_TRAIN/`
 
 | Archivo | Contenido |
 |---------|-----------|
-| `q_<fecha>.npy` | Q-table `(31, 11, 11, 11)` float64 |
+| `q_<fecha>.npy` | Q-table `(31, 11, 10, 11)` float64 |
 | `rewards_<fecha>.npy` | Rewards promedio cada 10k episodios |
 | `training_config_<fecha>.txt` | Hiperparámetros, shapes, metadatos |
 | `confsrl_<fecha>.npy` | Confianzas durante evaluación |
@@ -413,7 +413,7 @@ Para cada secuencia (0 a NumberOfIterations-1):
 │
 ├─ While not done:
 │   ├─ action = actionfunction(env, state, seqid)
-│   ├─ state', reward, done = env.step(action)
+│   ├─ state', reward, done, truncated, info = env.step(action)
 │   └─ state = state'
 │
 ├─ Al terminar secuencia:
@@ -540,11 +540,11 @@ Q-Learning tabular converge a la política óptima $Q^*$ bajo las condiciones:
 | Estado $s$ | `[resources_left, trial_no, severity]` |
 | Acción $a$ | `action ∈ {0, ..., 10}` |
 | Recompensa $r$ | `-numpy.sum(env.severities)` |
-| Q-table $Q(s,a)$ | `numpy.ndarray` shape `(31, 11, 11, 11)` |
+| Q-table $Q(s,a)$ | `numpy.ndarray` shape `(31, 11, 10, 11)` |
 | Actualización TD | `Q[s,a] += α(r + γ max Q[s'] - Q[s,a])` |
 | Política ε-greedy | `random < 1-ε → argmax Q ; else random` |
 | Episodio | Una secuencia completa (3–10 trials) |
-| Ambiente | `Pandemic(gym.Env)` |
+| Ambiente | `Pandemic(gymnasium.Env)` |
 | Paso | `env.step(action)` → sev update |
 | Terminal | `iteration == seq_length` |
 | Inicialización Q | `uniform(-1, 1)` |

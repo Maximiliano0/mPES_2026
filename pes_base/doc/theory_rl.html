@@ -70,7 +70,7 @@ aprender una <strong>política</strong> que maximice la recompensa acumulada a l
 <p>En el <strong>Pandemic Experiment Scenario (PES)</strong>:</p>
 <ul>
 <li><strong>Agente</strong>: Algoritmo de Q-Learning que decide asignación de recursos.</li>
-<li><strong>Ambiente</strong>: Simulación de pandemia (<code>Pandemic(gym.Env)</code> en <code>ext/pandemic.py</code>).</li>
+<li><strong>Ambiente</strong>: Simulación de pandemia (<code>Pandemic(gymnasium.Env)</code> en <code>ext/pandemic.py</code>).</li>
 <li><strong>Estado</strong>: <code>(recursos_disponibles, número_de_trial, severidad)</code>.</li>
 <li><strong>Acción</strong>: Cantidad de recursos a asignar (0–10).</li>
 <li><strong>Recompensa</strong>: Negativo de la suma de severidades de todas las ciudades.</li>
@@ -157,9 +157,9 @@ $s$ y luego seguir $\pi$:</p>
 <p>$$V^<em>(s) = \max_a Q^</em>(s, a)$$</p>
 <h3 id="34-implementacion-en-pes">3.4 Implementación en PES</h3>
 <p>PES utiliza una <strong>Q-table</strong> (tabla de Q-values) de la forma:</p>
-<p>$$Q : \underbrace{S}<em>{31 \times 11 \times 11} \times \underbrace{A}</em>{11} \rightarrow \mathbb{R}$$</p>
-<pre><code class="language-python">Q.shape = (31, 11, 11, 11)   # (resources, trials, severity, actions)
-# Total: 41,261 entradas
+<p>$$Q : \underbrace{S}<em>{31 \times 11 \times 10} \times \underbrace{A}</em>{11} \rightarrow \mathbb{R}$$</p>
+<pre><code class="language-python">Q.shape = (31, 11, 10, 11)   # (resources, trials, severity, actions)
+# Total: 37,510 entradas
 </code></pre>
 <p>Cada entrada $Q[r, t, s, a]$ almacena el valor estimado de asignar $a$ recursos
 cuando quedan $r$ recursos disponibles, se está en el trial $t$, y la severidad
@@ -277,7 +277,7 @@ semilla</strong>, por lo que cada ejecución produce un agente distinto.</p>
 <blockquote>
 <p><strong>Nota técnica</strong>: En PES, $\alpha = 0.2$ es constante, lo cual viola
 estrictamente la condición 2. Sin embargo, con 1,000,000 de episodios y
-un espacio de estados relativamente pequeño (3,751 estados), la convergencia
+un espacio de estados relativamente pequeño (3,410 estados), la convergencia
 práctica es suficiente.</p>
 </blockquote>
 <hr />
@@ -378,7 +378,7 @@ no hay estado futuro.</p>
 </tr>
 <tr>
 <td>Tamaño en PES</td>
-<td>$31 \times 11 \times 11 \times 11 = 41{,}261$</td>
+<td>$31 \times 11 \times 10 \times 11 = 37{,}510$</td>
 </tr>
 <tr>
 <td>Actualización</td>
@@ -408,8 +408,8 @@ no hay estado futuro.</p>
 </ul>
 <h3 id="83-por-que-tabular-funciona-en-pes">8.3 ¿Por qué tabular funciona en PES?</h3>
 <p>El espacio de estados de PES es pequeño:</p>
-<p>$$|S| = 31 \times 11 \times 11 = 3{,}751$$
-$$|S \times A| = 3{,}751 \times 11 = 41{,}261$$</p>
+<p>$$|S| = 31 \times 11 \times 10 = 3{,}410$$
+$$|S \times A| = 3{,}410 \times 11 = 37{,}510$$</p>
 <p>Con 1,000,000 episodios y secuencias de 3–10 trials:</p>
 <ul>
 <li>Mínimo $\sim 3{,}000{,}000$ transiciones vistas.</li>
@@ -631,7 +631,7 @@ $$|S \times A| = 3{,}751 \times 11 = 41{,}261$$</p>
 </tr>
 <tr>
 <td><strong>Q-table</strong></td>
-<td>Tabla de todos los Q-values (<code>31×11×11×11</code>)</td>
+<td>Tabla de todos los Q-values (<code>31×11×10×11</code>)</td>
 </tr>
 <tr>
 <td><strong>ε-greedy</strong></td>

@@ -120,7 +120,7 @@ episodes).</p>
 <tbody>
 <tr>
 <td><code>q_&lt;date&gt;.npy</code></td>
-<td>Trained Q-table — shape <code>(31, 11, 11, 11)</code></td>
+<td>Trained Q-table — shape <code>(31, 11, 10, 11)</code></td>
 </tr>
 <tr>
 <td><code>rewards_&lt;date&gt;.npy</code></td>
@@ -168,7 +168,7 @@ episodes).</p>
 </tr>
 </tbody>
 </table>
-<p>Additionally, the Q-table and rewards are <strong>copied</strong> to the standard
+<p>Additionally, the Q-table and rewards must be <strong>manually copied</strong> to the standard
 paths consumed by the experiment runner:</p>
 <ul>
 <li><code>pes_base/inputs/q.npy</code></li>
@@ -238,8 +238,8 @@ paths consumed by the experiment runner:</p>
 </tr>
 <tr>
 <td>2</td>
-<td>11</td>
-<td>Severity (0–10), <code>MAX_SEVERITY = 10</code></td>
+<td>10</td>
+<td>Severity (0–9), <code>MAX_SEVERITY = 9</code></td>
 </tr>
 <tr>
 <td>3</td>
@@ -248,7 +248,7 @@ paths consumed by the experiment runner:</p>
 </tr>
 </tbody>
 </table>
-<p><strong>Total entries:</strong> $31 \times 11 \times 11 \times 11 = 41{,}261$</p>
+<p><strong>Total entries:</strong> $31 \times 11 \times 10 \times 11 = 37{,}510$</p>
 <h3 id="17-algorithm-summary">1.7 Algorithm Summary</h3>
 <p>Standard tabular Q-Learning with update rule:</p>
 <p>$$Q(s,a) \leftarrow Q(s,a) + \alpha \bigl[ r + \gamma \max_{a'} Q(s',a') - Q(s,a) \bigr]$$</p>
@@ -326,7 +326,7 @@ SEED = 42
 NUM_BLOCKS = 8
 NUM_SEQUENCES = 8
 AVAILABLE_RESOURCES_PER_SEQUENCE = 39
-MAX_SEVERITY = 10
+MAX_SEVERITY = 9
 </code></pre>
 <hr />
 <h2 id="3-troubleshooting">3. Troubleshooting</h2>

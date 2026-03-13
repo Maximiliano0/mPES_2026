@@ -591,10 +591,10 @@ La función `generate_results_report()` produce dos archivos:
 
 | Propiedad | Valor |
 |-----------|-------|
-| Shape | `(31, 11, 11, 11)` |
+| Shape | `(31, 11, 10, 11)` |
 | Dimensiones | (recursos_disponibles, trial_no, severidad, acciones) |
 | Tipo | `float64` |
-| Tamaño | 41,261 entradas |
+| Tamaño | 37,510 entradas |
 | Rango de recursos | 0–30 (39 total − 9 pre-asignados) |
 
 **`rewards.npy`**:
@@ -644,7 +644,7 @@ El pipeline `train_rl.py` genera:
 | Reportes | `src/result_formatter.py` | `generate_results_report()` | JSON + PNG |
 | Logging | `src/log_utils.py` | `tee()`, `create_ConsoleLog_...()` | Dual terminal + archivo |
 | Terminal UI | `src/terminal_utils.py` | `header()`, `section()`, ... | Formato consola ANSI |
-| Env Gym | `ext/pandemic.py` | `Pandemic(Env)` | Ambiente OpenAI Gym |
+| Env Gymnasium | `ext/pandemic.py` | `Pandemic(Env)` | Ambiente Gymnasium |
 | Entrenamiento QL | `ext/pandemic.py` | `QLearning()` | Q-Learning tabular |
 | Evaluación | `ext/pandemic.py` | `run_experiment()` | Ejecutar secuencias en env |
 | Baseline aleatorio | `ext/train_rl.py` | `random_qf()` | Política de comparación |
@@ -764,7 +764,7 @@ pes_base/
 │   ├── theory_rl.md     # Teoría de RL para científicos de datos
 │   └── PES.__doc__      # Resumen técnico del paquete
 ├── ext/
-│   ├── pandemic.py      # Gym Env (Pandemic), QLearning, run_experiment, meta_cognitive
+│   ├── pandemic.py      # Gymnasium Env (Pandemic), QLearning, run_experiment, meta_cognitive
 │   ├── tools.py         # entropy_from_pdf, convert_globalseq_to_seqs, plot_confidences
 │   └── train_rl.py      # Pipeline de entrenamiento RL (baseline → train → eval → plots)
 ├── inputs/

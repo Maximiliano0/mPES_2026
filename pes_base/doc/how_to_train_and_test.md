@@ -68,7 +68,7 @@ All outputs are saved to `pes_base/inputs/<YYYY-MM-DD>_RL_TRAIN/`:
 
 | File | Description |
 |------|-------------|
-| `q_<date>.npy` | Trained Q-table — shape `(31, 11, 11, 11)` |
+| `q_<date>.npy` | Trained Q-table — shape `(31, 11, 10, 11)` |
 | `rewards_<date>.npy` | Average-reward history (100 values, sampled every 10 000 eps) |
 | `training_config_<date>.txt` | Summary of hyperparameters and settings |
 | `confsrl_<date>.npy` | Confidence scores from evaluation |
@@ -81,7 +81,7 @@ All outputs are saved to `pes_base/inputs/<YYYY-MM-DD>_RL_TRAIN/`:
 | `rl_agent_confidences_<date>.png` | Raw confidence scatter |
 | `rl_agent_remapped_confidences_<date>.png` | Normalised confidence (0–1) |
 
-Additionally, the Q-table and rewards are **copied** to the standard
+Additionally, the Q-table and rewards must be **manually copied** to the standard
 paths consumed by the experiment runner:
 
 - `pes_base/inputs/q.npy`
@@ -104,10 +104,10 @@ paths consumed by the experiment runner:
 |------|------|---------|
 | 0 | 31 | Resources left (0–30) |
 | 1 | 11 | Trial number (0–10) |
-| 2 | 11 | Severity (0–10), `MAX_SEVERITY = 10` |
+| 2 | 10 | Severity (0–9), `MAX_SEVERITY = 9` |
 | 3 | 11 | Actions (0–10 resources) |
 
-**Total entries:** $31 \times 11 \times 11 \times 11 = 41{,}261$
+**Total entries:** $31 \times 11 \times 10 \times 11 = 37{,}510$
 
 ### 1.7 Algorithm Summary
 
@@ -177,7 +177,7 @@ SEED = 42
 NUM_BLOCKS = 8
 NUM_SEQUENCES = 8
 AVAILABLE_RESOURCES_PER_SEQUENCE = 39
-MAX_SEVERITY = 10
+MAX_SEVERITY = 9
 ```
 
 ---

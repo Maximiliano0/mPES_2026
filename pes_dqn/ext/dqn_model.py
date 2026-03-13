@@ -47,13 +47,14 @@ import tensorflow as tf
 
 
 # ---------------------------------------------------------------------------
-#  CPU threading optimisation
+#  CPU threading optimisation (skipped when GPU is available)
 # ---------------------------------------------------------------------------
 #  On CPUs with few cores (e.g. Intel i3-6006U, 4 threads) explicitly
 #  tuning the thread pools improves throughput for the small DQN model.
 #  Must be called *before* any TF operation creates the thread pool.
-tf.config.threading.set_intra_op_parallelism_threads(0)   # 0 = auto-detect
-tf.config.threading.set_inter_op_parallelism_threads(2)
+if not tf.config.list_physical_devices('GPU'):
+    tf.config.threading.set_intra_op_parallelism_threads(0)   # 0 = auto-detect
+    tf.config.threading.set_inter_op_parallelism_threads(2)
 
 
 # ---------------------------------------------------------------------------

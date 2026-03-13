@@ -52,7 +52,7 @@ from .. import INPUTS_PATH
 
 
 # Suppress non-critical warnings
-warnings.filterwarnings('ignore', category=UserWarning, message='.*Box bound precision.*')
+warnings.filterwarnings('ignore', category=UserWarning, message='.*Box.*precision lowered.*')
 warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 
 ###################################

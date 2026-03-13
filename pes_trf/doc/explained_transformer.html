@@ -59,7 +59,7 @@ por un <strong>Transformer causal</strong> con cabezas de actor-critic.  El mode
 procesa la <strong>trayectoria completa</strong> de estados dentro de un episodio
 (hasta 10 timesteps) y produce una distribución de acción y un valor
 escalar en cada posición.</p>
-<p>Conserva el mismo entorno Gym (<code>Pandemic</code>), el mismo espacio de estados y
+<p>Conserva el mismo entorno Gymnasium (<code>Pandemic</code>), el mismo espacio de estados y
 acciones, y la misma integración con la UI de Pygame.</p>
 <hr />
 <h2 id="2-componentes-del-mdp-heredados-de-pes_base">2. Componentes del MDP (heredados de <code>pes_base</code>)</h2>
@@ -435,13 +435,13 @@ se rellena con ceros hasta <code>max_seq_len=10</code> y se marca con una másca
 de padding.</p>
 <pre><code>Para cada episodio k = 1 … batch_size:
     env.random_sequence()
-    state = env.reset()
+    state, _ = env.reset()
     agent.reset()
 
     Mientras no done:
         action, probs, value, log_prob = agent.act(state)
         action = min(action, resources_left)    ← enmascarar infactibles
-        state', reward, done = env.step(action)
+        state', reward, done, truncated, info = env.step(action)
 
     Rellenar hasta max_seq_len con ceros
     masks[k] = [1.0]*T + [0.0]*(max_seq_len - T)
@@ -839,7 +839,7 @@ Se conserva como baseline de comparación.</p>
 │   ├── transformer_model.py    # CausalSelfAttention, TransformerBlock,
 │   │                           #   PandemicTransformer, TransformerAgent
 │   ├── train_transformer.py    # Pipeline: collect_batch, compute_gae, train_step
-│   ├── pandemic.py             # Entorno Gym + QLearning (baseline) + run_experiment
+│   ├── pandemic.py             # Entorno Gymnasium + QLearning (baseline) + run_experiment
 │   ├── optimize_tr.py          # Bayesian optimisation (Q-Learning, no Transformer)
 │   └── tools.py                # Entropía, gráficas
 ├── src/

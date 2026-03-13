@@ -28,7 +28,7 @@ aprender una **política** que maximice la recompensa acumulada a largo plazo.
 En el **Pandemic Experiment Scenario (PES)**:
 
 - **Agente**: Algoritmo de Q-Learning que decide asignación de recursos.
-- **Ambiente**: Simulación de pandemia (`Pandemic(gym.Env)` en `ext/pandemic.py`).
+- **Ambiente**: Simulación de pandemia (`Pandemic(gymnasium.Env)` en `ext/pandemic.py`).
 - **Estado**: `(recursos_disponibles, número_de_trial, severidad)`.
 - **Acción**: Cantidad de recursos a asignar (0–10).
 - **Recompensa**: Negativo de la suma de severidades de todas las ciudades.
@@ -111,11 +111,11 @@ $$V^*(s) = \max_a Q^*(s, a)$$
 
 PES utiliza una **Q-table** (tabla de Q-values) de la forma:
 
-$$Q : \underbrace{S}_{31 \times 11 \times 11} \times \underbrace{A}_{11} \rightarrow \mathbb{R}$$
+$$Q : \underbrace{S}_{31 \times 11 \times 10} \times \underbrace{A}_{11} \rightarrow \mathbb{R}$$
 
 ```python
-Q.shape = (31, 11, 11, 11)   # (resources, trials, severity, actions)
-# Total: 41,261 entradas
+Q.shape = (31, 11, 10, 11)   # (resources, trials, severity, actions)
+# Total: 37,510 entradas
 ```
 
 Cada entrada $Q[r, t, s, a]$ almacena el valor estimado de asignar $a$ recursos
@@ -215,7 +215,7 @@ Q-Learning converge a $Q^*$ bajo las condiciones:
 
 > **Nota técnica**: En PES, $\alpha = 0.2$ es constante, lo cual viola
 > estrictamente la condición 2. Sin embargo, con 1,000,000 de episodios y
-> un espacio de estados relativamente pequeño (3,751 estados), la convergencia
+> un espacio de estados relativamente pequeño (3,410 estados), la convergencia
 > práctica es suficiente.
 
 ---
@@ -308,7 +308,7 @@ no hay estado futuro.
 | Aspecto | Tabular |
 |---------|---------|
 | Almacenamiento | Tabla explícita $|S| \times |A|$ |
-| Tamaño en PES | $31 \times 11 \times 11 \times 11 = 41{,}261$ |
+| Tamaño en PES | $31 \times 11 \times 10 \times 11 = 37{,}510$ |
 | Actualización | Directa: `Q[s,a] += ...` |
 | Convergencia | Garantizada (bajo condiciones) |
 | Generalización | No generaliza entre estados similares |
@@ -327,8 +327,8 @@ Para espacios de estados grandes o continuos, se puede aproximar $Q$ con:
 
 El espacio de estados de PES es pequeño:
 
-$$|S| = 31 \times 11 \times 11 = 3{,}751$$
-$$|S \times A| = 3{,}751 \times 11 = 41{,}261$$
+$$|S| = 31 \times 11 \times 10 = 3{,}410$$
+$$|S \times A| = 3{,}410 \times 11 = 37{,}510$$
 
 Con 1,000,000 episodios y secuencias de 3–10 trials:
 
@@ -450,7 +450,7 @@ El pipeline de entrenamiento ejecuta un **agente aleatorio** como baseline:
 | **Episodio** | Una secuencia completa (3–10 trials) |
 | **Política** | Regla de decisión $\pi(a\|s)$ |
 | **Q-value** | Valor esperado de acción en estado |
-| **Q-table** | Tabla de todos los Q-values (`31×11×11×11`) |
+| **Q-table** | Tabla de todos los Q-values (`31×11×10×11`) |
 | **ε-greedy** | Política que explora con probabilidad ε |
 | **Descuento** | Factor $\gamma$ que reduce valor de recompensas futuras |
 | **TD error** | Diferencia entre target y estimación actual |

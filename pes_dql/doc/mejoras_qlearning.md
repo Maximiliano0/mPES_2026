@@ -685,7 +685,7 @@ El flujo completo de pes_dql sigue tres etapas:
 - Watkins, C. J. C. H., & Dayan, P. (1992). "Q-learning." *Machine Learning*,
   8(3-4), 279–292.
 
-- Brockman, G. et al. (2016). "OpenAI Gym." *arXiv:1606.01540*.
+- Brockman, G. et al. (2016). "OpenAI Gym / Gymnasium." *arXiv:1606.01540*.
 
 - Puterman, M. L. (1994). *Markov Decision Processes: Discrete Stochastic
   Dynamic Programming*. Wiley.

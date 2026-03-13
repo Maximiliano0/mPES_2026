@@ -1,9 +1,9 @@
 '''
-pes_ac - Pandemic Experiment Scenario: Gym Environment and A2C Training
+pes_ac - Pandemic Experiment Scenario: Gymnasium Environment and A2C Training
 
 Provides the core simulation components:
 
-- **Pandemic** (gym.Env):  OpenAI Gym environment that models a pandemic
+- **Pandemic** (gymnasium.Env):  Gymnasium environment that models a pandemic
   resource-allocation problem.  State = (resources_left, trial_no, severity);
   action = resources to allocate (0-10).
 - **ac_agent_meta_cognitive**:  Actor-policy-based meta-cognitive function that
@@ -30,7 +30,7 @@ State normalisation: [resources/30, trial/10, severity/9] → [0, 1]³.
 ##########################
 import numpy
 import random
-from gym import Env, spaces
+from gymnasium import Env, spaces
 import tensorflow as tf
 
 ##########################
@@ -50,7 +50,7 @@ from ..src.exp_utils import calculate_normalised_final_severity_performance_metr
 
 class Pandemic(Env):
     """
-    Pandemic environment implementing OpenAI Gym's Env interface.
+    Pandemic environment implementing Gymnasium's Env interface.
 
     The Pandemic environment simulates a pandemic response scenario where an agent
     must allocate limited resources across multiple cities to minimize final severity.
@@ -108,8 +108,8 @@ class Pandemic(Env):
                                   self.trial_no_states,
                                   self.severity_states)
 
-        self.observation_space = spaces.Box(low=numpy.zeros(self.observation_shape),
-                                            high=numpy.ones(self.observation_shape),
+        self.observation_space = spaces.Box(low=numpy.zeros(self.observation_shape, dtype=numpy.float16),
+                                            high=numpy.ones(self.observation_shape, dtype=numpy.float16),
                                             dtype=numpy.float16)
 
         # Define an action space
@@ -261,7 +261,7 @@ class Pandemic(Env):
         self.severities.append(new_severity)
 
         # return the observation
-        return [self.available_resources, self.iteration, int(new_severity)]
+        return [self.available_resources, self.iteration, int(new_severity)], {}
 
     def render(self):
         """
@@ -276,7 +276,7 @@ class Pandemic(Env):
             The canvas/observation array
         """
         if (self.done):
-            print("--".format(self.iteration + 1), ':',
+            print("--", ':',
                   ":".join([" {:5.2f}".format(sev) for sev in self.severities]), '->', ' Done!')
         elif (len(self.resources) > 0):
             print("{:02d}".format(self.iteration + 1), ':',
@@ -440,9 +440,13 @@ def ac_agent_meta_cognitive(policy_probs, resources_left, response_timeout):
 
     o = numpy.arange(len(probs), dtype=numpy.float32)
 
-    # Set options that are not feasible (greater than resources left)
-    # to a very small value to avoid them being selected
-    probs[o > resources_left] = 0.00001
+    # Zero-out infeasible actions (allocation > resources left) and
+    # renormalise so that argmax and entropy are computed only over
+    # feasible actions — consistent with the optimizer's evaluation.
+    probs[o > resources_left] = 0.00001  # Tiny value to avoid zero probabilities
+    total = numpy.sum(probs)
+    if total > 0:
+        probs = probs / total
 
     # available resources, trial, severity
     dec_entropy = entropy_from_pdf(probs)
@@ -516,7 +520,7 @@ def run_experiment(env, actionfunction, RandomSequences=True,
     else:
         assert trials_per_sequence is not None and sevs is not None
         env.set_fixed_sequence(trials_per_sequence[seqid], sevs[seqid])
-    state = env.reset()
+    state, _ = env.reset()
     seqs = []
     perfs = []
     seq_ev = []
@@ -544,12 +548,12 @@ def run_experiment(env, actionfunction, RandomSequences=True,
                 else:
                     assert trials_per_sequence is not None and sevs is not None
                     env.set_fixed_sequence(trials_per_sequence[seqid], sevs[seqid])
-            state2 = env.reset()
+            state2, _ = env.reset()
 
         state = state2
 
     if verbose:
-        print(seqs)
+        print(numpy.array(seqs))
     env.close()
 
     return seqs, perfs, seq_ev
@@ -680,7 +684,7 @@ def A2CTraining(env, actor_lr, critic_lr, discount, entropy_coeff,
         done = False
         tot_reward: float = 0.0
         env.random_sequence()
-        state = env.reset()
+        state, _ = env.reset()
 
         # Collect episode transitions for batched update
         ep_states = []

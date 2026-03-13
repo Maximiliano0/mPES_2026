@@ -8,7 +8,7 @@ teórico se indica la variable, función o línea de código correspondiente.
 
 `pes_dqn` reemplaza la tabla Q tabular de `pes_base` / `pes_ql` por una
 **red neuronal** que aproxima la función $Q(s, a)$.  Conserva el mismo
-entorno Gym (`Pandemic`), el mismo espacio de estados y acciones, y la
+entorno Gymnasium (`Pandemic`), el mismo espacio de estados y acciones, y la
 misma integración con la UI de Pygame.
 
 ---
@@ -344,7 +344,7 @@ if epsilon > min_eps:
 ```
 Para cada episodio i = 1 … N:
     env.random_sequence()          ← secuencia aleatoria
-    state = env.reset()
+    state, _ = env.reset()
 
     Mientras no done:
         1. Normalizar estado:     s_norm = normalize_state(state, 30, 10, 9)
@@ -352,7 +352,7 @@ Para cada episodio i = 1 … N:
         3. (Opcional) Meta-cognición: confidence = dqn_agent_meta_cognitive(q_vals, ...)
            → Solo si compute_confidence=True; desactivado por defecto para
              eliminar el segundo forward pass y duplicar la velocidad en CPU.
-        4. Paso del entorno:      s', r, done = env.step(action)
+        4. Paso del entorno:      s', r, done, truncated, info = env.step(action)
         5. Almacenar transición:  buffer.push(s_norm, action, r, s'_norm, done)
         6. Si global_step % train_freq == 0 y |buffer| ≥ batch_size:
              ─ Samplear mini-batch del buffer (NumPy advanced indexing)
@@ -551,7 +551,7 @@ pes_dqn/
 │   ├── dqn_model.py         # ReplayBuffer (NumPy-backed), build_q_network,
 │   │                        #   normalize_state, train_step, sync_target_network;
 │   │                        #   configura tf.config.threading al importar
-│   ├── pandemic.py          # Entorno Gym + DQNTraining(compute_confidence=False)
+│   ├── pandemic.py          # Entorno Gymnasium + DQNTraining(compute_confidence=False)
 │   ├── train_dqn.py         # Pipeline de entrenamiento autónomo
 │   ├── optimize_dqn.py      # Búsqueda Bayesiana con Optuna
 │   └── tools.py             # Entropía, gráficas (sin cambios)

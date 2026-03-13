@@ -1,9 +1,9 @@
 '''
-pes_base - Pandemic Experiment Scenario: Gym Environment and RL Algorithms
+pes_base - Pandemic Experiment Scenario: Gymnasium Environment and RL Algorithms
 
 Provides the core simulation components:
 
-- **Pandemic** (gym.Env):  OpenAI Gym environment that models a pandemic
+- **Pandemic** (gymnasium.Env):  Gymnasium environment that models a pandemic
   resource-allocation problem.  State = (resources_left, trial_no, severity);
   action = resources to allocate (0-10).
 - **rl_agent_meta_cognitive**:  Entropy-based meta-cognitive function that
@@ -24,7 +24,7 @@ Dependencies
 ##########################
 import numpy
 import random
-from gym import Env, spaces
+from gymnasium import Env, spaces
 
 ##########################
 ##  Imports internos    ##
@@ -40,7 +40,7 @@ from ..src.exp_utils import calculate_normalised_final_severity_performance_metr
 
 class Pandemic(Env):
     """
-    Pandemic environment implementing OpenAI Gym's Env interface.
+    Pandemic environment implementing Gymnasium's Env interface.
 
     The Pandemic environment simulates a pandemic response scenario where an agent
     must allocate limited resources across multiple cities to minimize final severity.
@@ -97,8 +97,8 @@ class Pandemic(Env):
                                   self.trial_no_states,
                                   self.severity_states)
 
-        self.observation_space = spaces.Box(low = numpy.zeros(self.observation_shape),
-                                            high = numpy.ones(self.observation_shape),
+        self.observation_space = spaces.Box(low = numpy.zeros(self.observation_shape, dtype=numpy.float16),
+                                            high = numpy.ones(self.observation_shape, dtype=numpy.float16),
                                             dtype = numpy.float16)
 
         # Define an action space
@@ -249,7 +249,7 @@ class Pandemic(Env):
         self.severities.append( new_severity )
 
         # return the observation
-        return [self.available_resources, self.iteration, int(new_severity)]
+        return [self.available_resources, self.iteration, int(new_severity)], {}
 
     def render(self):
         """
@@ -264,7 +264,7 @@ class Pandemic(Env):
             The canvas/observation array
         """
         if (self.done):
-            print("--".format(self.iteration+1) , ':' , ":".join([" {:5.2f}".format(sev) for sev in self.severities]), '->', ' Done!')
+            print("--" , ':' , ":".join([" {:5.2f}".format(sev) for sev in self.severities]), '->', ' Done!')
         elif (len(self.resources)>0):
             print("{:02d}".format(self.iteration+1) , ':' , ":".join(["{:5.2f}".format(sev) for sev in self.severities]), '->', self.resources[-1])
         return self.canvas
@@ -507,7 +507,7 @@ def run_experiment(env, actionfunction, RandomSequences=True,
     else:
         assert trials_per_sequence is not None and sevs is not None
         env.set_fixed_sequence(trials_per_sequence[seqid],sevs[seqid])
-    state   = env.reset()
+    state, _ = env.reset()
     seqs    = []
     perfs   = []
     seq_ev  = []
@@ -536,11 +536,11 @@ def run_experiment(env, actionfunction, RandomSequences=True,
                 else:
                     assert trials_per_sequence is not None and sevs is not None
                     env.set_fixed_sequence(trials_per_sequence[seqid],sevs[seqid])
-            state2 = env.reset()
+            state2, _ = env.reset()
 
         state = state2
 
-    print( seqs )
+    print( numpy.array(seqs) )
     env.close()
 
     return seqs, perfs, seq_ev
@@ -642,7 +642,7 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes, UsePreloadedR
         done = False
         tot_reward, reward = 0,0
         env.random_sequence()
-        state = env.reset()
+        state, _ = env.reset()
 
         while done != True:
 

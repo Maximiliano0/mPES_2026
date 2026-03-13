@@ -55,7 +55,7 @@ from ..config.CONFIG import SEED
 from .pandemic import Pandemic, rl_agent_meta_cognitive, run_experiment, QLearning
 
 # Suppress non-critical warnings
-warnings.filterwarnings('ignore', category=UserWarning, message='.*Box bound precision.*')
+warnings.filterwarnings('ignore', category=UserWarning, message='.*Box.*precision lowered.*')
 warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 
 ###################################

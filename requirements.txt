@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 #  mPES — Python dependencies
 # ═══════════════════════════════════════════════════════════════════════════════
-#  Updated: 2026-03-06
+#  Updated: 2026-03-13
 #
 #  Cross-platform: Linux (linux_mpes_env, Python 3.12)
 #                  Windows (win_mpes_env, Python 3.10)
@@ -10,26 +10,26 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # ── Core scientific stack ───────────────────────────────────────────────────
-numpy==1.26.4
-scipy==1.11.4
-pandas==2.1.4
+numpy==2.4.3
+scipy==1.17.1
+pandas==3.0.1
 scikit-learn==1.4.2
-statsmodels==0.14.1
-matplotlib==3.8.2
+statsmodels==0.14.6
+matplotlib==3.10.8
 seaborn==0.12.0
-opencv-python==4.8.1.78
+opencv-python==4.13.0.92
 pillow==12.1.0
 
 # ── Deep Learning (TensorFlow / Keras) ─────────────────────────────────────
-tensorflow==2.16.2
+tensorflow==2.21.0
 tensorflow-io-gcs-filesystem==0.37.1
-keras==3.3.3
+keras==3.13.2
 Keras-Preprocessing==1.1.2
 tensorboard==2.16.2
 tensorboard-data-server==0.7.2
 tensorboard-plugin-wit==1.8.1
-ml-dtypes==0.3.2
-flatbuffers==24.3.25
+ml-dtypes==0.5.4
+flatbuffers==25.12.19
 opt-einsum==3.3.0
 optree==0.11.0
 namex==0.1.0
@@ -38,15 +38,15 @@ astunparse==1.6.3
 google-pasta==0.2.0
 libclang==14.0.6
 grpcio==1.62.1
-protobuf==4.25.3
-h5py==3.10.0
+protobuf==7.34.0
+h5py==3.14.0
 wrapt==1.14.1
 termcolor==1.1.0
 absl-py==1.2.0
 
 # ── Reinforcement Learning / Experiment ────────────────────────────────────
-gym==0.26.1
-gym-notices==0.0.8
+gymnasium==1.2.3
+farama-notifications==0.0.4
 pygame==2.5.2
 mne==1.6.1
 

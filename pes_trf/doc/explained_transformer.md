@@ -13,7 +13,7 @@ procesa la **trayectoria completa** de estados dentro de un episodio
 (hasta 10 timesteps) y produce una distribución de acción y un valor
 escalar en cada posición.
 
-Conserva el mismo entorno Gym (`Pandemic`), el mismo espacio de estados y
+Conserva el mismo entorno Gymnasium (`Pandemic`), el mismo espacio de estados y
 acciones, y la misma integración con la UI de Pygame.
 
 ---
@@ -348,13 +348,13 @@ de padding.
 ```
 Para cada episodio k = 1 … batch_size:
     env.random_sequence()
-    state = env.reset()
+    state, _ = env.reset()
     agent.reset()
 
     Mientras no done:
         action, probs, value, log_prob = agent.act(state)
         action = min(action, resources_left)    ← enmascarar infactibles
-        state', reward, done = env.step(action)
+        state', reward, done, truncated, info = env.step(action)
 
     Rellenar hasta max_seq_len con ceros
     masks[k] = [1.0]*T + [0.0]*(max_seq_len - T)
@@ -630,7 +630,7 @@ pes_trf/
 │   ├── transformer_model.py    # CausalSelfAttention, TransformerBlock,
 │   │                           #   PandemicTransformer, TransformerAgent
 │   ├── train_transformer.py    # Pipeline: collect_batch, compute_gae, train_step
-│   ├── pandemic.py             # Entorno Gym + QLearning (baseline) + run_experiment
+│   ├── pandemic.py             # Entorno Gymnasium + QLearning (baseline) + run_experiment
 │   ├── optimize_tr.py          # Bayesian optimisation (Q-Learning, no Transformer)
 │   └── tools.py                # Entropía, gráficas
 ├── src/

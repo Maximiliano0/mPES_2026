@@ -56,7 +56,7 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 
 
 # Suppress non-critical warnings
-warnings.filterwarnings('ignore', category=UserWarning, message='.*Box bound precision.*')
+warnings.filterwarnings('ignore', category=UserWarning, message='.*Box.*precision lowered.*')
 warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 
 ###################################

@@ -6,12 +6,15 @@ Bayesian Optimization of DQN hyperparameters using Optuna.
 Optimizes: learning_rate, discount_factor, epsilon_initial, epsilon_min,
            num_episodes, hidden_units, batch_size, replay_buffer_size,
            target_sync_freq, train_freq
-Objective: maximize mean normalised performance over the 64 evaluation sequences.
+Objective: maximize combined metric (weighted normalised performance +
+           meta-cognitive confidence) over the 64 evaluation sequences.
 
-The evaluation uses infeasible-action masking (actions > available resources are
-suppressed before argmax) so that the metric matches the behaviour of the RL agent
-in __main__.py.  The best model weights found during the search are preserved in
-memory and saved directly, avoiding a lossy re-training step.
+The evaluation uses ``dqn_agent_meta_cognitive`` to compute entropy-based
+confidence from the DQN Q-values.  The combined objective is::
+
+    objective = OPT_PERF_WEIGHT × mean_perf + OPT_CONF_WEIGHT × mean_confidence
+
+Default weights: 0.7 (perf) / 0.3 (confidence), configurable in CONFIG.py.
 
 Usage:
     python3 -m pes_dqn.ext.optimize_dqn [n_trials] [--resume YYYY-MM-DD]
@@ -75,15 +78,15 @@ _logging.getLogger('tensorflow').setLevel(_logging.ERROR)
 ##########################
 ##  Imports internos    ##
 ##########################
-from .pandemic import Pandemic, run_experiment, DQNTraining
+from .pandemic import Pandemic, run_experiment, DQNTraining, dqn_agent_meta_cognitive
 from .dqn_model import build_q_network, normalize_state
 from ..src.terminal_utils import header, section, success, info, list_item
 from .tools import convert_globalseq_to_seqs
-from ..config.CONFIG import SEED
+from ..config.CONFIG import SEED, OPT_PERF_WEIGHT, OPT_CONF_WEIGHT
 from .. import INPUTS_PATH
 
 # Suppress non-critical warnings
-warnings.filterwarnings('ignore', category=UserWarning, message='.*Box bound precision.*')
+warnings.filterwarnings('ignore', category=UserWarning, message='.*Box.*precision lowered.*')
 warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 
 try:
@@ -106,7 +109,8 @@ _severity_prob = None
 
 # Store best model weights/rewards during optimization to avoid lossy retraining
 _best_artifacts: dict = {'weights': None, 'hidden_units': None,
-                         'rewards': None, 'value': float('-inf')}
+                         'rewards': None, 'value': float('-inf'),
+                         'mean_confidence': 0.0}
 
 
 def _load_evaluation_data():
@@ -132,9 +136,13 @@ def _load_evaluation_data():
 ##     Objective function        ##
 ###################################
 def objective(trial: optuna.Trial) -> float:
-    """
-    Optuna objective: train a DQN with sampled hyperparameters,
-    evaluate on the fixed 64 sequences, and return mean normalised performance.
+    """Train a DQN with sampled hyperparameters and return combined objective.
+
+    Samples 11 hyperparameters, trains a fresh DQN via :func:`DQNTraining`,
+    evaluates on the 64 fixed sequences using :func:`dqn_agent_meta_cognitive`
+    for entropy-based confidence, and returns a combined metric::
+
+        objective = OPT_PERF_WEIGHT \u00d7 mean_perf + OPT_CONF_WEIGHT \u00d7 mean_confidence
     """
     # --- Sample hyperparameters ---
     learning_rate = trial.suggest_float('learning_rate', 5e-4, 5e-3, log=True)
@@ -169,7 +177,7 @@ def objective(trial: optuna.Trial) -> float:
         compute_confidence=False,
         verbose=False,
     )
-    # --- Evaluate on fixed sequences ---
+    # --- Evaluate on fixed sequences (with meta-cognitive confidence) ---
     env_eval = Pandemic()
     env_eval.verbose = False
 
@@ -177,31 +185,45 @@ def objective(trial: optuna.Trial) -> float:
     max_tri = env_eval.trial_no_states - 1
     max_sev = env_eval.severity_states - 1
 
+    confidences: list[float] = []
+
     def qf(_env, state, _seqid):
         s_norm = normalize_state(state, max_res, max_tri, max_sev)
         q_vals = model(s_norm[numpy.newaxis, :], training=False)[0].numpy()
-        # Mask infeasible actions (consistent with dqn_agent_meta_cognitive)
-        o = numpy.arange(len(q_vals), dtype=numpy.float32)
-        q_vals[o > state[0]] = 0.00001
-        return int(numpy.argmax(q_vals))
+        response, confidence, _rt_hold, _rt_release = dqn_agent_meta_cognitive(
+            q_vals.copy(), state[0], 10000
+        )
+        if state[0] == 0:
+            confidence = -1.0
+        confidences.append(confidence)
+        return int(response)
 
     _, perfs, _ = run_experiment(env_eval, qf, False, _trials_per_sequence, _sevs,
                                   verbose=False)
     mean_perf = float(numpy.mean(perfs))
+
+    # Meta-cognitive confidence (exclude steps with zero resources)
+    valid_confs = [c for c in confidences if c != -1.0]
+    mean_conf = float(numpy.mean(valid_confs)) if valid_confs else 0.0
+
+    # Combined objective: performance + meta-cognitive confidence
+    combined = OPT_PERF_WEIGHT * mean_perf + OPT_CONF_WEIGHT * mean_conf
 
     # Store extra info for later analysis
     trial.set_user_attr('mean_perf', mean_perf)
     trial.set_user_attr('std_perf', float(numpy.std(perfs)))
     trial.set_user_attr('min_perf', float(numpy.min(perfs)))
     trial.set_user_attr('max_perf', float(numpy.max(perfs)))
+    trial.set_user_attr('mean_confidence', mean_conf)
 
     # Preserve the best model weights to avoid lossy retraining at the end
     global _best_artifacts
-    if mean_perf > _best_artifacts['value']:
+    if combined > _best_artifacts['value']:
         _best_artifacts['weights'] = model.get_weights()
         _best_artifacts['hidden_units'] = hidden_units
         _best_artifacts['rewards'] = list(rewards)
-        _best_artifacts['value'] = mean_perf
+        _best_artifacts['value'] = combined
+        _best_artifacts['mean_confidence'] = mean_conf
 
     # ── Memory cleanup ──────────────────────────────────────────────
     # Each Optuna trial builds new Keras models and tf.function traces.
@@ -211,7 +233,7 @@ def objective(trial: optuna.Trial) -> float:
     tf.keras.backend.clear_session()
     gc.collect()
 
-    return mean_perf
+    return combined
 
 
 ###################################
@@ -235,7 +257,10 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
         f.write(f"Date:              {opt_date}\n")
         f.write(f"Total trials:      {len(study.trials)}\n")
         f.write(f"Best trial:        #{best.number + 1}\n")
-        f.write(f"Best mean perf:    {best.value:.6f}\n\n")
+        f.write(f"Best objective:    {best.value:.6f}\n")
+        f.write(f"  Mean perf:       {best.user_attrs.get('mean_perf', best.value):.6f}\n")
+        f.write(f"  Mean confidence: {best.user_attrs.get('mean_confidence', 'N/A')}\n")
+        f.write(f"  Weights:         perf={OPT_PERF_WEIGHT}, conf={OPT_CONF_WEIGHT}\n\n")
 
         f.write("BEST HYPERPARAMETERS\n")
         f.write("-" * 80 + "\n")
@@ -248,22 +273,25 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
         f.write(f"  Mean performance:   {best.user_attrs['mean_perf']:.6f}\n")
         f.write(f"  Std  performance:   {best.user_attrs['std_perf']:.6f}\n")
         f.write(f"  Min  performance:   {best.user_attrs['min_perf']:.6f}\n")
-        f.write(f"  Max  performance:   {best.user_attrs['max_perf']:.6f}\n\n")
+        f.write(f"  Max  performance:   {best.user_attrs['max_perf']:.6f}\n")
+        f.write(f"  Mean confidence:    {best.user_attrs.get('mean_confidence', 'N/A')}\n\n")
 
         f.write("ALL TRIALS\n")
-        f.write("-" * 80 + "\n")
+        f.write("-" * 100 + "\n")
         f.write(
-            f"{'#':>4s}  {'mean_perf':>10s}  {'lr':>10s}  "
+            f"{'#':>4s}  {'objective':>10s}  {'perf':>10s}  {'conf':>6s}  {'lr':>10s}  "
             f"{'gamma':>8s}  {'eps0':>6s}  {'eps_min':>7s}  "
             f"{'episodes':>8s}  {'h_dim':>5s}  {'layers':>6s}\n"
         )
-        f.write("-" * 80 + "\n")
+        f.write("-" * 100 + "\n")
         for t in sorted(study.trials, key=lambda t: t.value if t.value is not None else -1, reverse=True):
             if t.value is None:
                 continue
             p = t.params
+            t_perf = t.user_attrs.get('mean_perf', t.value)
+            t_conf = t.user_attrs.get('mean_confidence', 0.0)
             f.write(
-                f"{t.number + 1:4d}  {t.value:10.6f}  "
+                f"{t.number + 1:4d}  {t.value:10.6f}  {t_perf:10.6f}  {t_conf:6.4f}  "
                 f"{p['learning_rate']:10.6f}  {p['discount_factor']:8.4f}  "
                 f"{p['epsilon_initial']:6.3f}  {p['epsilon_min']:7.4f}  "
                 f"{p['num_episodes']:8d}  {p['hidden_dim']:5d}  "
@@ -295,8 +323,8 @@ def _save_report(study, opt_dir, opt_date, best_model, best_rewards):
     ax.plot(trial_numbers, running_best, color='#d62728', linewidth=2.5,
             label='Best so far', zorder=4)
     ax.set_xlabel('Trial number', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Mean normalised performance', fontsize=12, fontweight='bold')
-    ax.set_title('Bayesian Optimisation: Convergence (DQN)', fontsize=14, fontweight='bold', pad=20)
+    ax.set_ylabel('Combined objective (perf + confidence)', fontsize=12, fontweight='bold')
+    ax.set_title('Bayesian Optimisation: Convergence — DQN (meta-cognitive)', fontsize=14, fontweight='bold', pad=20)
     ax.legend(loc='lower right', fontsize=11)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -396,7 +424,7 @@ def main():
 
     study = optuna.create_study(
         direction='maximize',
-        study_name=f'dqn_opt_{opt_date}',
+        study_name=f'dqn_metacog_{opt_date}',
         sampler=optuna.samplers.TPESampler(seed=42),
         pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=2),
         storage=storage,
@@ -438,18 +466,20 @@ def main():
                     if t.state == optuna.trial.TrialState.COMPLETE])
         elapsed = time.time() - t_start
         best_val = study.best_value
+        perf = trial.user_attrs.get('mean_perf', 0.0)
+        conf = trial.user_attrs.get('mean_confidence', 0.0)
         print(
             f"  Trial {done:3d}/{n_trials}  |  "
-            f"value={trial.value:.4f}  |  best={best_val:.4f}  |  "
-            f"elapsed={elapsed:.0f}s"
+            f"obj={trial.value:.4f}  perf={perf:.4f}  conf={conf:.4f}  |  "
+            f"best={best_val:.4f}  |  elapsed={elapsed:.0f}s"
         )
         # Notificar cada 10 trials completados
         if done > 0 and done % 10 == 0:
             notify(
                 f"[pes_dqn] Progreso: {done}/{n_trials} trials",
                 f"Trials completados: {done}/{n_trials}\n"
-                f"Mejor mean_perf: {best_val:.4f}\n"
-                f"Ultimo trial: {trial.value:.4f}\n"
+                f"Mejor objetivo: {best_val:.4f}\n"
+                f"Último trial: obj={trial.value:.4f} perf={perf:.4f} conf={conf:.4f}\n"
                 f"Tiempo: {elapsed / 60:.1f} min",
                 tags="chart_with_upwards_trend"
             )
@@ -475,7 +505,10 @@ def main():
     section("Best Hyperparameters Found", width=80)
     for name, val in best.params.items():
         list_item(f"{name:<25s} = {val}")
-    info(f"Mean normalised performance: {best.value:.6f}")
+    info(f"Combined objective:         {best.value:.6f}")
+    info(f"  Mean normalised perf:     {best.user_attrs.get('mean_perf', best.value):.6f}")
+    info(f"  Mean meta-cog confidence: {best.user_attrs.get('mean_confidence', 'N/A')}")
+    info(f"  Weights: perf={OPT_PERF_WEIGHT}, conf={OPT_CONF_WEIGHT}")
     print()
 
     # --- Use best model from optimization, or retrain only if resuming ---
@@ -491,6 +524,7 @@ def main():
         best_model.set_weights(_best_artifacts['weights'])
         best_rewards = numpy.array(_best_artifacts['rewards'])
         success("Using model from best optimization trial (no retraining needed)")
+        info(f"Cached meta-cognitive confidence: {_best_artifacts['mean_confidence']:.4f}")
     else:
         info("Retraining with best hyperparameters (resumed study, original weights not in memory)...")
         env_final = Pandemic()
@@ -533,7 +567,9 @@ def main():
     notify(
         "[pes_dqn] Optimizacion completa",
         f"Trials: {total_completed}/{n_trials}\n"
-        f"Mejor mean_perf: {best.value:.4f}\n"
+        f"Mejor objetivo: {best.value:.4f}\n"
+        f"  perf={best.user_attrs.get('mean_perf', best.value):.4f}"
+        f"  conf={best.user_attrs.get('mean_confidence', 0.0):.4f}\n"
         f"Best trial: #{best.number + 1}\n"
         f"lr={bp['learning_rate']:.4f}  gamma={bp['discount_factor']:.3f}\n"
         f"episodes={bp['num_episodes']}  hidden={best_hidden}\n"

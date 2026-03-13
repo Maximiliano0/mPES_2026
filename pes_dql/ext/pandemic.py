@@ -1,10 +1,10 @@
 ﻿'''
-pes_dql — Pandemic Gym Environment and Enhanced Q-Learning.
+pes_dql — Pandemic Gymnasium Environment and Enhanced Q-Learning.
 
-Implements the Pandemic environment as a custom OpenAI Gym ``Env`` and provides
+Implements the Pandemic environment as a custom Gymnasium ``Env`` and provides
 four public entry points:
 
-1. **Pandemic** — Gym environment (state space 31×11×10, action space 11).
+1. **Pandemic** — Gymnasium environment (state space 31×11×10, action space 11).
 2. **QLearning()** — Tabular Q-Learning with three optional improvements:
    - *Double Q-Learning* (van Hasselt, 2010): two independent Q-tables to
      eliminate maximisation bias.
@@ -30,7 +30,7 @@ Dependencies:
 ##########################
 import numpy
 import random
-from gym import Env, spaces
+from gymnasium import Env, spaces
 
 ##########################
 ##  Imports internos    ##
@@ -46,7 +46,7 @@ from ..src.exp_utils import calculate_normalised_final_severity_performance_metr
 
 class Pandemic(Env):
     """
-    Pandemic environment implementing OpenAI Gym's Env interface.
+    Pandemic environment implementing Gymnasium's Env interface.
 
     The Pandemic environment simulates a pandemic response scenario where an agent
     must allocate limited resources across multiple cities to minimize final severity.
@@ -61,7 +61,7 @@ class Pandemic(Env):
 
     References
     ----------
-    Brockman, G. et al. (2016). "OpenAI Gym." arXiv:1606.01540.
+    Brockman, G. et al. (2016). "OpenAI Gym / Gymnasium." arXiv:1606.01540.
 
     Puterman, M. L. (1994). "Markov Decision Processes: Discrete Stochastic
     Dynamic Programming." Wiley.
@@ -117,8 +117,8 @@ class Pandemic(Env):
                                   self.trial_no_states,
                                   self.severity_states)
 
-        self.observation_space = spaces.Box(low = numpy.zeros(self.observation_shape),
-                                            high = numpy.ones(self.observation_shape),
+        self.observation_space = spaces.Box(low = numpy.zeros(self.observation_shape, dtype=numpy.float16),
+                                            high = numpy.ones(self.observation_shape, dtype=numpy.float16),
                                             dtype = numpy.float16)
 
         # Define an action space
@@ -287,7 +287,7 @@ class Pandemic(Env):
             The canvas/observation array
         """
         if (self.done):
-            print("--".format(self.iteration+1) , ':' , ":".join([" {:5.2f}".format(sev) for sev in self.severities]), '->', ' Done!')
+            print("--" , ':' , ":".join([" {:5.2f}".format(sev) for sev in self.severities]), '->', ' Done!')
         elif (len(self.resources)>0):
             print("{:02d}".format(self.iteration+1) , ':' , ":".join(["{:5.2f}".format(sev) for sev in self.severities]), '->', self.resources[-1])
         return self.canvas
@@ -579,7 +579,7 @@ def run_experiment(env, actionfunction, RandomSequences=True,
 
         state = state2
 
-    print( seqs )
+    print( numpy.array(seqs) )
     env.close()
 
     return seqs, perfs, seq_ev

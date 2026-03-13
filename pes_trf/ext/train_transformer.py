@@ -77,7 +77,7 @@ from .pandemic import (
 from .transformer_model import PandemicTransformer, TransformerAgent
 
 warnings.filterwarnings('ignore', category=UserWarning,
-                        message='.*Box bound precision.*')
+                        message='.*Box.*precision lowered.*')
 warnings.filterwarnings('ignore', message='.*A NumPy version.*SciPy.*')
 
 
@@ -115,7 +115,7 @@ def collect_batch(env, model, batch_size, max_seq_len=10):
 
     for _ in range(batch_size):
         env.random_sequence()
-        state = env.reset()
+        state, _ = env.reset()
         agent.reset()
 
         ep_s, ep_a, ep_r, ep_lp, ep_v = [], [], [], [], []
@@ -124,7 +124,7 @@ def collect_batch(env, model, batch_size, max_seq_len=10):
             action, _probs, value, log_prob = agent.act(state)
             # Clamp action to available resources
             action = min(action, int(state[0]))
-            state2, reward, done, _ = env.step(action)
+            state2, reward, done, _truncated, _info = env.step(action)
 
             ep_s.append(list(state))
             ep_a.append(action)

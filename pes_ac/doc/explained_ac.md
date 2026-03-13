@@ -14,7 +14,7 @@ de `pes_base` / `pes_ql`) por **dos redes neuronales separadas**:
   distribución de probabilidad sobre las acciones, y
 - un **Critic** $V_\phi(s)$ que estima el valor del estado actual.
 
-Conserva el mismo entorno Gym (`Pandemic`), el mismo espacio de estados y
+Conserva el mismo entorno Gymnasium (`Pandemic`), el mismo espacio de estados y
 acciones, y la misma integración con la UI de Pygame.
 
 ---
@@ -370,7 +370,7 @@ concentradas, incentivando la diversificación de acciones aun cuando
 ```
 Para cada episodio i = 1 … N:
     env.random_sequence()          ← secuencia aleatoria
-    state = env.reset()
+    state, _ = env.reset()
 
     batch_states, batch_actions, batch_rewards,
     batch_next_states, batch_dones = [], [], [], [], []
@@ -381,7 +381,7 @@ Para cada episodio i = 1 … N:
               - Con prob ε  → acción aleatoria factible
               - Con prob 1-ε → a ~ π_θ(· | s_norm)
         3. (Opcional) Meta-cognición: confidence = ac_agent_meta_cognitive(π(·|s), ...)
-        4. Paso del entorno:      s', r, done = env.step(action)
+        4. Paso del entorno:      s', r, done, truncated, info = env.step(action)
         5. Almacenar transición en batch de episodio:
               batch_states.append(s_norm)
               batch_actions.append(action)
@@ -627,7 +627,7 @@ pes_ac/
 │   │                        #   train_step_actor_critic (sin @tf.function;
 │   │                        #   se envuelve por trial en pandemic.py);
 │   │                        #   configura tf.config.threading al importar
-│   ├── pandemic.py          # Entorno Gym + A2CTraining(compute_confidence=False)
+│   ├── pandemic.py          # Entorno Gymnasium + A2CTraining(compute_confidence=False)
 │   ├── train_ac.py          # Pipeline de entrenamiento autónomo
 │   ├── optimize_ac.py       # Búsqueda Bayesiana con Optuna
 │   └── tools.py             # Entropía, gráficas (sin cambios)

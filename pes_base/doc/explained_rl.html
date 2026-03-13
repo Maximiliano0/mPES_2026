@@ -105,12 +105,12 @@ self.available_resources_states = self.max_resources + 1     # = 31
 self.max_seq_length = NUM_MAX_TRIALS                         # = 10
 self.trial_no_states = self.max_seq_length + 1               # = 11
 
-# Severidad: 0 a 10
-self.max_severity = MAX_SEVERITY                             # = 10
-self.severity_states = self.max_severity + 1                 # = 11
+# Severidad: 0 a 9
+self.max_severity = MAX_SEVERITY                             # = 9
+self.severity_states = self.max_severity + 1                 # = 10
 </code></pre>
 <p><strong>Cardinalidad del espacio de estados</strong>:</p>
-<p>$$|S| = 31 \times 11 \times 11 = 3{,}751 \text{ estados}$$</p>
+<p>$$|S| = 31 \times 11 \times 10 = 3{,}410 \text{ estados}$$</p>
 <p><strong>Significado de cada dimensión</strong>:</p>
 <table>
 <thead>
@@ -133,7 +133,7 @@ self.severity_states = self.max_severity + 1                 # = 11
 </tr>
 <tr>
 <td><code>severity</code></td>
-<td>0–10</td>
+<td>0–9</td>
 <td>Severidad inicial de la ciudad entrante (entera)</td>
 </tr>
 </tbody>
@@ -165,7 +165,7 @@ else:
     new_severity = self.new_city()
     self.severities.append(new_severity)
 
-return [self.available_resources, self.iteration, int(new_severity)], reward, done, ...
+return [self.available_resources, self.iteration, int(new_severity)], reward, done, False, {}
 </code></pre>
 <h3 id="25-funcion-de-recompensa">2.5 Función de Recompensa</h3>
 <pre><code class="language-python"># En Pandemic.step():
@@ -258,11 +258,11 @@ Se puede sobreescribir pasando un argumento por línea de comandos:
 <pre><code class="language-python">Q = numpy.random.uniform(low=-1, high=1,
                           size=(env.available_resources_states,   # 31
                                 env.trial_no_states,              # 11
-                                env.severity_states,              # 11
+                                env.severity_states,              # 10
                                 env.action_space.n))              # 11
 </code></pre>
 <ul>
-<li><strong>Shape</strong>: <code>(31, 11, 11, 11)</code> = <strong>41,261 entradas</strong></li>
+<li><strong>Shape</strong>: <code>(31, 11, 10, 11)</code> = <strong>37,510 entradas</strong></li>
 <li><strong>Inicialización</strong>: Valores aleatorios uniformes en $[-1, 1]$</li>
 <li><strong>Tipo</strong>: <code>float64</code></li>
 </ul>
@@ -353,7 +353,7 @@ del entrenamiento y explote progresivamente en la segunda mitad.</p>
     done = False
     tot_reward, reward = 0, 0
     env.random_sequence()             # Generar secuencia aleatoria
-    state = env.reset()               # → [max_resources, 0, severity_0]
+    state, _ = env.reset()               # → [max_resources, 0, severity_0]
 
     while done != True:
         # 1. Selección de acción (ε-greedy)
@@ -488,7 +488,7 @@ seqs, perfs, _ = run_experiment(env, eval_qf, False, trials_per_sequence, sevs)
 <tbody>
 <tr>
 <td><code>q_&lt;fecha&gt;.npy</code></td>
-<td>Q-table <code>(31, 11, 11, 11)</code> float64</td>
+<td>Q-table <code>(31, 11, 10, 11)</code> float64</td>
 </tr>
 <tr>
 <td><code>rewards_&lt;fecha&gt;.npy</code></td>
@@ -552,7 +552,7 @@ seqs, perfs, _ = run_experiment(env, eval_qf, False, trials_per_sequence, sevs)
 │
 ├─ While not done:
 │   ├─ action = actionfunction(env, state, seqid)
-│   ├─ state', reward, done = env.step(action)
+│   ├─ state', reward, done, truncated, info = env.step(action)
 │   └─ state = state'
 │
 ├─ Al terminar secuencia:
@@ -704,7 +704,7 @@ generados por el entrenamiento.</p>
 </tr>
 <tr>
 <td>Q-table $Q(s,a)$</td>
-<td><code>numpy.ndarray</code> shape <code>(31, 11, 11, 11)</code></td>
+<td><code>numpy.ndarray</code> shape <code>(31, 11, 10, 11)</code></td>
 </tr>
 <tr>
 <td>Actualización TD</td>
@@ -720,7 +720,7 @@ generados por el entrenamiento.</p>
 </tr>
 <tr>
 <td>Ambiente</td>
-<td><code>Pandemic(gym.Env)</code></td>
+<td><code>Pandemic(gymnasium.Env)</code></td>
 </tr>
 <tr>
 <td>Paso</td>

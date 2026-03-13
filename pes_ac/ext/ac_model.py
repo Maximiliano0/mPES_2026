@@ -45,10 +45,11 @@ import tensorflow as tf
 
 
 # ---------------------------------------------------------------------------
-#  CPU threading optimisation
+#  CPU threading optimisation (skipped when GPU is available)
 # ---------------------------------------------------------------------------
-tf.config.threading.set_intra_op_parallelism_threads(0)   # 0 = auto-detect
-tf.config.threading.set_inter_op_parallelism_threads(2)
+if not tf.config.list_physical_devices('GPU'):
+    tf.config.threading.set_intra_op_parallelism_threads(0)   # 0 = auto-detect
+    tf.config.threading.set_inter_op_parallelism_threads(2)
 
 
 # ---------------------------------------------------------------------------

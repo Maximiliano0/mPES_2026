@@ -121,7 +121,7 @@ in `ext/train_rl.py`:
 | Aspect | PES (baseline) | pes_ql |
 |--------|----------------|-----------|
 | Hyperparameters | Hand-tuned | Bayesian-optimised (Optuna) |
-| `MAX_SEVERITY` | 10 → Q-shape `(31,11,11,11)` | 9 → Q-shape `(31,11,10,11)` |
+| `MAX_SEVERITY` | 9 → Q-shape `(31,11,10,11)` | 9 → Q-shape `(31,11,10,11)` |
 | Default episodes | 1 000 000 | 900 000 |
 | ε-decay | Linear | Linear (same, but different bounds) |
 

@@ -19,6 +19,25 @@ Handles package setup including:
 ## External Imports ##
 ######################
 import os
+
+# TensorFlow/CUDA log suppression — must precede any transitive TF import.
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ.setdefault('CUDA_VISIBLE_DEVICES', '-1')
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
+# Quiet-import TF: suppress native-library stderr (cudart_stub.cc) emitted
+# before absl::InitializeLog().  The module is cached in sys.modules, so
+# subsequent ``import tensorflow`` calls in the package are free.
+_devnull = os.open(os.devnull, os.O_WRONLY)
+_old_stderr_fd = os.dup(2)
+os.dup2(_devnull, 2)
+os.close(_devnull)
+try:
+    import tensorflow  # noqa: F401
+finally:
+    os.dup2(_old_stderr_fd, 2)
+    os.close(_old_stderr_fd)
+
 import sys
 import warnings
 import numpy
@@ -115,17 +134,6 @@ MAX_SEVERITY = CONFIG.MAX_SEVERITY
 # sev_n = * β * sev_(n-1) - α * a  --> a is allocated resources, sev is severity
 RESPONSE_MULTIPLIER = PANDEMIC_PARAMETER  # α (Alpha)
 SEVERITY_MULTIPLIER = 1 + PANDEMIC_PARAMETER  # β (Beta)
-
-###########################
-### Tensorflow Issue    ###
-###########################
-# The experiment uses tensorflow, which has a nasty habit of dumping lots of
-# warning messages for missing nvidia libraries etc. The following environmental
-# variable disables these. ( '0': all logs are shown; '1': filter out INFOs and
-# below; '2': filter out WARNs; '3': filter out ERRORs, etc )
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
-# Force TensorFlow to use CPU by default.
-os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 
 # Set some nice numpy printing defaults and error handling
 numpy.set_printoptions(threshold=sys.maxsize, precision=3, suppress=True,

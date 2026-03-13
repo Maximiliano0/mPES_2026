@@ -276,7 +276,7 @@ def _save_png_plots(subject_id, outputs_path, performances, all_performances, st
         ax3 = fig.add_subplot(gs[1, 0])
         if len(normalized_all_perf) > 0:
             # Create proper boxplot data
-            bp = ax3.boxplot(normalized_all_perf, labels=[f'B{i+1}' for i in range(len(normalized_all_perf))],
+            bp = ax3.boxplot(normalized_all_perf, tick_labels=[f'B{i+1}' for i in range(len(normalized_all_perf))],
                               patch_artist=True)
             for patch in bp['boxes']:
                 patch.set_facecolor('lightblue')
