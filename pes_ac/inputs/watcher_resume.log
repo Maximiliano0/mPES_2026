@@ -1,6 +1,0 @@
-nohup: no se tendrá en cuenta la entrada
-[watch_and_push] Paquete: pes_ac
-[watch_and_push] Vigilando PIDs: 35519
-[watch_and_push] Proyecto: /home/mecatronica/Documentos/maximiliano/mPES
-[watch_and_push] Rama: dqn_and_ac
-[watch_and_push] PID 35519 -> pes_ac.ext.optimize_ac 100 --resume 2026-03-07

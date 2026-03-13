@@ -37,7 +37,8 @@ win_mpes_env\Scripts\Activate.ps1
 python3 -m pes_ac.ext.train_ac
 ```
 
-This runs the **full training pipeline** with default settings (100 000 episodes).
+This runs the **full training pipeline** with default settings (50 000 episodes,
+hiperparámetros del mejor trial de la optimización bayesiana del 2026-03-07).
 
 ### 1.2 Custom Episode Count
 
@@ -88,25 +89,29 @@ paths consumed by the experiment runner:
 
 ### 1.5 Default Hyperparameters
 
-These defaults are set in `config/CONFIG.py` and `ext/train_ac.py`:
+Los hiperparámetros activos en `ext/train_ac.py` corresponden al **trial #71**
+de la optimización bayesiana ejecutada el 2026-03-07
+(110 trials totales; rendimiento medio: 0.8466).
+Los valores de `CONFIG.py` (columna *CONFIG*) se conservan como línea base
+para la semilla (*warm-start*) de Optuna y no se modifican.
 
-| Parameter | Default | Source |
-|-----------|---------|--------|
-| Actor hidden layers | `[64, 64]` | `CONFIG.AC_ACTOR_HIDDEN_UNITS` |
-| Critic hidden layers | `[64, 64]` | `CONFIG.AC_CRITIC_HIDDEN_UNITS` |
-| Actor learning rate | 3 × 10⁻⁴ | `CONFIG.AC_ACTOR_LR` |
-| Critic learning rate | 1 × 10⁻³ | `CONFIG.AC_CRITIC_LR` |
-| Entropy coefficient | 0.01 | `CONFIG.AC_ENTROPY_COEFF` |
-| Discount γ | 0.99 | `CONFIG.AC_DISCOUNT` |
-| Initial ε | 0.679 | `train_ac.py` |
-| Min ε | 0.085 | `train_ac.py` |
-| Episodes | 100 000 | CLI arg or default |
-| Random seed | 42 | `CONFIG.SEED` |
+| Parámetro | Valor activo (`train_ac.py`) | CONFIG | Fuente |
+|-----------|------------------------------|--------|--------|
+| Actor hidden layers | `[64, 64]` | `[64, 64]` | `CONFIG.AC_ACTOR_HIDDEN_UNITS` |
+| Critic hidden layers | `[64, 64]` | `[64, 64]` | `CONFIG.AC_CRITIC_HIDDEN_UNITS` |
+| Actor learning rate | 1.4357 × 10⁻⁴ | 3 × 10⁻⁴ | `train_ac.py` (Bayesian opt trial #71) |
+| Critic learning rate | 3.9966 × 10⁻³ | 1 × 10⁻³ | `train_ac.py` (Bayesian opt trial #71) |
+| Entropy coefficient | 2.318 × 10⁻³ | 0.01 | `train_ac.py` (Bayesian opt trial #71) |
+| Discount γ | 0.9251 | 0.99 | `train_ac.py` (Bayesian opt trial #71) |
+| Initial ε | 0.6680 | 0.679 | `train_ac.py` (Bayesian opt trial #71) |
+| Min ε | 0.08754 | 0.085 | `train_ac.py` (Bayesian opt trial #71) |
+| Episodes | 50 000 | — | `train_ac.py` (Bayesian opt trial #71) |
+| Random seed | 42 | 42 | `CONFIG.SEED` |
 
 ### 1.6 Expected Training Time
 
 On a modest CPU (e.g. Intel i3-6006U @ 2 GHz, 4 threads), approximately
-**20–40 minutes** for 100 000 episodes with CPU optimisations enabled
+**10–20 minutes** for 50 000 episodes with CPU optimisations enabled
 (`tf.function` per-trial compilation, no confidence computation during training,
 TensorFlow thread-pool tuning).  Training time scales linearly with
 episode count.
@@ -185,6 +190,13 @@ separate learning rates (Actor and Critic) and an entropy coefficient —
 parameters that don't exist in the DQN search space.  Conversely, DQN
 parameters like `batch_size`, `replay_buffer_size`, and
 `target_sync_freq` are absent since A2C is on-policy.
+
+### 2.4 Running on Google Colab Pro+
+
+If the local machine does not have enough RAM (the full optimisation needs
+~900 MB per process), you can run it on Google Colab Pro+ using the notebook
+at `colab/mPES_Bayesian_Optimization.ipynb`.  See `utils/colab_workflow.md`
+for the complete step-by-step guide.
 
 ---
 

@@ -569,7 +569,7 @@ factibles únicamente.
 | Política | Implícita ($\arg\max Q$) | Implícita ($\arg\max Q$) | Explícita ($\pi_\theta$) |
 | Confianza | Entropía de Q (heurística) | Entropía de Q (heurística) | Entropía de $\pi$ (teórica) |
 | Exploración | ε-greedy | ε-greedy | Muestreo de $\pi$ + ε-overlay + entropía bonus |
-| Episodios típicos | 900 000 | 100 000 | 100 000+ |
+| Episodios típicos | 900 000 | 100 000 | 50 000+ (opt. bayesiana: 50 000) |
 
 ---
 

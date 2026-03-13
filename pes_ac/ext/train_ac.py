@@ -8,7 +8,9 @@ Pipeline stages
 ---------------
 1. Load training data (initial_severity.csv, sequence_lengths.csv)
 2. Run random-player baseline and save performance plots
-3. Train A2C agent (default 100 000 episodes, configurable via CLI)
+3. Train A2C agent (default 50 000 episodes, configurable via CLI)
+   Hyperparameters come from Bayesian optimisation trial #71 (2026-03-07,
+   mean_perf = 0.8466 over 110 trials).
 4. Save Keras Actor/Critic models, rewards history, and training config
    to a dated directory
 5. Evaluate trained agent on the same sequences and generate
@@ -45,8 +47,7 @@ from .ac_model import normalize_state
 from ..src.terminal_utils import header, section, success, info, list_item
 from .tools import plot_confidences, convert_globalseq_to_seqs
 from ..config.CONFIG import (SEED, AC_ACTOR_HIDDEN_UNITS, AC_CRITIC_HIDDEN_UNITS,
-                             AC_ACTOR_LR, AC_CRITIC_LR, AC_ENTROPY_COEFF,
-                             AC_DISCOUNT, AC_MODEL_ACTOR_FILE)
+                             AC_MODEL_ACTOR_FILE)
 from .. import INPUTS_PATH
 
 
@@ -169,14 +170,17 @@ def main():
     # ---- A2C Training ----
     section("A2C Training", width=80)
 
-    # A2C hyperparameters
-    actor_lr = AC_ACTOR_LR
-    critic_lr = AC_CRITIC_LR
-    discount_factor = AC_DISCOUNT
-    entropy_coeff = AC_ENTROPY_COEFF
-    epsilon_initial = 0.679
-    epsilon_min = 0.085
-    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 100000
+    # A2C hyperparameters — best trial from Bayesian optimisation (2026-03-07)
+    # Trial #71 · mean_perf = 0.846550 · std = 0.066494 · 110 trials total
+    actor_lr        = 0.00014357384148626853   # Bayesian opt (was AC_ACTOR_LR  = 3e-4)
+    critic_lr       = 0.003996560960682552     # Bayesian opt (was AC_CRITIC_LR = 1e-3)
+    discount_factor = 0.925134925943391        # Bayesian opt (was AC_DISCOUNT  = 0.99)
+    entropy_coeff   = 0.002318396641830523     # Bayesian opt (was AC_ENTROPY_COEFF = 0.01)
+    epsilon_initial = 0.6679619246410725       # Bayesian opt (was 0.679)
+    epsilon_min     = 0.08754052244921404      # Bayesian opt (was 0.085)
+    # AC_ACTOR_HIDDEN_UNITS / AC_CRITIC_HIDDEN_UNITS = [64, 64] already match
+    # the optimised values (actor_hidden_dim=64, critic_hidden_dim=64, n_hidden_layers=2)
+    num_episodes = int(sys.argv[1]) if len(sys.argv) > 1 else 50000  # best trial: 50 000
 
     info(f"Starting A2C training ({num_episodes:,} episodes)...")
     info(f"  Actor hidden units:  {AC_ACTOR_HIDDEN_UNITS}")

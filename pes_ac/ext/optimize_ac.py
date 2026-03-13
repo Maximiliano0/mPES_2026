@@ -132,9 +132,31 @@ def _load_evaluation_data():
 ##     Objective function        ##
 ###################################
 def objective(trial: optuna.Trial) -> float:
-    """
-    Optuna objective: train an A2C agent with sampled hyperparameters,
-    evaluate on the fixed 64 sequences, and return mean normalised performance.
+    """Train an A2C agent with sampled hyperparameters and return mean normalised performance.
+
+    Called by Optuna on each trial.  Samples 10 hyperparameters from the search
+    space, trains a fresh A2C agent via :func:`A2CTraining`, evaluates it on the
+    64 fixed sequences, and stores per-trial statistics as Optuna user attributes.
+    The best model weights are cached in ``_best_artifacts`` to avoid a lossy
+    retraining step at the end of the study.
+
+    Parameters
+    ----------
+    trial : optuna.Trial
+        Optuna trial object used for hyperparameter sampling.
+
+    Returns
+    -------
+    float
+        Mean normalised performance across the 64 evaluation sequences
+        (higher is better; maximised by the study).
+
+    Notes
+    -----
+    - ``tf.keras.backend.clear_session()`` and ``gc.collect()`` are called
+      after each trial to prevent memory growth over 100+ trials.
+    - Additional statistics (std, min, max performance) are stored as user
+      attributes on the trial for later reporting.
     """
     # --- Sample hyperparameters ---
     actor_lr = trial.suggest_float('actor_lr', 1e-4, 1e-2, log=True)

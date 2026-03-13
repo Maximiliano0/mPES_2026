@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optimización Bayesiana en Google Colab Pro+</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+  <script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {delimiters:[
+          {left:'$$',right:'$$',display:true},
+          {left:'$',right:'$',display:false}
+        ]})"></script>
+  <style>
+    :root { --bg:#ffffff; --fg:#1a1a2e; --accent:#0f3460; --code-bg:#f4f4f8;
+             --border:#ddd; --link:#1565c0; --table-stripe:#f9f9fc; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#1a1a2e; --fg:#e0e0e0; --accent:#64b5f6; --code-bg:#16213e;
+               --border:#333; --link:#90caf9; --table-stripe:#1e2a45; }
+    }
+    *,*::before,*::after { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+           line-height:1.7; color:var(--fg); background:var(--bg);
+           max-width:52em; margin:2em auto; padding:0 1.5em; }
+    h1 { border-bottom:3px solid var(--accent); padding-bottom:.3em; }
+    h2 { border-bottom:1px solid var(--border); padding-bottom:.2em; margin-top:2em; }
+    h3,h4 { margin-top:1.6em; }
+    a { color:var(--link); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    code { font-family:"JetBrains Mono","Fira Code",Consolas,monospace;
+           font-size:.92em; background:var(--code-bg); padding:.15em .35em;
+           border-radius:4px; }
+    pre { background:var(--code-bg); padding:1em 1.2em; border-radius:8px;
+          overflow-x:auto; border:1px solid var(--border); }
+    pre code { background:none; padding:0; font-size:.88em; }
+    table { border-collapse:collapse; width:100%; margin:1em 0; }
+    th,td { border:1px solid var(--border); padding:.55em .9em; text-align:left; }
+    th { background:var(--accent); color:#fff; }
+    tr:nth-child(even) { background:var(--table-stripe); }
+    blockquote { border-left:4px solid var(--accent); margin-left:0;
+                 padding:.4em 1em; color:#666; background:var(--code-bg);
+                 border-radius:0 6px 6px 0; }
+    .katex-display { overflow-x:auto; overflow-y:hidden; padding:.5em 0; }
+  </style>
+</head>
+<body>
+  <h1 id="optimizacion-bayesiana-en-google-colab-pro">Optimización Bayesiana en Google Colab Pro+</h1>
+<p>Guía paso a paso para ejecutar las optimizaciones Bayesianas de <strong>pes_dqn</strong> y
+<strong>pes_ac</strong> en Google Colab Pro+, usando VS Code como interfaz.</p>
+<div class="toc">
+<ul>
+<li><a href="#optimizacion-bayesiana-en-google-colab-pro">Optimización Bayesiana en Google Colab Pro+</a><ul>
+<li><a href="#motivacion">Motivación</a></li>
+<li><a href="#requisitos-previos">Requisitos previos</a></li>
+<li><a href="#estructura-del-notebook">Estructura del notebook</a></li>
+<li><a href="#guia-paso-a-paso">Guía paso a paso</a><ul>
+<li><a href="#paso-1-conectarse-a-colab-desde-vs-code">Paso 1 — Conectarse a Colab desde VS Code</a></li>
+<li><a href="#paso-2-configurar-la-celda-de-parametros">Paso 2 — Configurar la celda de parámetros</a></li>
+<li><a href="#paso-3-ejecutar-todas-las-celdas">Paso 3 — Ejecutar todas las celdas</a></li>
+<li><a href="#paso-4-monitorear-la-optimizacion">Paso 4 — Monitorear la optimización</a></li>
+<li><a href="#paso-5-revisar-resultados">Paso 5 — Revisar resultados</a></li>
+<li><a href="#paso-6-copiar-el-mejor-modelo">Paso 6 — Copiar el mejor modelo</a></li>
+<li><a href="#paso-7-push-a-github-opcional">Paso 7 — Push a GitHub (opcional)</a></li>
+</ul>
+</li>
+<li><a href="#manejo-de-desconexiones">Manejo de desconexiones</a><ul>
+<li><a href="#que-se-preserva">Qué se preserva</a></li>
+<li><a href="#como-reanudar">Cómo reanudar</a></li>
+</ul>
+</li>
+<li><a href="#flujo-de-archivos">Flujo de archivos</a></li>
+<li><a href="#detalles-tecnicos">Detalles técnicos</a><ul>
+<li><a href="#gpu-override">GPU Override</a></li>
+<li><a href="#optuna-tpe-sqlite">Optuna TPE + SQLite</a></li>
+<li><a href="#variables-de-entorno-en-colab">Variables de entorno en Colab</a></li>
+</ul>
+</li>
+<li><a href="#recuperar-resultados-localmente">Recuperar resultados localmente</a><ul>
+<li><a href="#opcion-a-git-pull">Opción A: Git pull</a></li>
+<li><a href="#opcion-b-descargar-desde-google-drive">Opción B: Descargar desde Google Drive</a></li>
+<li><a href="#copiar-modelo-al-path-estandar-local">Copiar modelo al path estándar (local)</a></li>
+<li><a href="#ejecutar-el-experimento-con-el-modelo-optimizado">Ejecutar el experimento con el modelo optimizado</a></li>
+</ul>
+</li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<hr />
+<h2 id="motivacion">Motivación</h2>
+<p>La máquina local (Intel i3-6006U, 7.7 GB RAM, 3.9 GB swap) es insuficiente
+para correr las optimizaciones completas. El kernel de Linux (<code>systemd-oomd</code>)
+termina los procesos cuando la presión de memoria supera el 50% durante más de
+20 segundos. Cada optimización consume ~900 MB, y con el escritorio activo se
+excede el límite rápidamente.</p>
+<table>
+<thead>
+<tr>
+<th>Recurso</th>
+<th>Local</th>
+<th>Colab Pro+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RAM</td>
+<td>7.7 GB</td>
+<td>hasta 83 GB</td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>i3-6006U 2C</td>
+<td>Xeon 2C/4C</td>
+</tr>
+<tr>
+<td>GPU</td>
+<td>—</td>
+<td>T4 / A100</td>
+</tr>
+<tr>
+<td>Runtime máximo</td>
+<td>ilimitado</td>
+<td>24 h</td>
+</tr>
+<tr>
+<td>Disco</td>
+<td>SSD 256 GB</td>
+<td>~200 GB efímero</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Nota sobre GPU:</strong> Los modelos DQN/A2C son pequeños (32–64 neuronas,
+1–2 capas ocultas). La GPU no acelera significativamente el entrenamiento,
+pero las instancias GPU de Colab Pro+ incluyen más RAM y mejor CPU.</p>
+</blockquote>
+<hr />
+<h2 id="requisitos-previos">Requisitos previos</h2>
+<ol>
+<li><strong>Cuenta Google</strong> con suscripción <strong>Colab Pro+</strong>.</li>
+<li><strong>Extensión de VS Code:</strong> <code>google.colab</code> (Google Colab) instalada y
+   autenticada con la cuenta <code>vegamaximiliano0@gmail.com</code>.</li>
+<li><strong>Token de GitHub</strong> (Personal Access Token) con permiso <code>repo</code> para hacer
+   push automático de resultados. Crear en
+   <em>GitHub → Settings → Developer settings → Personal access tokens</em>.</li>
+<li><strong>Google Drive</strong> con espacio suficiente (~500 MB por paquete).</li>
+</ol>
+<hr />
+<h2 id="estructura-del-notebook">Estructura del notebook</h2>
+<p>El notebook <code>colab/mPES_Bayesian_Optimization.ipynb</code> tiene 11 celdas:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Tipo</th>
+<th>Propósito</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Markdown</td>
+<td>Descripción y notas sobre reanudación</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Código</td>
+<td><strong>Configuración</strong>: paquete, trials, fecha, branch, token</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Markdown</td>
+<td>Encabezado "Setup del entorno"</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Código</td>
+<td><strong>Setup</strong>: clonar repo, restaurar DB desde Drive, instalar deps, verificar GPU</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Código</td>
+<td><strong>Verificación</strong>: nvidia-smi, RAM, archivos necesarios, estado de la DB</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Markdown</td>
+<td>Encabezado "Ejecutar optimización"</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Código</td>
+<td><strong>Optimización</strong>: subproceso con GPU + sincronización a Drive cada N min</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Markdown</td>
+<td>Encabezado "Resultados"</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Código</td>
+<td><strong>Resultados</strong>: trials por estado, top 10, copiar outputs a Drive</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Código</td>
+<td><strong>Copiar modelo</strong>: copiar <code>.keras</code> y <code>.npy</code> al path estándar</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Código</td>
+<td><strong>Push a GitHub</strong> (opcional): commit + push de resultados</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="guia-paso-a-paso">Guía paso a paso</h2>
+<h3 id="paso-1-conectarse-a-colab-desde-vs-code">Paso 1 — Conectarse a Colab desde VS Code</h3>
+<ol>
+<li>Abrir VS Code.</li>
+<li>Abrir la paleta de comandos: <code>Ctrl+Shift+P</code>.</li>
+<li>Buscar <strong>"Google Colab: New Notebook"</strong> o <strong>"Google Colab: Connect to Runtime"</strong>.</li>
+<li>Seleccionar el tipo de runtime:</li>
+<li><strong>Runtime type:</strong> Python 3</li>
+<li><strong>Hardware accelerator:</strong> GPU (T4 recomendado)</li>
+<li><strong>Runtime shape:</strong> High-RAM si está disponible</li>
+<li>Esperar a que VS Code se conecte al kernel remoto.</li>
+</ol>
+<blockquote>
+<p>Si ya tenés el notebook abierto, usá <strong>"Google Colab: Connect to Runtime"</strong>
+directamente.</p>
+</blockquote>
+<h3 id="paso-2-configurar-la-celda-de-parametros">Paso 2 — Configurar la celda de parámetros</h3>
+<p>La celda #2 contiene los parámetros principales como formulario interactivo:</p>
+<pre><code class="language-python">PACKAGE = &quot;pes_dqn&quot;        # &quot;pes_dqn&quot; o &quot;pes_ac&quot;
+N_TRIALS = 110              # Trials objetivo (DQN=110, AC=100)
+RESUME_DATE = &quot;2026-03-07&quot;  # Fecha del estudio a reanudar
+BRANCH = &quot;dqn_and_ac&quot;       # Rama de Git
+DRIVE_SYNC_MINUTES = 5      # Intervalo de backup a Drive (min)
+GITHUB_TOKEN = &quot;Token_2026&quot; # Reemplazar con tu Personal Access Token
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>DQN</th>
+<th>AC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PACKAGE</code></td>
+<td><code>pes_dqn</code></td>
+<td><code>pes_ac</code></td>
+</tr>
+<tr>
+<td><code>N_TRIALS</code></td>
+<td><code>110</code></td>
+<td><code>100</code></td>
+</tr>
+<tr>
+<td><code>RESUME_DATE</code></td>
+<td><code>2026-03-07</code></td>
+<td><code>2026-03-07</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Importante:</strong> Escribir el <code>GITHUB_TOKEN</code> en la celda y <strong>no</strong> hacer commit
+del token. La celda se limpia automáticamente antes de pushear.</p>
+<h3 id="paso-3-ejecutar-todas-las-celdas">Paso 3 — Ejecutar todas las celdas</h3>
+<p>Ejecutar las celdas en orden o usar <strong>Run All</strong>:</p>
+<ol>
+<li><strong>Celda 2 (Configuración):</strong> Define variables y crea el directorio de backup
+   en Drive.</li>
+<li><strong>Celda 4 (Setup):</strong></li>
+<li>Monta Google Drive en <code>/content/drive</code>.</li>
+<li>Clona el repositorio (o hace <code>git pull</code> si ya existe).</li>
+<li>Restaura la DB de Optuna desde Drive si es más reciente que la del repo.</li>
+<li>Instala dependencias faltantes (<code>optuna</code>, <code>gym</code>, <code>pygame</code>, etc.).</li>
+<li>Verifica TensorFlow y la GPU.</li>
+<li><strong>Celda 5 (Verificación):</strong></li>
+<li>Muestra info de GPU (<code>nvidia-smi</code>).</li>
+<li>Muestra RAM total del sistema.</li>
+<li>Verifica la existencia de archivos necesarios (DB, CSVs).</li>
+<li>Imprime el estado actual de trials en la DB.</li>
+</ol>
+<h3 id="paso-4-monitorear-la-optimizacion">Paso 4 — Monitorear la optimización</h3>
+<p>La celda 7 ejecuta la optimización como subproceso. La salida se muestra en
+tiempo real:</p>
+<pre><code>============================================================
+  python3 -m pes_dqn.ext.optimize_dqn 110 --resume 2026-03-07
+  cwd: /content/mPES
+  GPU: CUDA_VISIBLE_DEVICES=0
+  Drive sync: cada 5 min
+============================================================
+
+[I 2026-03-11 ...] Trial 22 finished with value: 0.847...
+</code></pre>
+<p>Un hilo en segundo plano copia la DB a Google Drive cada <code>DRIVE_SYNC_MINUTES</code>
+minutos como respaldo. Al finalizar, se hace un backup final.</p>
+<p><strong>Tiempo estimado:</strong>
+- DQN (89 trials restantes): ~8–12 horas
+- AC (62 trials restantes): ~6–10 horas</p>
+<h3 id="paso-5-revisar-resultados">Paso 5 — Revisar resultados</h3>
+<p>La celda 9 muestra un resumen de la optimización:
+- Trials por estado (COMPLETE, FAIL, RUNNING).
+- Top 10 trials ordenados por valor de la función objetivo.
+- Copia todos los outputs al directorio de Drive.</p>
+<h3 id="paso-6-copiar-el-mejor-modelo">Paso 6 — Copiar el mejor modelo</h3>
+<p>La celda 10 copia el mejor modelo <code>.keras</code> al path estándar que espera
+<code>__main__.py</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Paquete</th>
+<th>Archivo optimización</th>
+<th>Path estándar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pes_dqn</code></td>
+<td><code>dqn_best_*.keras</code></td>
+<td><code>pes_dqn/inputs/dqn_model.keras</code></td>
+</tr>
+<tr>
+<td><code>pes_ac</code></td>
+<td><code>ac_best_*.keras</code></td>
+<td><code>pes_ac/inputs/ac_actor.keras</code></td>
+</tr>
+</tbody>
+</table>
+<p>También copia <code>rewards_best_*.npy</code> → <code>rewards.npy</code> y respalda el modelo en
+Drive.</p>
+<h3 id="paso-7-push-a-github-opcional">Paso 7 — Push a GitHub (opcional)</h3>
+<p>La celda 11 hace <code>git add -A</code>, <code>commit</code> y <code>push</code> automático si se configuró
+<code>GITHUB_TOKEN</code>. Si no, descargá los archivos desde Drive manualmente.</p>
+<hr />
+<h2 id="manejo-de-desconexiones">Manejo de desconexiones</h2>
+<p>Colab puede desconectarse por inactividad (~90 min sin interacción) o al
+alcanzar el límite de 24h.</p>
+<h3 id="que-se-preserva">Qué se preserva</h3>
+<ul>
+<li><strong>DB de Optuna en Drive:</strong> Se sincroniza cada N minutos. Como máximo se
+  pierden los trials del último intervalo de sincronización.</li>
+<li><strong>Repositorio clonado:</strong> Se pierde (disco efímero), pero se re-clona al
+  volver a ejecutar.</li>
+</ul>
+<h3 id="como-reanudar">Cómo reanudar</h3>
+<ol>
+<li>Reconectar a un runtime (Paso 1).</li>
+<li>Ejecutar <strong>todas las celdas</strong> desde el principio.</li>
+<li>La celda 4 restaura la DB desde Drive.</li>
+<li>Optuna detecta los trials completados y retoma desde donde quedó.</li>
+</ol>
+<blockquote>
+<p><code>load_if_exists=True</code> en el código de optimización permite reanudar
+automáticamente sin intervención manual adicional.</p>
+</blockquote>
+<hr />
+<h2 id="flujo-de-archivos">Flujo de archivos</h2>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│  Google Colab (efímero)                                     │
+│                                                             │
+│  /content/mPES/  ← git clone                                │
+│    └─ pes_dqn/inputs/2026-03-07_BAYESIAN_OPT/              │
+│        ├─ optuna_study_2026-03-07.db   ← Optuna escribe    │
+│        ├─ dqn_best_2026-03-07.keras     ← mejor modelo     │
+│        └─ rewards_best_2026-03-07.npy   ← rewards          │
+│                                                             │
+│  Sync cada 5 min ↕                                          │
+│                                                             │
+│  /content/drive/MyDrive/mPES_backups/pes_dqn/              │
+│    ├─ optuna_study_2026-03-07.db        ← backup           │
+│    └─ 2026-03-07_BAYESIAN_OPT/          ← outputs finales  │
+│        ├─ optuna_study_2026-03-07.db                        │
+│        ├─ dqn_best_2026-03-07.keras                         │
+│        └─ rewards_best_2026-03-07.npy                       │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                    git push / Drive download
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Máquina local                                              │
+│                                                             │
+│  mPES/                                                      │
+│    └─ pes_dqn/inputs/                                       │
+│        ├─ dqn_model.keras               ← modelo final     │
+│        ├─ rewards.npy                   ← rewards           │
+│        └─ 2026-03-07_BAYESIAN_OPT/     ← todo el estudio   │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr />
+<h2 id="detalles-tecnicos">Detalles técnicos</h2>
+<h3 id="gpu-override">GPU Override</h3>
+<p>El código fuente (en cada <code>__init__.py</code>) establece:</p>
+<pre><code class="language-python">os.environ.setdefault(&quot;CUDA_VISIBLE_DEVICES&quot;, &quot;-1&quot;)  # CPU only
+</code></pre>
+<p>El uso de <code>setdefault</code> hace que <strong>no</strong> sobreescriba la variable si ya existe.
+La celda de optimización define <code>CUDA_VISIBLE_DEVICES='0'</code> en el entorno del
+subproceso, habilitando la primera GPU.</p>
+<h3 id="optuna-tpe-sqlite">Optuna TPE + SQLite</h3>
+<ul>
+<li><strong>Sampler:</strong> TPE (Tree-structured Parzen Estimator) — default de Optuna.</li>
+<li><strong>Storage:</strong> SQLite local (<code>optuna_study_YYYY-MM-DD.db</code>).</li>
+<li><strong>Reanudación:</strong> <code>load_if_exists=True</code> continúa con los trials existentes.</li>
+<li>Los trials con estado <code>RUNNING</code> (interrumpidos) se ignoran: Optuna no los
+  reintenta, pero tampoco bloquean el estudio.</li>
+</ul>
+<h3 id="variables-de-entorno-en-colab">Variables de entorno en Colab</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Valor</th>
+<th>Propósito</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CUDA_VISIBLE_DEVICES</code></td>
+<td><code>0</code></td>
+<td>Habilita GPU para TensorFlow</td>
+</tr>
+<tr>
+<td><code>VIRTUAL_ENV</code></td>
+<td><code>/content</code></td>
+<td>Evita el prompt "Press ENTER" de <code>__init__.py</code></td>
+</tr>
+<tr>
+<td><code>PYTHONUNBUFFERED</code></td>
+<td><code>1</code></td>
+<td>Output en tiempo real</td>
+</tr>
+<tr>
+<td><code>TF_ENABLE_ONEDNN_OPTS</code></td>
+<td><code>0</code></td>
+<td>Suprime mensajes de oneDNN</td>
+</tr>
+<tr>
+<td><code>TF_CPP_MIN_LOG_LEVEL</code></td>
+<td><code>2</code></td>
+<td>Solo warnings y errores de TF</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="recuperar-resultados-localmente">Recuperar resultados localmente</h2>
+<p>Después de que la optimización termine, hay dos formas de traer los resultados
+a la máquina local:</p>
+<h3 id="opcion-a-git-pull">Opción A: Git pull</h3>
+<p>Si se hizo push desde Colab (celda 11):</p>
+<pre><code class="language-bash">cd ~/Documentos/maximiliano/mPES
+source linux_mpes_env/bin/activate
+git pull origin dqn_and_ac
+</code></pre>
+<h3 id="opcion-b-descargar-desde-google-drive">Opción B: Descargar desde Google Drive</h3>
+<ol>
+<li>Ir a <code>Mi unidad &gt; mPES_backups &gt; pes_dqn</code> (o <code>pes_ac</code>).</li>
+<li>Descargar los archivos <code>.keras</code>, <code>.npy</code> y <code>.db</code>.</li>
+<li>Copiar al directorio correspon­diente en el repositorio local.</li>
+</ol>
+<h3 id="copiar-modelo-al-path-estandar-local">Copiar modelo al path estándar (local)</h3>
+<p>Si el modelo no quedó en el path estándar, copiarlo manualmente:</p>
+<pre><code class="language-bash"># DQN
+cp pes_dqn/inputs/2026-03-07_BAYESIAN_OPT/dqn_best_2026-03-07.keras \
+   pes_dqn/inputs/dqn_model.keras
+
+# AC
+cp pes_ac/inputs/2026-03-07_BAYESIAN_OPT/ac_best_2026-03-07.keras \
+   pes_ac/inputs/ac_actor.keras
+</code></pre>
+<h3 id="ejecutar-el-experimento-con-el-modelo-optimizado">Ejecutar el experimento con el modelo optimizado</h3>
+<pre><code class="language-bash">source linux_mpes_env/bin/activate
+python3 -m pes_dqn   # o python3 -m pes_ac
+</code></pre>
+<hr />
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Problema</th>
+<th>Solución</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"No module named google.colab"</td>
+<td>Estás corriendo fuera de Colab. Conectate al runtime remoto.</td>
+</tr>
+<tr>
+<td>GPU no detectada</td>
+<td>Verificar que el runtime tiene GPU. Ir a Runtime → Change runtime type → GPU.</td>
+</tr>
+<tr>
+<td>DB no se restaura desde Drive</td>
+<td>El directorio de Drive puede no existir. Verificar que la fecha <code>RESUME_DATE</code> coincide.</td>
+</tr>
+<tr>
+<td><code>git push</code> falla</td>
+<td>Verificar que <code>GITHUB_TOKEN</code> tiene permiso <code>repo</code> y no expiró.</td>
+</tr>
+<tr>
+<td>OOM en Colab</td>
+<td>Cambiar a runtime "High-RAM" o reducir el tamaño de batch en la configuración del paquete.</td>
+</tr>
+<tr>
+<td>Trial RUNNING infinito</td>
+<td>Los trials interrumpidos quedan en estado RUNNING. Optuna los ignora y crea nuevos.</td>
+</tr>
+<tr>
+<td>"Press ENTER to continue"</td>
+<td>La variable <code>VIRTUAL_ENV</code> no se definió. Asegurarse de que la celda de configuración se ejecutó.</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
