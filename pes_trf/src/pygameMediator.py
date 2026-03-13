@@ -74,8 +74,8 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
     Parameters
     ----------
     options : array_like
-        1-D array of Q-values from the Q-table state [resources, trial, severity]
-        Typically shape (11,) representing resource allocation probabilities
+        1-D array of action values or softmax probabilities.
+        Typically shape (11,) representing resource allocation options.
     resources_left : float or int
         Available resources that constrain feasible actions
     response_timeout : int
@@ -185,7 +185,8 @@ def provide_rl_agent_response(
     Parameters
     ----------
     resources : float
-        Total resources available in session (informational).
+        Total resources available in session (informational; prefixed with
+        ``_`` in the signature because it is unused).
     resources_left : float or int
         Remaining resources available for allocation.
     session_no : int

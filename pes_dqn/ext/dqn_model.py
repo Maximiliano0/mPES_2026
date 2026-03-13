@@ -170,7 +170,8 @@ def build_q_network(state_dim: int, action_dim: int,
     Returns
     -------
     tf.keras.Model
-        Compiled-ready Keras ``Sequential`` model.
+        Keras ``Sequential`` model (uncompiled; call ``.compile()`` or use
+        a custom training loop with ``tf.GradientTape``).
     """
     model = tf.keras.Sequential(name="DQN")
     model.add(tf.keras.layers.Input(shape=(state_dim,)))

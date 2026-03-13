@@ -113,10 +113,6 @@ DQN_LEARNING_RATE = 1e-3                  # Adam optimiser learning rate
 DQN_TRAIN_FREQ = 4                        # Environment steps between gradient updates
 DQN_MODEL_FILE = 'dqn_model.keras'        # Filename for the saved Keras model
 
-# ==================== BAYESIAN OPTIMISATION (META-COGNITION) ====================
-OPT_PERF_WEIGHT = 0.7     # Weight for mean normalised performance in combined objective
-OPT_CONF_WEIGHT = 0.3     # Weight for mean meta-cognitive confidence in combined objective
-
 # ==================== RUNTIME & PERSISTENCE ====================
 VERBOSE = True             # Enable detailed console logging and initialization messages
 SAVE_RESULTS = True        # Save experiment results to JSON/TXT files after each sequence

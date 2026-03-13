@@ -139,7 +139,11 @@ class Pandemic(Env):
         self.initial_severities : list
             Initial severity values for each trial in the sequence
         self.allocations : list
-            Resource allocations for each trial in the sequence
+            Resource allocations for each trial in the sequence.
+            **Only set when no probability distributions are configured**
+            (i.e. the ``if`` branch).  When distributions are configured
+            (the ``else`` branch), only *seq_length* and
+            *initial_severities* are set.
         """
         if (self.number_cities_prob.shape[0] == 0):
             self.seq_length = random.randrange(int(3), int(self.max_seq_length))
@@ -236,8 +240,10 @@ class Pandemic(Env):
 
         Returns
         -------
-        list
-            Initial observation [available_resources, trial_number, initial_severity]
+        tuple
+            - observation (list): Initial observation
+              ``[available_resources, trial_number, initial_severity]``
+            - info (dict): Empty info dict (Gymnasium API)
         """
         # Reload the available resources
         self.available_resources = self.max_resources
@@ -330,7 +336,8 @@ class Pandemic(Env):
             - observation (list): New state [available_resources, trial_number, severity]
             - reward (float): Reward for this step (negative sum of severities)
             - done (bool): Whether the episode is finished
-            - info (list): Additional information (empty list)
+            - truncated (bool): Always ``False`` (no time-limit truncation)
+            - info (dict): Additional information (empty dict)
         """
         # Flag that marks the termination of an episode
         done = False
@@ -388,10 +395,11 @@ def ac_agent_meta_cognitive(policy_probs, resources_left, response_timeout):
 
     Confidence formula::
 
-        confidence = 1 - (H(π_feasible) / H_max)
+        confidence = (H(π_feasible) - H_max) / (H_min - H_max)
 
-    where H_max = log₂(n_actions) and H(π_feasible) is the Shannon entropy of
-    the policy restricted to feasible actions (allocation ≤ resources_left).
+    where H_max = log₂(n_actions) (uniform), H_min ≈ 0 (peaked), and
+    H(π_feasible) is the Shannon entropy of the policy restricted to feasible
+    actions (allocation ≤ resources_left).
 
     Parameters
     ----------
@@ -417,8 +425,9 @@ def ac_agent_meta_cognitive(policy_probs, resources_left, response_timeout):
     Notes
     -----
     - Infeasible actions (allocation > resources_left) are set to a tiny value
-      before entropy computation and action selection.
-    - Confidence is computed as the normalised inverse of entropy based on the
+      and the distribution is **renormalised** before entropy computation and
+      action selection.
+    - Confidence is computed as ``(H − H_max) / (H_min − H_max)`` using the
       min/max entropy reference distributions.
     - Response times are sampled from normal distributions parameterised by
       confidence.
@@ -567,9 +576,10 @@ def A2CTraining(env, actor_lr, critic_lr, discount, entropy_coeff,
     """
     Train an Advantage Actor-Critic (A2C) agent on the Pandemic environment.
 
-    Uses on-policy updates — each transition is used to update both the Actor
-    (policy network) and the Critic (value network) immediately within the
-    episode.  An ε-greedy overlay is maintained for additional exploration
+    Uses on-policy updates — transitions collected during each episode are
+    used to update both the Actor (policy network) and the Critic (value
+    network) in a **single batched gradient step at the end of the episode**.
+    An ε-greedy overlay is maintained for additional exploration
     during early training, with linear decay.
 
     Parameters
@@ -622,9 +632,9 @@ def A2CTraining(env, actor_lr, critic_lr, discount, entropy_coeff,
       networks (see :func:`ac_model.normalize_state`).
     - The function prints average reward every 10 000 episodes to track
       convergence.
-    - A2C performs on-policy updates: each transition (s, a, r, s', done)
-      is used **once** to update both Actor and Critic via
-      :func:`ac_model.train_step_actor_critic`.
+    - A2C performs on-policy updates: all transitions from one episode
+      are batched and used in a **single gradient step** at the end of
+      the episode via :func:`ac_model.train_step_actor_critic`.
     """
 
     # ----- Reproducibility -----

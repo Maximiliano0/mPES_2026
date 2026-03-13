@@ -92,7 +92,7 @@ TRUST_MAX = 100            # Maximum scale value for confidence slider (upgraded
 USE_FIXED_BLOCK_SEQUENCES = True  # Load sequence trial lengths from CSV file (vs. random)
 
 # ==================== REPRODUCIBILITY ====================
-SEED = 42                  # Random seed for Q-Learning training reproducibility
+SEED = 42                  # Random seed for training reproducibility
 
 # ==================== RUNTIME & PERSISTENCE ====================
 VERBOSE = True             # Enable detailed console logging and initialization messages

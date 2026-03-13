@@ -132,7 +132,6 @@ configuration:
 | `tf.constant` scalar hyper-parameters | Prevents costly retracing across Optuna trials | `ext/pandemic.py` |
 | Skip confidence computation | `compute_confidence=False` skips entropy/masking per step | `ext/pandemic.py` |
 | TF thread-pool tuning | `intra_op=0` (auto), `inter_op=2` for multi-core CPUs | `ext/ac_model.py` |
-| OMP_NUM_THREADS | Set to CPU core count before TF import | `__init__.py` |
 | Actor-only inference | Only Actor loaded at experiment time (Critic discarded) | `src/pygameMediator.py` |
 
 To re-enable confidence tracking during training (at slightly slower speed):
@@ -195,7 +194,7 @@ parameters like `batch_size`, `replay_buffer_size`, and
 
 If the local machine does not have enough RAM (the full optimisation needs
 ~900 MB per process), you can run it on Google Colab Pro+ using the notebook
-at `colab/mPES_Bayesian_Optimization.ipynb`.  See `utils/colab_workflow.md`
+at `colab/Bayesian_Colab.ipynb`.  See `utils/colab_workflow.md`
 for the complete step-by-step guide.
 
 ---
@@ -308,8 +307,6 @@ still too slow:
 
 - Reduce episode count: `python3 -m pes_ac.ext.train_ac 50000`
 - Verify `compute_confidence=False` is set (default) in `train_ac.py`
-- Check that `OMP_NUM_THREADS` is set to your CPU core count
-  (auto-configured in `__init__.py`)
 
 ### Actor vs. Critic model confusion
 

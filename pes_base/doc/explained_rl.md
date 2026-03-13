@@ -454,6 +454,7 @@ train_rl.py                           __main__.py
 ```
 
 > **Paso manual requerido**: Después de entrenar, copiar los archivos:
+>
 > ```bash
 > cp inputs/<fecha>_RL_TRAIN/q_<fecha>.npy inputs/q.npy
 > cp inputs/<fecha>_RL_TRAIN/rewards_<fecha>.npy inputs/rewards.npy

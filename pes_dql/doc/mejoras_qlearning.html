@@ -124,9 +124,11 @@ recursos a acciones que parecen buenas pero no lo son.</p>
 $Q_B$. En cada step, con probabilidad 0.5 se actualiza una u otra:</p>
 <p>$$Q_A(s,a) \leftarrow Q_A(s,a) + \alpha\left[r + \gamma\, Q_B!\left(s',\, \underset{a'}{\arg\max}\; Q_A(s',a')\right) - Q_A(s,a)\right]$$</p>
 <p>$$Q_B(s,a) \leftarrow Q_B(s,a) + \alpha\left[r + \gamma\, Q_A!\left(s',\, \underset{a'}{\arg\max}\; Q_B(s',a')\right) - Q_B(s,a)\right]$$</p>
-<p>El mecanismo es:
-- Una tabla <strong>selecciona</strong> la acción (argmax): decide cuál es la mejor acción
-- La otra tabla <strong>evalúa</strong> esa acción: estima cuánto vale</p>
+<p>El mecanismo es:</p>
+<ul>
+<li>Una tabla <strong>selecciona</strong> la acción (argmax): decide cuál es la mejor acción</li>
+<li>La otra tabla <strong>evalúa</strong> esa acción: estima cuánto vale</li>
+</ul>
 <p>Como los errores de estimación de $Q_A$ y $Q_B$ son independientes (fueron
 inicializadas con valores aleatorios distintos), el sesgo optimista se cancela
 en promedio. Intuitivamente, si $Q_A$ sobreestima la acción $a^*$, es improbable
@@ -486,8 +488,9 @@ trayectorias).</p>
 nueva.</p>
 <h4 id="eleccion-de-la-funcion-potencial">Elección de la función potencial</h4>
 <p>Para el entorno Pandemic, se eligió:</p>
-<p>$$\Phi(s) = -\sum_{i=0}^{t} S_i$$</p>
-<p>Es decir, el potencial es el negativo de la severidad total. La función de shaping
+<p>$$\Phi(s) = -\sum_{i=1}^{|C|} \max(0,\; S_i)$$</p>
+<p>Es decir, el potencial es el negativo de la severidad total de todas las
+ciudades $C$ activas en el estado actual. La función de shaping
 resultante es:</p>
 <p>$$F(s, s') = \beta \left(\gamma \cdot \Phi(s') - \Phi(s)\right) = \beta \left(-\gamma \sum S_i^{\text{después}} + \sum S_i^{\text{antes}}\right)$$</p>
 <p>$$= \beta \left(\sum S_i^{\text{antes}} - \gamma \sum S_i^{\text{después}}\right)$$</p>

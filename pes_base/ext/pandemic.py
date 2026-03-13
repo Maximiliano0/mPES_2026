@@ -224,8 +224,10 @@ class Pandemic(Env):
 
         Returns
         -------
-        list
-            Initial observation [available_resources, trial_number, initial_severity]
+        tuple
+            - observation (list): Initial observation
+              ``[available_resources, trial_number, initial_severity]``
+            - info (dict): Empty info dict (Gymnasium API)
         """
         # Reload the available resources
         self.available_resources = self.max_resources
@@ -316,7 +318,8 @@ class Pandemic(Env):
             - observation (list): New state [available_resources, trial_number, severity]
             - reward (float): Reward for this step (negative sum of severities)
             - done (bool): Whether the episode is finished
-            - info (list): Additional information (empty list)
+            - truncated (bool): Always ``False`` (no time-limit truncation)
+            - info (dict): Additional information (empty dict)
         """
         # Flag that marks the termination of an episode
         done = False
@@ -393,9 +396,9 @@ def rl_agent_meta_cognitive(options, resources_left, response_timeout):
         Normalized confidence score based on entropy (range: typically 0-1)
         Lower entropy → higher confidence
     rt_hold : float
-        Response time for button hold phase (in milliseconds)
+        Response time for button hold phase (in seconds)
     rt_release : float
-        Response time for button release phase (in milliseconds)
+        Response time for button release phase (in seconds)
 
     Notes:
     ------

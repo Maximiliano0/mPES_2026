@@ -197,7 +197,7 @@ def exit_experiment_gracefully( Message, Filehandles, MovementData, LogUtils, Py
         Movement tracking data to save
     LogUtils : module
         Log utilities module for final logging
-    _PygameMediator : module
+    PygameMediator : module
         Pygame mediator module (currently unused for RL-Agent mode)
     """
 

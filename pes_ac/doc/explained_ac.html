@@ -612,7 +612,9 @@ hiperparámetros óptimos del A2C.</p>
 <p>Se entrena un agente A2C con los hiperparámetros sugeridos y se evalúa
 en las <strong>64 secuencias fijas</strong> (las mismas que usa <code>__main__.py</code>).  El score
 reportado a Optuna es el <strong>rendimiento normalizado medio</strong> (a maximizar),
-calculado con <code>calculate_normalised_final_severity_performance_metric()</code>.</p>
+calculado con <code>calculate_normalised_final_severity_performance_metric()</code>.
+Se aplica enmascaramiento de acciones infactibles (<code>actions &gt; resources_left</code>)
+para que la métrica coincida con el comportamiento del agente en el experimento.</p>
 <p>Durante la evaluación, tanto <code>A2CTraining()</code> como <code>run_experiment()</code> se
 invocan con <code>verbose=False</code> para suprimir las impresiones de consola por
 episodio/secuencia, evitando ruido en la salida de terminal durante
@@ -629,8 +631,9 @@ acelerando la búsqueda al evitar completar trials prometedoramente malos:</p>
 )
 </code></pre>
 <h3 id="94-warm-start">9.4 Warm-Start</h3>
-<p>La búsqueda comienza con un <strong>trial semilla</strong> usando los valores por defecto
-de <code>CONFIG.py</code>, asegurando que al menos un trial alcance un rendimiento
+<p>La búsqueda comienza con un <strong>trial semilla</strong> usando valores razonables
+(parcialmente de <code>CONFIG.py</code> y parcialmente fijados en el propio
+<code>optimize_ac.py</code>), asegurando que al menos un trial alcance un rendimiento
 razonable:</p>
 <pre><code class="language-python">warm_start = {
     &quot;actor_lr&quot;: 3e-4,
@@ -747,8 +750,6 @@ de entropía, enmascaramiento, y normalización por step.</p>
 <pre><code class="language-python">tf.config.threading.set_intra_op_parallelism_threads(0)   # auto-detect
 tf.config.threading.set_inter_op_parallelism_threads(2)
 </code></pre>
-<p>Además, <code>OMP_NUM_THREADS</code> se configura en <code>__init__.py</code> al número de
-cores disponibles antes de importar TensorFlow.</p>
 <h3 id="124-solo-el-actor-en-inferencia">12.4 Solo el Actor en Inferencia</h3>
 <p>Durante el experimento (<code>__main__.py</code>), solo se carga y ejecuta el Actor.
 El Critic se descarta tras el entrenamiento, reduciendo la memoria en
@@ -756,7 +757,7 @@ inferencia a ~50 % del total.</p>
 <hr />
 <h2 id="13-estructura-de-archivos">13. Estructura de Archivos</h2>
 <pre><code>pes_ac/
-├── __init__.py              # Exporta constantes AC_*; configura OMP_NUM_THREADS
+├── __init__.py              # Exporta constantes AC_*; configura variables de entorno TF
 ├── __main__.py              # Valida ac_actor.keras antes de ejecutar
 ├── config/CONFIG.py         # 8 constantes AC_*
 ├── ext/

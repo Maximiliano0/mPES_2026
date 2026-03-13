@@ -159,7 +159,7 @@ Saved to `pes_trf/inputs/<YYYY-MM-DD>_BAYESIAN_OPT/`:
 
 | File | Description |
 |------|-------------|
-| `best_<date>.npy` | Best Q-table found |
+| `q_best_<date>.npy` | Best Q-table found |
 | `rewards_best_<date>.npy` | Reward history of the best trial |
 | `optimization_results_<date>.txt` | Full report with all trial results |
 | `optimization_history_<date>.png` | Convergence plot |

@@ -200,8 +200,13 @@ Los componentes:
 > Sin semilla fija, la única forma de preservar un resultado es
 > conservar la Q-table (`.npy`) generada.
 >
-> En la implementación actual de PES, el entrenamiento **no fija
-> semilla**, por lo que cada ejecución produce un agente distinto.
+> En la implementación actual de PES, la función `QLearning()` acepta
+> un parámetro `seed` que, cuando se proporciona, fija las semillas
+> de `numpy.random` y `random` antes de inicializar la Q-table.
+> El pipeline de entrenamiento (`train_rl.py`) pasa `seed=SEED`
+> (por defecto `SEED = 42` en `CONFIG.py`), haciendo que el
+> entrenamiento sea **reproducible** entre ejecuciones con los
+> mismos hiperparámetros.
 
 ### 5.5 Convergencia
 
@@ -363,6 +368,7 @@ En PES, los Q-values se interpretan como una distribución sobre acciones:
 $$\text{confidence} = \frac{H(p) - H_{\max}}{H_{\min} - H_{\max}}$$
 
 Donde:
+
 - $H_{\min}$: Entropía de distribución determinística ($\approx 0$)
 - $H_{\max}$: Entropía de distribución uniforme ($= \log_2 11 \approx 3.46$)
 

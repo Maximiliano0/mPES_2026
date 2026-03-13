@@ -475,6 +475,8 @@ Se entrena un agente A2C con los hiperparámetros sugeridos y se evalúa
 en las **64 secuencias fijas** (las mismas que usa `__main__.py`).  El score
 reportado a Optuna es el **rendimiento normalizado medio** (a maximizar),
 calculado con `calculate_normalised_final_severity_performance_metric()`.
+Se aplica enmascaramiento de acciones infactibles (`actions > resources_left`)
+para que la métrica coincida con el comportamiento del agente en el experimento.
 
 Durante la evaluación, tanto `A2CTraining()` como `run_experiment()` se
 invocan con `verbose=False` para suprimir las impresiones de consola por
@@ -498,8 +500,9 @@ study = optuna.create_study(
 
 ### 9.4 Warm-Start
 
-La búsqueda comienza con un **trial semilla** usando los valores por defecto
-de `CONFIG.py`, asegurando que al menos un trial alcance un rendimiento
+La búsqueda comienza con un **trial semilla** usando valores razonables
+(parcialmente de `CONFIG.py` y parcialmente fijados en el propio
+`optimize_ac.py`), asegurando que al menos un trial alcance un rendimiento
 razonable:
 
 ```python
@@ -604,9 +607,6 @@ tf.config.threading.set_intra_op_parallelism_threads(0)   # auto-detect
 tf.config.threading.set_inter_op_parallelism_threads(2)
 ```
 
-Además, `OMP_NUM_THREADS` se configura en `__init__.py` al número de
-cores disponibles antes de importar TensorFlow.
-
 ### 12.4 Solo el Actor en Inferencia
 
 Durante el experimento (`__main__.py`), solo se carga y ejecuta el Actor.
@@ -619,7 +619,7 @@ inferencia a ~50 % del total.
 
 ```
 pes_ac/
-├── __init__.py              # Exporta constantes AC_*; configura OMP_NUM_THREADS
+├── __init__.py              # Exporta constantes AC_*; configura variables de entorno TF
 ├── __main__.py              # Valida ac_actor.keras antes de ejecutar
 ├── config/CONFIG.py         # 8 constantes AC_*
 ├── ext/

@@ -293,11 +293,6 @@ configuration:</p>
 <td><code>ext/ac_model.py</code></td>
 </tr>
 <tr>
-<td>OMP_NUM_THREADS</td>
-<td>Set to CPU core count before TF import</td>
-<td><code>__init__.py</code></td>
-</tr>
-<tr>
 <td>Actor-only inference</td>
 <td>Only Actor loaded at experiment time (Critic discarded)</td>
 <td><code>src/pygameMediator.py</code></td>
@@ -370,7 +365,7 @@ parameters like <code>batch_size</code>, <code>replay_buffer_size</code>, and
 <h3 id="24-running-on-google-colab-pro">2.4 Running on Google Colab Pro+</h3>
 <p>If the local machine does not have enough RAM (the full optimisation needs
 ~900 MB per process), you can run it on Google Colab Pro+ using the notebook
-at <code>colab/mPES_Bayesian_Optimization.ipynb</code>.  See <code>utils/colab_workflow.md</code>
+at <code>colab/Bayesian_Colab.ipynb</code>.  See <code>utils/colab_workflow.md</code>
 for the complete step-by-step guide.</p>
 <hr />
 <h2 id="3-testing-the-a2c-agent-running-the-experiment">3. Testing the A2C Agent (Running the Experiment)</h2>
@@ -479,8 +474,6 @@ still too slow:</p>
 <ul>
 <li>Reduce episode count: <code>python3 -m pes_ac.ext.train_ac 50000</code></li>
 <li>Verify <code>compute_confidence=False</code> is set (default) in <code>train_ac.py</code></li>
-<li>Check that <code>OMP_NUM_THREADS</code> is set to your CPU core count
-  (auto-configured in <code>__init__.py</code>)</li>
 </ul>
 <h3 id="actor-vs-critic-model-confusion">Actor vs. Critic model confusion</h3>
 <p>Only the <strong>Actor</strong> model (<code>ac_actor.keras</code>) is needed for the experiment.

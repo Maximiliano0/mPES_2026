@@ -234,8 +234,10 @@ class Pandemic(Env):
 
         Returns
         -------
-        list
-            Initial observation [available_resources, trial_number, initial_severity]
+        tuple
+            - observation (list): Initial observation
+              ``[available_resources, trial_number, initial_severity]``
+            - info (dict): Empty info dict (Gymnasium API)
         """
         # Reload the available resources
         self.available_resources = self.max_resources
@@ -328,7 +330,8 @@ class Pandemic(Env):
             - observation (list): New state [available_resources, trial_number, severity]
             - reward (float): Reward for this step (negative sum of severities)
             - done (bool): Whether the episode is finished
-            - info (list): Additional information (empty list)
+            - truncated (bool): Always ``False`` (no time-limit truncation)
+            - info (dict): Additional information (empty dict)
         """
         # Flag that marks the termination of an episode
         done = False

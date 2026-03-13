@@ -4,10 +4,10 @@ pes_trf — Utility functions for the Pandemic Experiment Scenario.
 Provides helper functions shared by the training and evaluation pipelines:
 
 • ``entropy_from_pdf(pdf)`` — Shannon entropy of a discrete distribution.
-• ``convert_globalseq_to_seqs(global_seq)`` — Map a global sequence index
-  to its (block, sequence) pair.
-• ``plot_confidences(confs, rewards, path)`` — Scatter + ECDF plots of
-  confidence vs. reward.
+• ``convert_globalseq_to_seqs(sequence_map, seqin360)`` — Convert a flat
+  array of values into a nested list grouped by sequence lengths.
+• ``plot_confidences(ConfidencesPerSubject, title, Show, ExcludeUnanswered)``
+  — Histogram of meta-cognitive confidence values.
 '''
 
 ##########################

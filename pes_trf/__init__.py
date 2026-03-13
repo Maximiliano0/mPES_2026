@@ -12,7 +12,7 @@ Handles package setup including:
 - Path definitions for documentation, outputs, and inputs
 - ANSI colour codes for terminal output (ANSI class)
 - NumPy and TensorFlow configuration
-- Package exports via __all__ (37 symbols)
+- Package exports via __all__ (36 symbols)
 
 Usage
 -----

@@ -464,7 +464,7 @@ def main():
 
                 resources_left = resources_to_allocate - numpy.sum(ResourceAllocationsAtCurrentlyVisibleCities)
                 # NOTE: resources_left: i.e. in this sequence (i.e. as opposed to in block)
-                # NOTE: resources_to_allocate == AVAILABLE_RESOURCES_PER_SEQUENCE == 49
+                # NOTE: resources_to_allocate == AVAILABLE_RESOURCES_PER_SEQUENCE == 39
 
                 SeveritiesOfCurrentlyVisibleCities = exp_utils.get_updated_severity(INIT_NO_OF_CITIES,
                                                                                     ResourceAllocationsAtCurrentlyVisibleCities,

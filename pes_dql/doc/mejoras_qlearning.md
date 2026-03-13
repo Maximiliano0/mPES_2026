@@ -72,6 +72,7 @@ $$Q_A(s,a) \leftarrow Q_A(s,a) + \alpha\left[r + \gamma\, Q_B\!\left(s',\, \unde
 $$Q_B(s,a) \leftarrow Q_B(s,a) + \alpha\left[r + \gamma\, Q_A\!\left(s',\, \underset{a'}{\arg\max}\; Q_B(s',a')\right) - Q_B(s,a)\right]$$
 
 El mecanismo es:
+
 - Una tabla **selecciona** la acción (argmax): decide cuál es la mejor acción
 - La otra tabla **evalúa** esa acción: estima cuánto vale
 
@@ -409,9 +410,10 @@ nueva.
 
 Para el entorno Pandemic, se eligió:
 
-$$\Phi(s) = -\sum_{i=0}^{t} S_i$$
+$$\Phi(s) = -\sum_{i=1}^{|C|} \max(0,\; S_i)$$
 
-Es decir, el potencial es el negativo de la severidad total. La función de shaping
+Es decir, el potencial es el negativo de la severidad total de todas las
+ciudades $C$ activas en el estado actual. La función de shaping
 resultante es:
 
 $$F(s, s') = \beta \left(\gamma \cdot \Phi(s') - \Phi(s)\right) = \beta \left(-\gamma \sum S_i^{\text{después}} + \sum S_i^{\text{antes}}\right)$$

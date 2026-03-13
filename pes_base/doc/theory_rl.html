@@ -262,8 +262,13 @@ entrenamiento no es reproducible</strong> a menos que se establezcan
 semillas explícitas con <code>numpy.random.seed()</code> y <code>random.seed()</code>.
 Sin semilla fija, la única forma de preservar un resultado es
 conservar la Q-table (<code>.npy</code>) generada.</p>
-<p>En la implementación actual de PES, el entrenamiento <strong>no fija
-semilla</strong>, por lo que cada ejecución produce un agente distinto.</p>
+<p>En la implementación actual de PES, la función <code>QLearning()</code> acepta
+un parámetro <code>seed</code> que, cuando se proporciona, fija las semillas
+de <code>numpy.random</code> y <code>random</code> antes de inicializar la Q-table.
+El pipeline de entrenamiento (<code>train_rl.py</code>) pasa <code>seed=SEED</code>
+(por defecto <code>SEED = 42</code> en <code>CONFIG.py</code>), haciendo que el
+entrenamiento sea <strong>reproducible</strong> entre ejecuciones con los
+mismos hiperparámetros.</p>
 </blockquote>
 <h3 id="55-convergencia">5.5 Convergencia</h3>
 <p>Q-Learning converge a $Q^*$ bajo las condiciones:</p>
@@ -435,9 +440,11 @@ $$|S \times A| = 3{,}410 \times 11 = 37{,}510$$</p>
 <li>Normalizar a confianza:</li>
 </ol>
 <p>$$\text{confidence} = \frac{H(p) - H_{\max}}{H_{\min} - H_{\max}}$$</p>
-<p>Donde:
-- $H_{\min}$: Entropía de distribución determinística ($\approx 0$)
-- $H_{\max}$: Entropía de distribución uniforme ($= \log_2 11 \approx 3.46$)</p>
+<p>Donde:</p>
+<ul>
+<li>$H_{\min}$: Entropía de distribución determinística ($\approx 0$)</li>
+<li>$H_{\max}$: Entropía de distribución uniforme ($= \log_2 11 \approx 3.46$)</li>
+</ul>
 <table>
 <thead>
 <tr>

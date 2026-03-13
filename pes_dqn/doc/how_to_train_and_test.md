@@ -179,7 +179,7 @@ Saved to `pes_dqn/inputs/<YYYY-MM-DD>_BAYESIAN_OPT/`:
 
 If the local machine does not have enough RAM (the full optimisation needs
 ~900 MB per process), you can run it on Google Colab Pro+ using the notebook
-at `colab/mPES_Bayesian_Optimization.ipynb`.  See `utils/colab_workflow.md`
+at `colab/Bayesian_Colab.ipynb`.  See `utils/colab_workflow.md`
 for the complete step-by-step guide.
 
 ---
